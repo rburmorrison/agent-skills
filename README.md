@@ -6,7 +6,7 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 
 **Engineering**:
 
-- `gitmoji-commits` - Proposes subject-first GitMoji commit messages from repository changes.
+- `gitmoji-commits` - Creates subject-first GitMoji commits from repository changes.
 
 ## Usage
 

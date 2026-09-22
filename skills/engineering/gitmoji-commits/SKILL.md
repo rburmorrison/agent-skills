@@ -1,6 +1,6 @@
 ---
 name: gitmoji-commits
-description: Create GitMoji commit proposals from repository changes, using official GitMoji shortcodes, recent commit style, explicit user confirmation, rare optional bodies, and heredoc commit commands.
+description: Create GitMoji commits from repository changes, using official GitMoji shortcodes, recent commit style, rare optional bodies, and heredoc commit commands.
 ---
 
 # GitMoji Commits
@@ -75,13 +75,21 @@ Initial commit rules:
 
 - Do not split the initial commit unless the user explicitly asks.
 - Do not add a commit body unless the user explicitly asks.
-- Show `- All Repository Files` in the proposal instead of individual paths.
-- After confirmation, stage with `git add -A`.
+- Show `- All Repository Files` in the record instead of individual paths.
+- Stage with `git add -A`.
 
-Initial commit proposal:
+Initial commit command:
+
+```bash
+git add -A && git commit -F - <<'EOF'
+:tada: Initial commit
+EOF
+```
+
+After the initial commit succeeds, show:
 
 ```markdown
-I would like to make the following commit:
+I made the following commit:
 
 ---
 
@@ -90,16 +98,6 @@ I would like to make the following commit:
 - All Repository Files
 
 ---
-
-Let me know if you'd like me to commit these changes.
-```
-
-Initial commit command:
-
-```bash
-git add -A && git commit -F - <<'EOF'
-:tada: Initial commit
-EOF
 ```
 
 ## Grouping Changes
@@ -127,7 +125,7 @@ Do not add a body just because recent commits commonly use bodies. If a body is 
 
 When a body is used:
 
-- Show it as block-quoted bullets in the confirmation proposal.
+- Show it as block-quoted bullets in the commit record.
 - Use past tense.
 - End each bullet with punctuation.
 - Use 1-3 bullets in normal cases.
@@ -141,82 +139,17 @@ Example body:
 > - Updated local webhook setup to require signed test payloads.
 ```
 
-## Confirmation Format
+## Commit
 
-Always ask for confirmation before staging or committing. Do not run `git add` or `git commit` before the user confirms.
+After choosing shortcodes, subjects, bodies, and file groups, commit immediately. Do not ask the user to approve those choices.
 
-For one subject-only commit:
+Before committing, always re-run `git status --short` and compare it to the chosen commits.
 
-```markdown
-I would like to make the following commit:
-
----
-
-:memo: Document GitMoji commit workflow
-
-- skills/gitmoji-commits/SKILL.md
-- skills/gitmoji-commits/references/gitmoji-shortcodes.md
-
----
-
-Let me know if you'd like me to commit these changes.
-```
-
-For one commit with a body:
-
-```markdown
-I would like to make the following commit:
-
----
-
-:boom: Require signed webhook payloads
-
-> - Required HMAC verification before processing webhook events.
-> - Updated local webhook setup to require signed test payloads.
-
-- src/webhooks.ts
-- tests/webhooks.test.ts
-
----
-
-Let me know if you'd like me to commit these changes.
-```
-
-For multiple commits:
-
-```markdown
-I would like to make the following commits:
-
----
-
-:sparkles: Add repository import workflow
-
-- src/importer.ts
-- src/repository.ts
-
----
-
-:white_check_mark: Cover importer edge cases
-
-- tests/importer.test.ts
-- tests/fixtures/import-source.json
-
----
-
-Let me know if you'd like me to commit these changes.
-```
-
-Use the framed `---` format for every proposal, including subject-only commits.
-
-## After Confirmation
-
-Before committing, always re-run `git status --short` and compare it to the confirmed proposal.
-
-If files were added, removed, renamed, or modified outside the confirmed proposal, stop and ask for confirmation again.
+If files were added, removed, renamed, or modified outside the chosen commits, stop and ask.
 
 Run one combined harness command per commit. Use heredoc commit messages for every commit, including subject-only commits.
 
-For normal working-tree commits, stage only the files confirmed for that commit with `git add path/to/file ...`, then commit. Do not use `git add -A` except for the initial commit flow or when the user explicitly confirms staging the entire working tree.
+For normal working-tree commits, stage only the files chosen for that commit with `git add path/to/file ...`, then commit. Do not use `git add -A` except for the initial commit flow or when the user explicitly asks to stage the entire working tree.
 
 Subject-only command:
 
@@ -237,4 +170,65 @@ git add src/webhooks.ts tests/webhooks.test.ts && git commit -F - <<'EOF'
 EOF
 ```
 
-After committing, report the commit hash or hashes and the final `git status --short`.
+After the commits succeed, show the framed record below. Then report the commit hash or hashes and the final `git status --short`.
+
+## Confirmation Format
+
+Use this format only after the commit succeeds, as a record of what was done. The frame ends after the file list.
+
+For one subject-only commit:
+
+```markdown
+I made the following commit:
+
+---
+
+:memo: Document GitMoji commit workflow
+
+- skills/gitmoji-commits/SKILL.md
+- skills/gitmoji-commits/references/gitmoji-shortcodes.md
+
+---
+```
+
+For one commit with a body:
+
+```markdown
+I made the following commit:
+
+---
+
+:boom: Require signed webhook payloads
+
+> - Required HMAC verification before processing webhook events.
+> - Updated local webhook setup to require signed test payloads.
+
+- src/webhooks.ts
+- tests/webhooks.test.ts
+
+---
+```
+
+For multiple commits:
+
+```markdown
+I made the following commits:
+
+---
+
+:sparkles: Add repository import workflow
+
+- src/importer.ts
+- src/repository.ts
+
+---
+
+:white_check_mark: Cover importer edge cases
+
+- tests/importer.test.ts
+- tests/fixtures/import-source.json
+
+---
+```
+
+Use the framed `---` format for every commit record, including subject-only commits.
