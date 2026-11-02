@@ -1,0 +1,8 @@
+cognitive-complexity-threshold = 15
+
+# Tests intentionally fail on invalid setup; direct failure helpers stay readable.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+
+# The production unwrap policy also covers compile-time evaluation.
+allow-unwrap-in-consts = false

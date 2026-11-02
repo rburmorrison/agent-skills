@@ -1,0 +1,7 @@
+# Merge into a package manifest; use workspace.lints.clippy for shared settings.
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+cognitive_complexity = "deny"
+unwrap_used = "deny"

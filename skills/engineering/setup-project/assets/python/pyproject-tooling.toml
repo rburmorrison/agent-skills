@@ -1,0 +1,25 @@
+# Merge these tables into the package-manager-created pyproject.toml.
+[tool.ruff.lint]
+select = [
+    "E4", "E7", "E9", "F", # Syntax, imports, and undefined/unused names.
+    "I", "UP",             # Import order and supported modern syntax.
+    "B", "A", "C4",        # Common bugs, shadowing, and comprehension clarity.
+    "SIM", "RET", "RUF",   # Simplification and consistent control flow.
+    "C901",                # Inspect overly complex functions.
+    "S", "BLE",            # Common security mistakes and broad exceptions.
+    "PGH",                 # Explicit suppression codes and type-check hygiene.
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.per-file-ignores]
+# Assertions are the test framework's observable behavior checks.
+"**/test_*.py" = ["S101"]
+"**/*_test.py" = ["S101"]
+"**/conftest.py" = ["S101"]
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
+enable_error_code = ["ignore-without-code"]
