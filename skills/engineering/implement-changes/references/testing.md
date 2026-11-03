@@ -10,6 +10,8 @@ Use parameterization when cases share a readable structure. Separate materially 
 
 Keep error assertions specific enough to protect the contract, while allowing harmless wording and implementation changes. Avoid asserting private call order, internal helper names, incidental container layout, or other details unless they are part of the agreed behavior.
 
+When a contract distinguishes invalid input from I/O failures, account for the parser or adapter's relevant failure variants, including library-level rejection before domain validation. Decoder limits on nesting or numeric values, for example, may raise different errors from ordinary syntax rejection. Verify the failure path behind a test's claim: a rollback test needs an earlier successful write within the transaction under test; a partial-read failure needs an earlier successful read.
+
 Tests have lighter style restrictions. Failure-on-error shortcuts are acceptable when they make setup clearer; in Rust, `unwrap()` is acceptable in tests and `expect()` is optional when its message helps. Use the equivalent idiom in other languages. Encode routine test exemptions in tooling with a reason beside the setting, instead of repeating suppressions throughout tests.
 
 ## Example: a rejected update preserves state
@@ -34,6 +36,20 @@ def test_invalid_title_preserves_existing_entry() -> None:
 ```
 
 The three blocks show setup, the rejected action, and its observable consequence. The test invokes the application's real catalog operation; it does not mock the validation helper or assert private call order. The named test and nearby expected value explain the contract without a generic fixture harness. A transaction guarantee would additionally need a test against the actual storage adapter.
+
+## Readable text fixtures
+
+Keep each logical record visible on its own source line. For example, a Rust TSV fixture can show the event sequence directly:
+
+```rust
+let input = concat!(
+    "alpha\tqueued\t-\n",
+    "beta\tfailed\t3\n",
+    "alpha\tsucceeded\t7\n",
+);
+```
+
+Use the equivalent literal or construction in the target language, and format expected reports similarly. Reserve dense byte escapes for cases where the encoding itself is the behavior under test.
 
 ## Reporting coverage
 

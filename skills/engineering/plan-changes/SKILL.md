@@ -36,7 +36,9 @@ Make the following explicit when relevant, without imposing empty sections on sm
 - Meaningful behavior and failure cases to verify, plus runnable project check commands.
 - Independent review coverage for non-trivial changes and any known verification limitations.
 
-Resolve the design sufficiently for implementation to proceed within agreed behavior, scope, public contracts, and architectural boundaries. Leave local details such as private helper extraction and idiomatic syntax to implementation.
+For substantial transformations, name the operations and their input/output contracts, including the pure calculations and the operation that owns I/O or a transaction. A step such as "implement storage logic" leaves too much design implicit. When error categories are part of the contract, identify relevant parser or adapter failure families as well as domain-validation failures; inspect the boundary implementation when needed.
+
+Resolve the design sufficiently for implementation to proceed within agreed behavior, scope, public contracts, and architectural boundaries. Leave routine details such as incidental helper extraction and idiomatic syntax to implementation.
 
 Do not assume the same model will implement. A model switch in the same chat preserves the conversation, but the plan must still state the decisions and concrete work. Avoid vague steps such as "add validation" or unresolved menus of approaches. Read [the plan example](references/plan-example.md) when calibrating the necessary detail.
 

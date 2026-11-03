@@ -102,3 +102,18 @@ return summary
 ```
 
 The plan must define errors and transaction behavior before implementation. Parsing and validation should operate on values without reaching into storage or the environment. A small converter may need fewer modules; this is a responsibility example, not a mandatory directory template.
+
+When a calculation depends on stored state, separating it does not require moving the read outside the transaction. Illustrative orchestration can remain small:
+
+```text
+with store.transaction() as transaction:
+    current = transaction.load_items()
+    changes = plan_updates(current, requested)
+    transaction.apply(changes)
+
+return summarize(changes)
+```
+
+Here `plan_updates` owns the substantial domain calculation using ordinary values; the surrounding operation owns the read, write, and commit boundary. Use the existing transaction API. Do not add a framework or extract every statement into a helper.
+
+Watch for repeated linear searches inside a collection traversal. An ordered sequence can preserve output order while a set or map supports membership or lookup. Choose each collection for its role rather than turning a linear transformation into a quadratic one.

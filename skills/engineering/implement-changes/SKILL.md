@@ -21,6 +21,7 @@ Manage dependencies through the project's package manager. Use actual package in
 - Prefer named records, fields, and explicit variants for domain values crossing boundaries. Local, immediately unpacked tuples remain useful. Add runtime validation at external boundaries when required; do not add a validation dependency merely to name internal fields.
 - Group statements that perform one conceptual step. Separate changes of purpose with whitespace. Compact match arms generally form one unit and need no extra blank lines.
 - Extract coherent operations with meaningful names. Keep a simple sequence together when splitting it would add navigation without improving comprehension.
+- When substantial domain calculations sit among I/O operations, separate the calculation from the orchestration. Preserve transaction and snapshot boundaries while doing so.
 - Organize modules by responsibility and reasons to change. Keep types near the code that owns their meaning. Treat size and complexity as inspection signals rather than incentives to create trivial files or helpers.
 - Use idioms supported by the declared language version. Pattern matching suits meaningful variants and structured alternatives; ordinary predicates can remain conditionals.
 - Explain non-obvious decisions, contracts, and constraints when needed. Avoid comments that narrate obvious statements or documentation added solely for volume.
@@ -37,7 +38,7 @@ Lint and type-check suppressions must be rare, narrowly scoped, and accompanied 
 
 ## Independent review
 
-For non-trivial changes, delegate one full review to a separate agent with fresh context. Behavioral changes involving interacting components, public contracts, persistence, or significant refactoring normally qualify. Pure formatting and typo corrections usually do not.
+For non-trivial changes, delegate one full review to a separate agent with fresh context. Disable conversation-history inheritance when starting it: for tools exposing `fork_turns`, use `"none"`. Supply a self-contained review brief instead. Behavioral changes involving interacting components, public contracts, persistence, or significant refactoring normally qualify. Pure formatting and typo corrections usually do not.
 
 Give the reviewer the agreed plan and decisions, actual final diff including new files, relevant code, and verification results. Use `review-changes` if available. Do not supply the implementer's self-assessment or a desired verdict. Use the task's chosen reviewer model; if none was chosen, use the environment's normal inheritance rather than guessing model IDs or upgrading silently.
 

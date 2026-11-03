@@ -1,6 +1,6 @@
 # Reviewer brief
 
-The implementing agent should supply:
+Start the reviewer without inheriting the implementation conversation. The implementing agent should supply this brief instead:
 
 - The requested outcome, agreed plan, consequential decisions, and exclusions.
 - The repository or workspace location and an unambiguous base and current state, including new files.
