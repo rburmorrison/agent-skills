@@ -2,7 +2,7 @@
 
 Use a concise brief for documented items. Add `# Errors` for fallible operations, explaining the error conditions callers need to handle. Add `# Panics` when the function can panic under a caller-relevant condition, and `# Safety` for unsafe interfaces with caller obligations. These contracts must not be lost in pursuit of brevity; do not add empty sections to infallible, non-panicking, safe functions.
 
-Put short argument and result semantics, such as units or encoding, in the brief. Put failure conditions in `# Errors` or the other applicable contract section. Do not add a prose body merely because a parameter has a non-obvious constraint. Use examples when they materially clarify correct use; do not require a doctest for every trivial item.
+Put short argument and result semantics, such as units or encoding, in the brief. Put failure conditions in `# Errors` or the other applicable contract section. Include an explanatory body only when the user explicitly requests one. Use an `# Examples` section when examples materially clarify correct use; do not require a doctest for every trivial item.
 
 For a decoder that accepts exactly four little-endian bytes, this body is unnecessary:
 

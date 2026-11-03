@@ -12,7 +12,7 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 - [review-changes](skills/engineering/review-changes/SKILL.md) - Reviews a completed change or targeted fixes against the plan using fresh context and a supplied brief; reads the relevant documentation skills when reviewing documentation.
 - [setup-project](skills/engineering/setup-project/SKILL.md) - Establishes strict project tooling, with Rust and Python profiles.
 - [document-usage](skills/engineering/document-usage/SKILL.md) - Keeps quick-start READMEs, built-in help, and concise user guides aligned with the software.
-- [document-code](skills/engineering/document-code/SKILL.md) - Maintains concise interface briefs and contract sections, omits unnecessary prose bodies, and keeps implementation comments selective while respecting documentation lints.
+- [document-code](skills/engineering/document-code/SKILL.md) - Uses concise briefs with applicable contract or example sections; explanatory bodies require an explicit request. Keeps implementation comments selective and respects documentation lints.
 - [align-codebase](skills/engineering/align-codebase/SKILL.md) (manual) - Plans and applies a scoped, behavior-preserving alignment of an existing codebase with these conventions.
 - [implement-verified-steps](skills/engineering/implement-verified-steps/SKILL.md) (manual) - Checks and independently reviews each planned step, with targeted follow-up only for concrete unresolved risks.
 

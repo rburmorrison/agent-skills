@@ -15,9 +15,9 @@ Truly internal implementation details usually need no documentation comment. Pro
 
 ## Describe the Contract Briefly
 
-Use a concise brief followed by complete, applicable contract sections, with no explanatory body by default. Document inputs, results, errors, and other obligations a caller needs, using the language and project's documentation conventions. Include meaningful units, limits, side effects, ownership, or failure guarantees where they affect correct use. Do not omit a required contract just to keep the comment short.
+Use a concise brief followed only by applicable contract or example sections in the language and project's documentation format. Explanatory body paragraphs require an explicit user request. This format applies to functions, types, members, and modules. Document inputs, results, errors, and other obligations a caller needs. Include meaningful units, limits, side effects, ownership, or failure guarantees where they affect correct use. Do not omit a required contract just to keep the comment short.
 
-Put short argument and result semantics in the brief or applicable contract sections, and failure conditions in the error section. A non-obvious constraint does not, by itself, justify an explanatory body. When revising an existing body, move useful facts to those locations and remove the redundant prose. Reserve a body for necessary context that cannot reasonably fit there; keep the brief readable rather than packing unrelated contracts into one long sentence.
+Put short argument and result semantics in the brief or applicable contract sections, and failure conditions in the error section. When revising an existing body, move useful facts to those locations and remove the body. Keep member-specific facts on the relevant members. Do not repackage explanatory prose under a Notes or Details heading, or overload the brief to retain it.
 
 Distinguish guarantees enforced by a type from guarantees provided by a particular operation. Public construction or mutation may bypass validation; do not describe every instance as validated when only a constructor or parser provides that guarantee.
 
@@ -40,6 +40,6 @@ Prefer self-documenting code within the agreed implementation scope. A documenta
 
 Update affected documentation in the same change as signatures, return values, error behavior, invariants, or assumptions. Check callers and propagated failures before promising a contract; distinguish caller-relevant errors from speculative failures. Do not document desired behavior as if it already exists, or change behavior to fit an old comment.
 
-Run applicable documentation lints, builds, and executable examples already supported by the project. Inspect the rendered or extracted result when source syntax might hide or misattach documentation. Keep edits tied to the task and affected contracts rather than documenting every untouched symbol.
+Run applicable documentation lints, builds, and executable examples already supported by the project. Check changed documentation blocks against the required format, including edits made to resolve review findings. Inspect the rendered or extracted result when source syntax might hide or misattach documentation. Keep edits tied to the task and affected contracts rather than documenting every untouched symbol.
 
 Use the task's existing verification and review cadence; do not add a documentation-only review round. Report material gaps or unavailable checks accurately.

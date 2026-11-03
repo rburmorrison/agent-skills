@@ -1,6 +1,6 @@
 # Python Documentation
 
-Use a concise summary and Google-style sections by default, respecting an established project format or enforced convention. Usually omit the prose body between the summary and sections.
+Use a concise summary followed only by applicable Google-style contract or example sections, respecting an established project format or enforced convention. Include an explanatory body only when the user explicitly requests one.
 
 Document each caller-supplied argument under `Args:`, its meaning and relevant constraints. Do not add entries for implicit `self` or `cls`, or repeat types already clear from annotations unless tooling requires them. Use `Returns:` for a meaningful return value, or `Yields:` for a generator's yielded values. Omit an uninformative `Returns: None` section unless required by the project.
 
