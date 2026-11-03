@@ -9,8 +9,10 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 - [gitmoji-commits](skills/engineering/gitmoji-commits/SKILL.md) - Creates subject-first GitMoji commits from repository changes.
 - [plan-changes](skills/engineering/plan-changes/SKILL.md) - Resolves consequential decisions before editing and specifies substantial operations, their data contracts, and I/O ownership before implementation.
 - [implement-changes](skills/engineering/implement-changes/SKILL.md) - Implements agreed changes with clear responsibility boundaries, readable behavior tests, automatic review, and a concise handoff.
-- [review-changes](skills/engineering/review-changes/SKILL.md) - Reviews a completed change or targeted fixes against the plan using fresh context and a supplied brief.
+- [review-changes](skills/engineering/review-changes/SKILL.md) - Reviews a completed change or targeted fixes against the plan using fresh context and a supplied brief; reads the relevant documentation skills when reviewing documentation.
 - [setup-project](skills/engineering/setup-project/SKILL.md) - Establishes strict project tooling, with Rust and Python profiles.
+- [document-usage](skills/engineering/document-usage/SKILL.md) - Keeps quick-start READMEs, built-in help, and concise user guides aligned with the software.
+- [document-code](skills/engineering/document-code/SKILL.md) - Maintains concise interface briefs and contract sections, omits unnecessary prose bodies, and keeps implementation comments selective while respecting documentation lints.
 - [align-codebase](skills/engineering/align-codebase/SKILL.md) (manual) - Plans and applies a scoped, behavior-preserving alignment of an existing codebase with these conventions.
 - [implement-verified-steps](skills/engineering/implement-verified-steps/SKILL.md) (manual) - Checks and independently reviews each planned step, with targeted follow-up only for concrete unresolved risks.
 
@@ -24,6 +26,8 @@ npx skills add rburmorrison/agent-skills --global
 
 Omit `--global` to install skills for the current project instead.
 
+Documentation reviews use `document-code` and `document-usage`; install them with `review-changes`.
+
 Install skills globally by name:
 
 ```bash
@@ -33,6 +37,8 @@ npx skills add rburmorrison/agent-skills --global --skill plan-changes
 npx skills add rburmorrison/agent-skills --global --skill implement-changes
 npx skills add rburmorrison/agent-skills --global --skill review-changes
 npx skills add rburmorrison/agent-skills --global --skill setup-project
+npx skills add rburmorrison/agent-skills --global --skill document-usage
+npx skills add rburmorrison/agent-skills --global --skill document-code
 npx skills add rburmorrison/agent-skills --global --skill align-codebase
 npx skills add rburmorrison/agent-skills --global --skill implement-verified-steps
 ```

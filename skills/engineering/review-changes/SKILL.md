@@ -17,6 +17,8 @@ For a targeted follow-up, review the stated unresolved risk, the fix, and paths 
 
 ## Assess the Change
 
+Before assessing source documentation, read the `document-code` skill. Before assessing README, help, or user-guide changes, read `document-usage`. Use the host's available skill locations rather than assuming sibling directories. If a required skill is unavailable, report that coverage limitation and use the supplied documentation requirements. Apply the guidance within the current review.
+
 - Does it implement the agreed behavior, including errors, edge cases, and partial failures?
 - Are public contracts, domain invariants, validation, and data ownership preserved?
 - Is I/O concentrated at clear boundaries, with core logic understandable independently?
@@ -26,6 +28,7 @@ For a targeted follow-up, review the stated unresolved risk, the fix, and paths 
 - Are all changed responsibilities and dependencies necessary for the agreed scope?
 - Do tests exercise meaningful behavior at the real boundary, with clear setup and assertions? Are they redundant or coupled to incidental implementation details?
 - Are tooling changes justified? Are suppressions rare, narrow, and accompanied by a specific reason, including configuration-level exceptions?
+- Do affected interface contracts, help, and usage examples match the implemented behavior and documentation lints? Check completeness and unnecessary prose without expanding the review into unrelated documentation.
 
 Apply lighter style expectations to tests. Do not report an allowed test failure shortcut as a production-style violation. Distinguish a concrete readability problem from personal taste; identify the cost or contract at stake.
 

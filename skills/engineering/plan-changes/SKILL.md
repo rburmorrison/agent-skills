@@ -32,6 +32,7 @@ Make the following explicit when relevant, without imposing empty sections on sm
 - Existing file paths and symbols to change; distinguish proposed new locations from existing ones.
 - Responsibilities, named domain types, interfaces, invariants, and data flow.
 - I/O ownership, validation, error propagation, and partial-failure behavior.
+- Affected interface documentation, built-in help, and user examples, with relevant verification.
 - Implementation sequence and dependencies between steps.
 - Meaningful behavior and failure cases to verify, plus runnable project check commands.
 - Independent review coverage for non-trivial changes and any known verification limitations.

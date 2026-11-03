@@ -24,9 +24,11 @@ Manage dependencies through the project's package manager. Use actual package in
 - When substantial domain calculations sit among I/O operations, separate the calculation from the orchestration. Preserve transaction and snapshot boundaries while doing so.
 - Organize modules by responsibility and reasons to change. Keep types near the code that owns their meaning. Treat size and complexity as inspection signals rather than incentives to create trivial files or helpers.
 - Use idioms supported by the declared language version. Pattern matching suits meaningful variants and structured alternatives; ordinary predicates can remain conditionals.
-- Explain non-obvious decisions, contracts, and constraints when needed. Avoid comments that narrate obvious statements or documentation added solely for volume.
+- Document interfaces intended for other components, including within the project, and all items required by documentation lints. Use `document-code` for concise briefs, complete applicable contracts, and selective comments explaining non-obvious decisions.
 
 Read [the code examples](references/code-examples.md) for non-trivial implementation or when resolving a style tradeoff. Their languages illustrate shared principles rather than restricting the skill's scope.
+
+Update affected documentation as code evolves. Use `document-usage` when a change affects user-facing commands, setup, workflows, or examples; use `document-code` for affected interface contracts and source comments. Keep documentation changes within scope; an internal refactor need not change the README. If a supporting skill is unavailable, disclose the limitation and follow the supplied requirements and project conventions.
 
 ## Verify Behavior
 
