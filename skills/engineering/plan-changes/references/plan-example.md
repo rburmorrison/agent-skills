@@ -21,18 +21,23 @@ The user chose updates to support recurring imports. They chose atomicity to mak
 
 ## Design
 
-- The CLI owns reading the input file and displaying results. It passes text to parsing code.
-- Parsing converts rows to a named input-record type that preserves the source row number. It performs no file or database access.
-- Domain validation produces valid catalog entries or a collection of row-specific errors. The result distinguishes success from failure explicitly.
-- The import operation invokes validation before calling the existing atomic storage operation. Confirm that this operation really rolls back both inserts and updates on failure during investigation.
-- The result contains named inserted and updated counts. Errors distinguish invalid input from storage failure.
+The CLI owns reading the input file and displaying results. The following operation names illustrate the decisions the planner should make; choose actual paths and interfaces from the repository.
 
-In a real plan, name the existing entry points, exact data fields, validation rules, error representation, storage interface, and proposed file locations. These choices depend on the repository and user answers; the example does not supply substitutes for that investigation.
+| Operation and owning module | Contract and responsibility | I/O |
+|---|---|---|
+| `parse_catalog` in catalog parsing | Text → input records retaining source row numbers, or parsing errors. | None |
+| `validate_catalog` in catalog validation | Input records → validated entries, or row-specific validation errors. | None |
+| `plan_import` in catalog import planning | Current catalog entries and validated input → `ImportPlan` with named inserts and updates. Decides which records change. | None |
+| `import_catalog` in catalog storage | Validated entries → `ImportResult` with inserted and updated counts, or a storage error. Owns the transaction, reads current entries, calls `plan_import`, applies the plan, and commits or rolls back. | Database |
+
+The request flows from CLI file reading through parsing and validation to `import_catalog`, then back to CLI result display. Invalid input never reaches writes. Keep current-state reads, planning, and application within the storage consistency boundary. Verify that the existing isolation, locking, or conflict checks prevent concurrent changes from invalidating the plan; sharing a transaction alone does not establish that guarantee. Reuse the existing transaction capability and confirm that it rolls back both inserts and updates on failure.
+
+In a real plan, specify the exact record fields, validation rules, error representation, existing entry points, storage interface, and proposed file locations. These choices depend on the repository and user answers. Incidental helpers and syntax remain implementation choices.
 
 ## Sequence and verification
 
-1. Add the parsing and validation types and operations in the modules identified during investigation.
-2. Connect the existing atomic storage operation to the import workflow.
+1. Add the parsing, validation, and import-planning types and operations in the modules identified during investigation.
+2. Implement the import transaction using the existing storage capability and the pure import plan.
 3. Add the CLI entry point using the repository's existing argument and error conventions.
 4. Verify valid inserts and updates, row-specific validation errors, no writes for invalid input, and rollback when storage fails partway through a batch.
 5. Run the project's established formatting, lint, type, and relevant test commands. Provide the actual commands in the real plan.

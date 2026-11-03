@@ -36,7 +36,17 @@ Make the following explicit when relevant, without imposing empty sections on sm
 - Meaningful behavior and failure cases to verify, plus runnable project check commands.
 - Independent review coverage for non-trivial changes and any known verification limitations.
 
-For substantial transformations, name the operations and their input/output contracts, including the pure calculations and the operation that owns I/O or a transaction. A step such as "implement storage logic" leaves too much design implicit. When error categories are part of the contract, identify relevant parser or adapter failure families as well as domain-validation failures; inspect the boundary implementation when needed.
+Make responsibility boundaries a concrete planning deliverable for non-trivial changes. For each substantial operation, specify:
+
+- Its proposed function or method name, module, and responsibility.
+- Its inputs and result, including the named types or fields that cross the boundary.
+- Whether it performs I/O, and which operation owns coordination, errors, and any transaction or snapshot.
+
+When substantial calculations would otherwise sit among I/O operations, plan a pure operation accepting ordinary values and a separate operation that coordinates external effects. Keep reads, calculations, and writes within the required consistency boundary. Choose these boundaries from the actual behavior and code; a step such as "implement storage logic" leaves that design unfinished.
+
+Before finishing, trace a representative request through the proposed operations. Check that each responsibility has an owner and the implementer can connect their contracts without choosing the major decomposition. Keep cohesive sequences together; do not prescribe every helper, create layers without a concrete purpose, or use function-length targets.
+
+When error categories are part of the contract, identify relevant parser or adapter failure families as well as domain-validation failures; inspect the boundary implementation when needed.
 
 Resolve the design sufficiently for implementation to proceed within agreed behavior, scope, public contracts, and architectural boundaries. Leave routine details such as incidental helper extraction and idiomatic syntax to implementation.
 

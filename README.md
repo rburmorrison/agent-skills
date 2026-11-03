@@ -7,7 +7,7 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 **Engineering**:
 
 - [gitmoji-commits](skills/engineering/gitmoji-commits/SKILL.md) - Creates subject-first GitMoji commits from repository changes.
-- [plan-changes](skills/engineering/plan-changes/SKILL.md) - Resolves consequential decisions before editing and plans concrete operations, contracts, and failure boundaries.
+- [plan-changes](skills/engineering/plan-changes/SKILL.md) - Resolves consequential decisions before editing and specifies substantial operations, their data contracts, and I/O ownership before implementation.
 - [implement-changes](skills/engineering/implement-changes/SKILL.md) - Implements agreed changes with clear responsibility boundaries, readable behavior tests, automatic review, and a concise handoff.
 - [review-changes](skills/engineering/review-changes/SKILL.md) - Reviews a completed change or targeted fixes against the plan using fresh context and a supplied brief.
 - [setup-project](skills/engineering/setup-project/SKILL.md) - Establishes strict project tooling, with Rust and Python profiles.
