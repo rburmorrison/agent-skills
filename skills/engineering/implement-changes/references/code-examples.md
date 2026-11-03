@@ -1,8 +1,8 @@
-# Readable code examples
+# Readable Code Examples
 
 These fragments illustrate language-agnostic decisions. Adapt the types and syntax to the actual project's conventions and supported versions.
 
-## Logical paragraphs
+## Logical Paragraphs
 
 A dense report hides intermediate concepts:
 
@@ -31,7 +31,7 @@ def render_failures(checks: Sequence[Check]) -> str:
 
 This remains one coherent function. The simple comprehension is useful; three extra helpers would add little meaning.
 
-## Named domain values
+## Named Domain Values
 
 Positional fields lose meaning at call sites:
 
@@ -60,7 +60,7 @@ println!(
 
 Choose the equivalent record, dataclass, named tuple, struct, or explicit variant in the target language. Local iteration pairs can remain immediately unpacked tuples. Runtime validation is a separate concern from naming fields.
 
-## Cohesive branches
+## Cohesive Branches
 
 For several variants of one event, a compact match exposes both the variant and its data:
 

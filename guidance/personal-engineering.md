@@ -1,4 +1,4 @@
-# Personal engineering guidance
+# Personal Engineering Guidance
 
 Complete planning before editing. Ask consequential questions one at a time, allowing each answer to inform the next. Resolve decisions affecting behavior, scope, public contracts, data ownership, I/O boundaries, and architecture before implementation. Scale planning to the change; a small, unambiguous correction needs only a brief plan.
 
@@ -17,5 +17,9 @@ For non-trivial changes, use a separate reviewer agent with fresh context and th
 If completing a change requires altering agreed behavior or scope, finish useful independent work and report the roadblock at the end. Clearly identify incomplete work. Do not invent new behavior, silently narrow acceptance criteria, or interrupt implementation with another design interview.
 
 Keep the final handoff concise. Explain what changed, why, and the useful details of the approach in plain sentences. Summarize important tested behavior and verification results. When human attention would help, provide a small, prioritized table of clickable local file links with verified line numbers and the decision worth inspecting. It is acceptable to recommend no targeted human review.
+
+Use Title Case for documentation headings.
+
+These conventions are defaults. Follow explicit task-specific instructions that override them, retain unaffected defaults, and record the overrides in the plan so they survive model changes. An explicitly requested review cadence replaces the default cadence rather than adding another mandatory review.
 
 These defaults support the current request and applicable project conventions. They do not authorize additional scope, commits, publishing, installation, or external actions. If a named skill or required reviewer capability is unavailable, state the limitation rather than claiming it was used.

@@ -13,7 +13,7 @@ Read applicable project instructions and the code relevant to the requested beha
 
 Use available project context before asking for information. Distinguish established facts, user decisions, technical choices, and unresolved assumptions. Check external contracts and tool capabilities where the proposed design depends on them.
 
-## Resolve decisions
+## Resolve Decisions
 
 Ask one consequential question at a time. Explain its practical effect and offer a recommendation when useful. Wait for the answer before asking the next question or deciding dependent behavior. Allow follow-up discussion; there is no fixed question quota.
 
@@ -23,12 +23,12 @@ Establish the outcome and exclusions. Include necessary supporting changes and e
 
 For new projects, use `setup-project` if available to select tooling and supported versions during planning; initialization and configuration writes belong to implementation. Resolve any material tooling conflict before editing.
 
-## Produce an implementation-ready plan
+## Produce an Implementation-Ready Plan
 
 Make the following explicit when relevant, without imposing empty sections on small tasks:
 
 - Agreed behavior, acceptance criteria, and exclusions.
-- Consequential decisions and their reasons, including answers from the conversation.
+- Consequential decisions and their reasons, including answers from the conversation and task-specific overrides to the usual conventions or review cadence.
 - Existing file paths and symbols to change; distinguish proposed new locations from existing ones.
 - Responsibilities, named domain types, interfaces, invariants, and data flow.
 - I/O ownership, validation, error propagation, and partial-failure behavior.

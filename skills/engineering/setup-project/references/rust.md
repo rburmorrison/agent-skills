@@ -1,4 +1,4 @@
-# Rust tooling profile
+# Rust Tooling Profile
 
 Use the project's agreed Rust edition, minimum supported version, and toolchain. Check that the chosen toolchain supports the configuration. Create the package with Cargo and manage dependencies with `cargo add` and `cargo remove`; respect workspace dependency and lockfile conventions.
 

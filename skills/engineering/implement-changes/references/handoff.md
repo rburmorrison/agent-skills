@@ -1,4 +1,4 @@
-# Final handoff
+# Final Handoff
 
 Start with plain sentences explaining what changed, why, and the useful parts of the approach. Avoid obligatory "Recap:" and "Human review:" prefixes. Scale the response to the work.
 

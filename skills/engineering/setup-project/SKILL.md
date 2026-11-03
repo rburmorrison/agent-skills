@@ -7,7 +7,7 @@ description: Establish a new project's package-manager workflow, strict formatti
 
 Use for new projects or an explicitly requested tooling setup. Keep existing-project feature work within its established tooling unless changing that tooling is part of the agreed plan.
 
-## Plan the setup
+## Plan the Setup
 
 Inspect the destination and applicable instructions before creating files. Establish the project kind, supported language/runtime versions, package manager, and required checks. Ask consequential questions one at a time. Select compatible tools during planning; setup writes start only when implementation is authorized.
 
@@ -19,7 +19,7 @@ Keep the shared policy language-agnostic: formatting, deliberate strict linting,
 
 Profiles are defaults for new projects. Respect explicit user choices and supported-version constraints. Resolve conflicts during planning. A tool-specific complexity score is an inspection signal, not a proof of readability or an equivalent measure across languages.
 
-## Initialize and configure
+## Initialize and Configure
 
 Use the package manager's initialization and dependency commands. Resolve packages from actual package information with the agreed compatibility constraints; do not invent versions or add dependencies by hand. Preserve the package manager's lockfile policy.
 
@@ -29,7 +29,7 @@ Enable a deliberate strict rule set, including type checking where applicable. E
 
 Give dependencies, source files, and modules homes justified by the actual project's responsibilities. Do not create speculative directories, placeholder abstractions, or redundant automation layers.
 
-## Verify and hand off
+## Verify and Hand Off
 
 Run formatting checks, linting, type checks where applicable, and relevant tests with the configured project tools. Check the actual configuration is discovered and covers the intended production and test code. Adapt feature/platform coverage to supported combinations.
 

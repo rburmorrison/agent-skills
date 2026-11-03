@@ -7,15 +7,15 @@ description: Independently review a completed code change or targeted fixes agai
 
 Review the actual changed state against the agreed plan and applicable project instructions. This is a read-only review; the implementing agent owns fixes. Review instructions do not authorize broad refactoring or a specialized security audit.
 
-## Establish the review boundary
+## Establish the Review Boundary
 
-Read the plan, consequential decisions, and verification results. Identify the base and reviewed state, including untracked/new files. Inspect the relevant diff and enough surrounding code, callers, and tests to understand affected contracts. Do not claim to have reviewed omitted files or results you did not inspect.
+Read the plan, consequential decisions, and verification results. Honor the requested review unit: the completed change, a planned implementation step, or a targeted fix. Identify the base and reviewed state, including untracked/new files. Inspect the relevant diff and enough surrounding code, callers, and tests to understand affected contracts. For step reviews, distinguish current acceptance criteria from work deliberately assigned to later steps. Do not claim to have reviewed omitted files or results you did not inspect.
 
 Use fresh context for an independent review: a supplied brief and source evidence, without the implementer's conversation history. If that history was inherited, disclose the limitation. Assess evidence without adopting the implementer's desired verdict. If the plan or base is missing, inspect what is available and state the review limitation. Do not invent acceptance criteria or reinterpret an agreed decision as an implementation defect.
 
-For a targeted follow-up, review the fix and paths its effects can reach. Expand only where the evidence shows the prior conclusions may no longer hold. Another full review is warranted only when substantial rework makes the earlier assessment obsolete.
+For a targeted follow-up, review the stated unresolved risk, the fix, and paths its effects can reach. Expand only where the evidence shows the prior conclusions may no longer hold. Another full review of already reviewed scope is normally warranted only when substantial rework makes the earlier assessment obsolete. Reviews of distinct steps follow the task's agreed cadence.
 
-## Assess the change
+## Assess the Change
 
 - Does it implement the agreed behavior, including errors, edge cases, and partial failures?
 - Are public contracts, domain invariants, validation, and data ownership preserved?
@@ -29,7 +29,7 @@ For a targeted follow-up, review the fix and paths its effects can reach. Expand
 
 Apply lighter style expectations to tests. Do not report an allowed test failure shortcut as a production-style violation. Distinguish a concrete readability problem from personal taste; identify the cost or contract at stake.
 
-## Report findings
+## Report Findings
 
 Read [the reviewer brief and finding format](references/reviewer-brief.md). Prioritize actionable, evidence-backed findings with precise file locations, a concrete trigger or readability cost, and the consequence. Suggest the smallest correction consistent with the plan.
 

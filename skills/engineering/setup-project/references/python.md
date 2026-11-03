@@ -1,4 +1,4 @@
-# Python tooling profile
+# Python Tooling Profile
 
 Establish the supported Python version and project kind during planning. Use uv for a new project unless another package manager is required. Let initialization record the agreed `requires-python`; keep formatter, linter, and type-checker targets consistent with that range.
 

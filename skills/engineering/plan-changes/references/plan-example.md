@@ -1,8 +1,8 @@
-# Example: catalog import
+# Example: Catalog Import
 
 This is an illustrative plan. Paths and interfaces must be verified or chosen for the actual project before use.
 
-## Resolve one decision at a time
+## Resolve One Decision at a Time
 
 Request: "Add CSV import for the catalog."
 
@@ -10,7 +10,7 @@ First ask: "When an identifier already exists, should import reject it, update i
 
 Wait for the response. If the user chooses updates, record that choice and its reason. The next question can then address invalid rows or transaction behavior. Do not bundle the interview into a questionnaire.
 
-## Agreed behavior
+## Agreed Behavior
 
 - Existing identifiers are updated; new identifiers are inserted.
 - Validate all records before starting writes. Report invalid records with source row numbers.
@@ -34,7 +34,7 @@ The request flows from CLI file reading through parsing and validation to `impor
 
 In a real plan, specify the exact record fields, validation rules, error representation, existing entry points, storage interface, and proposed file locations. These choices depend on the repository and user answers. Incidental helpers and syntax remain implementation choices.
 
-## Sequence and verification
+## Sequence and Verification
 
 1. Add the parsing, validation, and import-planning types and operations in the modules identified during investigation.
 2. Implement the import transaction using the existing storage capability and the pure import plan.

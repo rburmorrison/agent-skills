@@ -1,4 +1,4 @@
-# Readable behavior tests
+# Readable Behavior Tests
 
 Derive cases from agreed behavior, invariants, and meaningful failures. Prefer a small set of distinct scenarios over repeated tests of equivalent paths. Add cases when they protect a separate contract; do not optimize for a numeric test or coverage target unless the project requires one.
 
@@ -14,7 +14,7 @@ When a contract distinguishes invalid input from I/O failures, account for the p
 
 Tests have lighter style restrictions. Failure-on-error shortcuts are acceptable when they make setup clearer; in Rust, `unwrap()` is acceptable in tests and `expect()` is optional when its message helps. Use the equivalent idiom in other languages. Encode routine test exemptions in tooling with a reason beside the setting, instead of repeating suppressions throughout tests.
 
-## Example: a rejected update preserves state
+## Example: A Rejected Update Preserves State
 
 This example assumes `Catalog` and its immutable `Entry` type come from the application, and that the catalog exposes its entries for reading:
 
@@ -37,7 +37,7 @@ def test_invalid_title_preserves_existing_entry() -> None:
 
 The three blocks show setup, the rejected action, and its observable consequence. The test invokes the application's real catalog operation; it does not mock the validation helper or assert private call order. The named test and nearby expected value explain the contract without a generic fixture harness. A transaction guarantee would additionally need a test against the actual storage adapter.
 
-## Readable text fixtures
+## Readable Text Fixtures
 
 Keep each logical record visible on its own source line. For example, a Rust TSV fixture can show the event sequence directly:
 
@@ -51,7 +51,7 @@ let input = concat!(
 
 Use the equivalent literal or construction in the target language, and format expected reports similarly. Reserve dense byte escapes for cases where the encoding itself is the behavior under test.
 
-## Reporting coverage
+## Reporting Coverage
 
 For a catalog import, useful commitments might be:
 

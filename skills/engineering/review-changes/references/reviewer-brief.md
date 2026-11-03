@@ -1,4 +1,4 @@
-# Reviewer brief
+# Reviewer Brief
 
 Start the reviewer without inheriting the implementation conversation. The implementing agent should supply this brief instead:
 
@@ -10,7 +10,7 @@ Start the reviewer without inheriting the implementation conversation. The imple
 
 Do not include a desired verdict or instruct the reviewer to confirm the implementer's reasoning. Review the evidence independently. A reviewed diff must correspond to the final state being handed off, or the later edits must receive appropriate verification.
 
-## Finding format
+## Finding Format
 
 For each actionable finding, provide:
 
