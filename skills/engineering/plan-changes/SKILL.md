@@ -37,6 +37,8 @@ Make the following explicit when relevant, without imposing empty sections on sm
 - Meaningful behavior and failure cases to verify, plus runnable project check commands.
 - Independent review coverage for non-trivial changes and any known verification limitations.
 
+When source documentation or caller-facing behavior changes, read `document-code` and, for affected user workflows, `document-usage` from the available skill locations. If a supporting skill is unavailable, state the limitation and use the supplied requirements. For affected interfaces or cohesive groups, identify documentation targets and essential contracts, keeping member facts on members and distinguishing type-wide guarantees from operation-specific guarantees. Specify ownership without drafting every comment or expanding the documentation scope.
+
 Make responsibility boundaries a concrete planning deliverable for non-trivial changes. For each substantial operation, specify:
 
 - Its proposed function or method name, module, and responsibility.

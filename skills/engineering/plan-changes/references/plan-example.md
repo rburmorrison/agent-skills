@@ -34,6 +34,12 @@ The request flows from CLI file reading through parsing and validation to `impor
 
 In a real plan, specify the exact record fields, validation rules, error representation, existing entry points, storage interface, and proposed file locations. These choices depend on the repository and user answers. Incidental helpers and syntax remain implementation choices.
 
+## Documentation Ownership
+
+- `ImportPlan` owns the meaning of its inserts and updates; `ImportResult` owns the meaning of its counts. Keep storage orchestration out of these type descriptions.
+- Parsing and validation operations own accepted input and row-specific failures. `import_catalog` owns the transaction and rollback guarantees in its contract.
+- Update CLI help and one runnable CSV example for the new workflow. Leave unrelated documentation and obvious internal helpers alone, while satisfying documentation lints.
+
 ## Sequence and Verification
 
 1. Add the parsing, validation, and import-planning types and operations in the modules identified during investigation.

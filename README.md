@@ -7,12 +7,12 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 **Engineering**:
 
 - [gitmoji-commits](skills/engineering/gitmoji-commits/SKILL.md) - Creates subject-first GitMoji commits from repository changes.
-- [plan-changes](skills/engineering/plan-changes/SKILL.md) - Resolves consequential decisions before editing and specifies substantial operations, their data contracts, and I/O ownership before implementation.
+- [plan-changes](skills/engineering/plan-changes/SKILL.md) - Resolves consequential decisions before editing, specifies responsibility boundaries, and assigns documentation facts to their owning interfaces.
 - [implement-changes](skills/engineering/implement-changes/SKILL.md) - Implements agreed changes with clear responsibility boundaries, readable behavior tests, automatic review, and a concise handoff.
-- [review-changes](skills/engineering/review-changes/SKILL.md) - Reviews a completed change or targeted fixes against the plan using fresh context and a supplied brief; reads the relevant documentation skills when reviewing documentation.
+- [review-changes](skills/engineering/review-changes/SKILL.md) - Reviews a completed change or targeted fixes using fresh context and the shared documentation guidance.
 - [setup-project](skills/engineering/setup-project/SKILL.md) - Establishes strict project tooling, with Rust and Python profiles.
 - [document-usage](skills/engineering/document-usage/SKILL.md) - Keeps quick-start READMEs, built-in help, and concise user guides aligned with the software.
-- [document-code](skills/engineering/document-code/SKILL.md) - Uses concise briefs with applicable contract or example sections; explanatory bodies require an explicit request. Keeps implementation comments selective and respects documentation lints.
+- [document-code](skills/engineering/document-code/SKILL.md) - Uses concise briefs and complete contracts, keeps type documentation self-contained, and reserves short bodies for exceptional caller-facing context.
 - [align-codebase](skills/engineering/align-codebase/SKILL.md) (manual) - Plans and applies a scoped, behavior-preserving alignment of an existing codebase with these conventions.
 - [implement-verified-steps](skills/engineering/implement-verified-steps/SKILL.md) (manual) - Checks and independently reviews each planned step, with targeted follow-up only for concrete unresolved risks.
 
@@ -26,7 +26,7 @@ npx skills add rburmorrison/agent-skills --global
 
 Omit `--global` to install skills for the current project instead.
 
-Documentation reviews use `document-code` and `document-usage`; install them with `review-changes`.
+For documentation work, install `document-code` and `document-usage` with the planning, implementation, and review skills.
 
 Install skills globally by name:
 

@@ -19,6 +19,8 @@ For a targeted follow-up, review the stated unresolved risk, the fix, and paths 
 
 Before assessing source documentation, read the `document-code` skill. Before assessing README, help, or user-guide changes, read `document-usage`. Use the host's available skill locations rather than assuming sibling directories. If a required skill is unavailable, report that coverage limitation and use the supplied documentation requirements. Apply the guidance within the current review.
 
+Apply `document-code` to each affected source documentation block, checking contract accuracy, completeness, and unnecessary explanation. When recommending shortening, identify the facts to preserve and their destinations. Retain concise bodies that meet the skill's exception criteria. Report actionable findings and material coverage limitations.
+
 - Does it implement the agreed behavior, including errors, edge cases, and partial failures?
 - Are public contracts, domain invariants, validation, and data ownership preserved?
 - Is I/O concentrated at clear boundaries, with core logic understandable independently?
