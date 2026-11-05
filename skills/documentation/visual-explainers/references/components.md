@@ -6,7 +6,7 @@ Use JSON, not Python code. Strings inside `blocks` are paragraphs. All paths are
 
 Required: `title`. Optional: `brand` (short header name; defaults to title), `lead`, `description`, `theme` (`violet`, `slate`, `blue`, `night`), `lang` (default `en`), `intro` (blocks below the lead), `sections` (list of `{title, blocks, id?}`), `scripts` (local JS file paths), `styles` (local CSS file paths).
 
-The shell creates H1. Sections create H2 and ToC entries. You choose all section names and ordering. Heading blocks create H3/H4; H3 joins the ToC except inside tabs. Component titles are labels, not extra sections. No footer or source section is forced. Use paragraphs/links or a section when sources are useful.
+The shell creates H1. Sections create H2 and ToC entries. You choose all section names and ordering. Heading blocks create H3/H4; H3 joins the ToC except inside tabs. Component titles are labels, not extra sections. On mobile the header stays sticky and its contents icon opens a vertical drawer. Selecting a heading closes the drawer and scrolls smoothly to it below the header. The selected link stays highlighted during navigation, including near the end of the document. Manual scrolling resumes section tracking; reduced-motion preferences disable animation. No footer or source section is forced. Use paragraphs/links or a section when sources are useful.
 
 ## Inline Text
 
@@ -64,3 +64,5 @@ Tabs work without custom JS and support arrows/Home/End. Disclosures use native 
 Use [diagrams.md](diagrams.md) for `diagram`, [charts.md](charts.md) for `chart`, and [custom.md](custom.md) for `html`, `scripts`, and `styles`. Use [icons.md](icons.md) to select valid icon names for cards, flow nodes, or metrics.
 
 IDs are optional except when custom code refers to a component. Supply an ID starting with a letter and containing only letters, digits, hyphens, and underscores. IDs must be unique. The builder reserves shell IDs and generates the rest.
+
+Paragraphs and headings fill their containing column. The page expands to the available viewport width with the shell’s normal side padding; hiding the contents expands the main column.

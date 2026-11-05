@@ -9,9 +9,9 @@ import mimetypes
 from pathlib import Path
 import re
 import sys
-import textwrap
 from urllib.parse import unquote_to_bytes
 from html.parser import HTMLParser
+from diagram_layout import FontMetrics, label_geometry, layout_graph, rounded_path
 
 SKILL = Path(__file__).resolve().parents[1]
 ASSETS = SKILL / 'assets'
@@ -189,50 +189,89 @@ class Renderer:
         kind=b.get('kind','flow');title=b.get('title','');cap=b.get('caption','')
         if kind=='flow':
             pieces=[]
+            has_icons=any(node.get('icon') for node in b['nodes'])
             for node in b['nodes']:
-                if pieces:pieces.append('<span class="arrow" aria-hidden="true">→</span>')
-                pieces.append('<div class="node">'+(self.icon(node['icon']) if node.get('icon') else '')+'<strong>'+inline(node['label'])+'</strong>'+('<p>'+inline(node['text'])+'</p>' if node.get('text') else '')+'</div>')
+                if pieces:pieces.append('<span class="flow-connector" aria-hidden="true"><svg class="flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18m-6-6 6 6-6 6"/></svg></span>')
+                pieces.append('<div class="node">'+(('<span class="flow-icon" aria-hidden="true">'+(self.icon(node['icon']) if node.get('icon') else '')+'</span>') if has_icons else '')+'<strong>'+inline(node['label'])+'</strong>'+('<p>'+inline(node['text'])+'</p>' if node.get('text') else '')+'</div>')
             body='<div class="flow" data-count="'+str(len(b['nodes']))+'" role="group" aria-label="'+esc(title or 'Process')+'">'+''.join(pieces)+'</div>'
         elif kind=='sequence':
-            actors=b['actors'];n=len(actors)
-            if not 2<=n<=6:raise ValueError('Sequence diagrams support 2–6 actors')
-            body=f'<div class="sequence" style="--actors:{n}"><div class="sequence-actors">'+''.join('<strong>'+inline(a)+'</strong>' for a in actors)+'</div>'
-            for msg in b['messages']:
-                a,c=msg['from'],msg['to']
-                if not isinstance(a,int) or not isinstance(c,int) or not 0<=min(a,c)<=max(a,c)<n:raise ValueError('Sequence from/to must be actor indices')
-                left=(min(a,c)+.5)/n*100;width=abs(c-a)/n*100
-                if a==c:left=(a+.5)/n*100;width=min(20,45/n)
-                cls=' self' if a==c else (' reverse' if c<a else '')
-                body+=f'<div class="sequence-row"><div class="sequence-message{cls}" style="--from:{left}%;--distance:{width}%"><span>'+inline(msg['label'])+'</span></div></div>'
-            body+='</div>'
+            body=self.sequence_diagram(b)
         elif kind=='graph':
-            nodes=b['nodes'];edges=b.get('edges',[]);ids=[n['id'] for n in nodes]
-            if len(set(ids))!=len(ids) or not nodes:raise ValueError('Graph requires unique node IDs')
-            layers={i:0 for i in ids};incoming={i:[] for i in ids}
-            for edge in edges:
-                if edge['from'] not in ids or edge['to'] not in ids:raise ValueError('Graph edge refers to unknown node')
-                incoming[edge['to']].append(edge['from'])
-            pending=set(ids);done=set()
-            while pending:
-                ready=[i for i in ids if i in pending and all(p in done for p in incoming[i])]
-                if not ready:raise ValueError('Graph must be acyclic; use sequence or custom HTML/SVG for cycles')
-                for i in ready:layers[i]=max([layers[p]+1 for p in incoming[i]] or [0]);done.add(i);pending.remove(i)
-            counts={l:sum(v==l for v in layers.values()) for l in layers.values()};seen={};positions={};W=max(600,(max(layers.values())+1)*240);H=max(160,max(counts.values())*130+20)
-            for i in ids:
-                l=layers[i];row=seen.get(l,0);seen[l]=row+1;positions[i]=((W-175)/2 if max(layers.values())==0 else 25+l*(W-225)/max(layers.values()),(row+.5)*H/counts[l]-36)
-            marker=self.uid();body=f'<svg class="graph-svg" viewBox="0 0 {W} {H}" role="img" aria-label="{esc(title or "Directed Graph")}"><defs><marker id="{marker}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="var(--accent)"/></marker></defs>'
-            for edge in edges:
-                x,y=positions[edge['from']];u,v=positions[edge['to']];x+=175;y+=36;v+=36
-                body+=f'<path d="M{x} {y}C{x+30} {y} {u-30} {v} {u} {v}" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#{marker})"/>'
-                if edge.get('label'):body+=f'<text x="{(x+u)/2}" y="{(y+v)/2-9}" text-anchor="middle" fill="var(--muted)" font-size="12" paint-order="stroke" stroke="var(--paper)" stroke-width="5" stroke-linejoin="round">{esc(edge["label"])}</text>'
-            for n in nodes:
-                x,y=positions[n['id']];lines=textwrap.wrap(n['label'],21)
-                if len(lines)>3:raise ValueError('Graph labels must fit three short lines; move detail into surrounding prose')
-                body+=f'<rect x="{x}" y="{y}" width="175" height="72" rx="8" fill="var(--wash)" stroke="var(--line)"/>'
-                for j,line in enumerate(lines):body+=f'<text x="{x+87.5}" y="{y+36-(len(lines)-1)*8+j*16}" text-anchor="middle" dominant-baseline="middle" fill="var(--ink)" font-size="14">{esc(line)}</text>'
-            body+='</svg>'
+            body=self.graph_diagram(b)
         else:raise ValueError('Diagram kind must be flow, sequence, graph')
         return '<figure class="visual">'+('<div class="visual-label"><strong>'+self.heading(title)+'</strong></div>' if title else '')+'<div class="diagram-scroll">'+body+('</div><figcaption style="padding:0 20px 16px">'+inline(cap)+'</figcaption>' if cap else '</div>')+'</figure>'
+    def diagram_metrics(self):
+        if not hasattr(self,'_metrics'):
+            self._metrics=FontMetrics(ASSETS/'fonts/Manrope.ttf')
+        return self._metrics
+
+    def svg_text(self,lines,x,y,size=13,cls='',anchor='middle'):
+        text=f'<text class="{cls}" x="{x:.2f}" y="{y:.2f}" text-anchor="{anchor}" font-size="{size}" fill="var(--ink)">'
+        for i,line in enumerate(lines):
+            text+=f'<tspan x="{x:.2f}" dy="{18 if i else 0}">{esc(line)}</tspan>'
+        return text+'</text>'
+
+    def diagram_marker(self,ident):
+        return f'<defs><marker id="{ident}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10Z" fill="var(--accent)"/></marker></defs>'
+
+    def graph_diagram(self,b):
+        layout=layout_graph(b['nodes'],b.get('edges',[]),self.diagram_metrics())
+        W,H=layout['width'],layout['height'];marker=self.uid()
+        description='; '.join(next(n['label'] for n in b['nodes'] if n['id']==e['from'])+' → '+next(n['label'] for n in b['nodes'] if n['id']==e['to'])+(': '+e['label'] if e.get('label') else '') for e in b.get('edges',[]))
+        body=f'<svg class="graph-svg" style="--diagram-min-width:{max(550,W*.82):.0f}px" viewBox="0 0 {W:.2f} {H:.2f}" role="img" aria-label="{esc(b.get("title","Directed Graph"))}"><desc>{esc(description)}</desc>'+self.diagram_marker(marker)
+        for route in layout['edges']:
+            body+=f'<path class="graph-edge" d="{rounded_path(route["points"])}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" marker-end="url(#{marker})"/>'
+        for node in layout['nodes']:
+            x,y,w,h=node['x'],node['y'],node['width'],node['height']
+            body+=f'<g class="graph-node" data-node="{esc(node["id"])}"><rect x="{x:.2f}" y="{y:.2f}" width="{w}" height="{h}" rx="8" fill="var(--wash)" stroke="var(--line)"/>'
+            body+=self.svg_text(node['lines'],x+w/2,y+h/2-(len(node['lines'])-1)*9+5,14)+'</g>'
+        # Labels have their own measured lanes and are painted last.
+        for route in layout['edges']:
+            label=route['label']
+            if label:
+                x,y,w,h=label['x'],label['y'],label['width'],label['height']
+                body+=f'<g class="graph-edge-label"><rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" rx="5" fill="var(--paper)"/>'
+                body+=self.svg_text(label['lines'],x+w/2,y+18,label['size'])+'</g>'
+        return body+'</svg>'
+
+    def sequence_diagram(self,b):
+        actors=b['actors'];n=len(actors);metrics=self.diagram_metrics()
+        if not 2<=n<=6:raise ValueError('Sequence diagrams support 2–6 actors')
+        spacing=232;centers=[104+i*spacing for i in range(n)];W=centers[-1]+104
+        actor_lines=[metrics.wrap(a,14,146) for a in actors]
+        actor_h=max(48,max(len(lines) for lines in actor_lines)*18+20)
+        y=20+actor_h+28;rows=[]
+        for message in b['messages']:
+            a,c=message['from'],message['to']
+            if not isinstance(a,int) or not isinstance(c,int) or not 0<=min(a,c)<=max(a,c)<n:raise ValueError('Sequence from/to must be actor indices')
+            if a==c:
+                label=label_geometry(message['label'],metrics,spacing-52)
+                direction=-1 if a==n-1 else 1
+                label_x=centers[a]+14 if direction>0 else centers[a]-14-label['width']
+                arrow_y=y+label['height']+10
+                points=[(centers[a],arrow_y),(centers[a]+direction*56,arrow_y),(centers[a]+direction*56,arrow_y+26),(centers[a],arrow_y+26)]
+                height=label['height']+60
+            else:
+                label=label_geometry(message['label'],metrics,min(abs(a-c)*spacing-36,320))
+                label_x=(centers[a]+centers[c])/2-label['width']/2
+                arrow_y=y+label['height']+10
+                points=[(centers[a],arrow_y),(centers[c],arrow_y)]
+                height=label['height']+36
+            rows.append(dict(label=dict(label,x=label_x,y=y),points=points))
+            y+=height
+        H=y+12;marker=self.uid()
+        body=f'<svg class="sequence-svg" style="--diagram-min-width:{W}px" viewBox="0 0 {W} {H}" role="img" aria-label="{esc(b.get("title","Message Sequence"))}">'+self.diagram_marker(marker)
+        body+='<desc>'+esc('; '.join(actors[m['from']]+' → '+actors[m['to']]+': '+m['label'] for m in b['messages']))+'</desc>'
+        for x in centers:body+=f'<path d="M{x} {20+actor_h}V{H-8}" stroke="var(--line)" stroke-width="1.5"/>'
+        for row in rows:
+            body+=f'<path class="sequence-arrow" d="{rounded_path(row["points"])}" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#{marker})"/>'
+            label=row['label'];x,y,w,h=label['x'],label['y'],label['width'],label['height']
+            body+=f'<g class="sequence-label"><rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" rx="4" fill="var(--paper)"/>'+self.svg_text(label['lines'],x+w/2,y+17)+'</g>'
+        for x,lines in zip(centers,actor_lines):
+            body+=f'<rect x="{x-80}" y="20" width="160" height="{actor_h}" rx="8" fill="var(--wash)"/>'
+            body+=self.svg_text(lines,x,20+actor_h/2-(len(lines)-1)*9+5,14)
+        return body+'</svg>'
+
     def chart(self,b):
         self.used_charts=True;kind=b['kind'];data=b['data'];ident=self.uid(b.get('id'))
         if kind not in CHARTS:raise ValueError('Chart kind must be '+', '.join(CHARTS))
@@ -256,12 +295,12 @@ class Renderer:
         for file in sorted((ASSETS/'fonts').glob('*-OFL.txt')):licenses.append(file.name+'\n'+file.read_text(encoding='utf-8'))
         css+=(ASSETS/'base.css').read_text(encoding='utf-8')
         for file in d.get('styles',[]):css+='\n'+self.file(file).read_text(encoding='utf-8')
-        js=((ASSETS/'charts.js').read_text(encoding='utf-8')+'\n' if self.used_charts else '')+(ASSETS/'core.js').read_text(encoding='utf-8')
+        js=((ASSETS/'charts.js').read_text(encoding='utf-8')+'\n' if self.used_charts else '')+(ASSETS/'navigation.js').read_text(encoding='utf-8')+'\n'+(ASSETS/'core.js').read_text(encoding='utf-8')
         js+='\ndocument.querySelectorAll(\'input[type="range"]\').forEach(r=>r.addEventListener("input",()=>{const o=document.getElementById(r.id+"-value");if(o)o.value=r.value}));\n'
         for file in d.get('scripts',[]):js+='\n;(()=>{\n'+self.file(file).read_text(encoding='utf-8')+'\n})();\n'
         js=re.sub('</script',r'<\/script',js,flags=re.I)
         if re.search('</style',css,re.I):raise ValueError('Custom CSS may not contain </style')
-        result='<!doctype html><html lang="'+esc(d.get('lang','en'))+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="'+esc(d.get('description',d.get('lead','')))+'"><title>'+esc(d['title'])+'</title><style>'+css+'</style></head><body data-theme="'+theme+'"><a class="skip" href="#main">Skip to Content</a><div class="progress" aria-hidden="true"></div><header><div class="header-start"><button id="toc-toggle" class="sidebar-toggle" type="button" aria-label="Hide Contents" title="Hide Contents" aria-controls="contents" aria-expanded="true">'+self.icon('contents')+'</button><span class="brand">'+esc(d.get('brand',d['title']))+'</span></div><div class="tools"><div class="theme-control"><button id="theme-toggle" class="header-icon-button" type="button" aria-label="Change Theme" title="Change Theme" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu">'+self.icon('theme')+'</button><div id="theme-menu" class="theme-menu" role="menu" aria-label="Color Theme" hidden>'+menu+'</div></div><button class="header-icon-button" data-print type="button" aria-label="Print" title="Print">'+self.icon('print')+'</button></div></header><div class="layout"><div class="contents-slot"><aside id="contents"><p>On This Page</p><nav aria-label="Table of Contents"></nav></aside></div><main id="main">'+body+'</main></div><script>'+js+'</script><template id="font-licenses"><pre>'+esc('\n\n'.join(licenses))+'</pre></template></body></html>'
+        result='<!doctype html><html lang="'+esc(d.get('lang','en'))+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="'+esc(d.get('description',d.get('lead','')))+'"><title>'+esc(d['title'])+'</title><style>'+css+'</style></head><body data-theme="'+theme+'"><a class="skip" href="#main">Skip to Content</a><div class="progress" aria-hidden="true"></div><header><div class="header-start"><button id="toc-toggle" class="sidebar-toggle" type="button" aria-label="Hide Contents" title="Hide Contents" aria-controls="contents" aria-expanded="true">'+self.icon('contents')+'</button><span class="brand">'+esc(d.get('brand',d['title']))+'</span></div><div class="tools"><div class="theme-control"><button id="theme-toggle" class="header-icon-button" type="button" aria-label="Change Theme" title="Change Theme" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu">'+self.icon('theme')+'</button><div id="theme-menu" class="theme-menu" role="menu" aria-label="Color Theme" hidden>'+menu+'</div></div><button class="header-icon-button" data-print type="button" aria-label="Print" title="Print">'+self.icon('print')+'</button></div></header><div class="contents-backdrop" aria-hidden="true"></div><div class="layout"><div class="contents-slot"><aside id="contents" aria-labelledby="contents-title"><div class="contents-heading"><p id="contents-title">On This Page</p><button class="contents-close" type="button" aria-label="Close Contents">'+self.icon('close')+'</button></div><nav aria-label="Table of Contents"></nav></aside></div><main id="main">'+body+'</main></div><script>'+js+'</script><template id="font-licenses"><pre>'+esc('\n\n'.join(licenses))+'</pre></template></body></html>'
         problems=check_html(result)
         if problems:raise ValueError('\n'.join(problems))
         return result

@@ -45,13 +45,13 @@ All content is supplied by you; do not copy the placeholder content. Paths in JS
 - **Interactions:** accessible tabs, disclosures, range controls, choices, plus custom HTML/SVG/canvas and JavaScript. See [custom.md](references/custom.md) for custom visualizations or simulations.
 - **Icons:** 72 consistent SVG symbols; choose by meaning from [icons.md](references/icons.md). Do not redraw existing controls or use emoji as UI icons.
 
-The shell supplies Violet, Slate, Blue, and Night themes; an animated ToC sidebar with scroll spy; a top-left contents icon; a theme icon with a themed menu; and a print icon. Fonts, CSS, scripts, and media are embedded by the builder. These controls need no author-written code.
+The shell supplies Violet, Slate, Blue, and Night themes; a sticky header, an animated desktop ToC sidebar and mobile contents drawer with scroll spy; a top-left contents icon; a theme icon with a themed menu; and a print icon. Fonts, CSS, scripts, and media are embedded by the builder. These controls need no author-written code.
 
 ## Content and Appearance
 
 - State useful information directly. Omit decorative format badges, prototype labels, and commentary about how the document was generated, embedded, or made portable.
 - Use Title Case for headings. The builder capitalizes English heading initials and preserves internal capitalization; check acronyms and identifiers yourself. Use code formatting for commands, filenames, APIs, and commit hashes.
-- Use whitespace and hierarchy to separate sections. Keep the provided compact spacing; avoid horizontal rules between ordinary sections, oversized empty hero areas, or inflated margins.
+- Use whitespace and hierarchy to separate sections. Let prose and headings fill the available content width. Keep the provided compact spacing; avoid horizontal rules between ordinary sections, oversized empty hero areas, or inflated margins.
 - Use components where they help comprehension. Do not add alerts, metrics, diagrams, interactive controls, checklists, or source sections just to demonstrate their availability. Match the user's requested content.
 - Every interactive example must visibly change a relevant result. Keep explanations, calculations, chart values, units, and controls consistent. Label simulated or illustrative data near its chart.
 - Keep captions centered and informative about the subject. Diagrams must have legible labels and meaningful relationships. Images need descriptive alt text; custom controls need labels and keyboard access.
