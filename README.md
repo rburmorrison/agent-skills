@@ -30,8 +30,6 @@ npx skills add rburmorrison/agent-skills --global
 
 Omit `--global` to install skills for the current project instead.
 
-For documentation work, install `document-code` and `document-usage` with the planning, implementation, and review skills.
-
 Install skills globally by name:
 
 ```bash
@@ -52,8 +50,4 @@ npx skills add rburmorrison/agent-skills --global --skill visual-explainers
 
 ## Personal Guidance
 
-After installing the engineering skills, copy or merge [personal-engineering.md](guidance/personal-engineering.md) into your agent's personal instructions, preserving any existing guidance. Skill installation alone does not install this guidance.
-
-The shared rules are model-agnostic and language-agnostic. Language-specific settings live in the setup skill's [Rust](skills/engineering/setup-project/references/rust.md) and [Python](skills/engineering/setup-project/references/python.md) profiles. Independent review requires a host that supports reviewer agents; the implementation skill reports when that capability is unavailable.
-
-The two manual workflows reuse the shared engineering skills. Select `align-codebase` or `implement-verified-steps` explicitly using your agent's skill invocation mechanism. Explicit task instructions can override the usual conventions or review cadence, while unaffected defaults remain in force.
+Add the contents of [personal-engineering.md](guidance/personal-engineering.md) to your global `AGENTS.md` or `CLAUDE.md`.
