@@ -16,6 +16,10 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 - [align-codebase](skills/engineering/align-codebase/SKILL.md) (manual) - Plans and applies a scoped, behavior-preserving alignment of an existing codebase with these conventions.
 - [implement-verified-steps](skills/engineering/implement-verified-steps/SKILL.md) (manual) - Checks and independently reviews each planned step, with targeted follow-up only for concrete unresolved risks.
 
+**Documentation**:
+
+- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone HTML explainers with embedded fonts and images, themes, an animated contents sidebar, diagrams, eight interactive chart types, and 72 SVG icons. A Python standard-library builder packages the document for offline use; the user chooses its content and structure.
+
 ## Usage
 
 Install all skills globally from this repository with the Skills CLI:
@@ -41,6 +45,9 @@ npx skills add rburmorrison/agent-skills --global --skill document-usage
 npx skills add rburmorrison/agent-skills --global --skill document-code
 npx skills add rburmorrison/agent-skills --global --skill align-codebase
 npx skills add rburmorrison/agent-skills --global --skill implement-verified-steps
+
+# Documentation
+npx skills add rburmorrison/agent-skills --global --skill visual-explainers
 ```
 
 ## Personal Guidance

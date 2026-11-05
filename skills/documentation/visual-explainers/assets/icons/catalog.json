@@ -1,0 +1,440 @@
+{
+  "grid": 24,
+  "stroke_width": 1.75,
+  "stroke_linecap": "round",
+  "stroke_linejoin": "round",
+  "icons": [
+    {
+      "name": "document",
+      "family": "Reading and Sources",
+      "purpose": "Read a prose document",
+      "file": "document.svg"
+    },
+    {
+      "name": "book",
+      "family": "Reading and Sources",
+      "purpose": "Read an open book",
+      "file": "book.svg"
+    },
+    {
+      "name": "definition",
+      "family": "Reading and Sources",
+      "purpose": "Find the explanation of a term",
+      "file": "definition.svg"
+    },
+    {
+      "name": "quotation",
+      "family": "Reading and Sources",
+      "purpose": "Identify quoted words",
+      "file": "quotation.svg"
+    },
+    {
+      "name": "source-link",
+      "family": "Reading and Sources",
+      "purpose": "Follow a cited reference",
+      "file": "source-link.svg"
+    },
+    {
+      "name": "external-link",
+      "family": "Reading and Sources",
+      "purpose": "Open an external destination",
+      "file": "external-link.svg"
+    },
+    {
+      "name": "note",
+      "family": "Information and Status",
+      "purpose": "Provide additional information",
+      "file": "note.svg"
+    },
+    {
+      "name": "tip",
+      "family": "Information and Status",
+      "purpose": "Offer a useful suggestion",
+      "file": "tip.svg"
+    },
+    {
+      "name": "important",
+      "family": "Information and Status",
+      "purpose": "Emphasize essential information",
+      "file": "important.svg"
+    },
+    {
+      "name": "warning",
+      "family": "Information and Status",
+      "purpose": "Warn of a possible problem",
+      "file": "warning.svg"
+    },
+    {
+      "name": "caution",
+      "family": "Information and Status",
+      "purpose": "Flag a risk with serious consequences",
+      "file": "caution.svg"
+    },
+    {
+      "name": "success",
+      "family": "Information and Status",
+      "purpose": "Confirm a successful outcome",
+      "file": "success.svg"
+    },
+    {
+      "name": "error",
+      "family": "Information and Status",
+      "purpose": "Identify an error",
+      "file": "error.svg"
+    },
+    {
+      "name": "question",
+      "family": "Information and Status",
+      "purpose": "Ask for clarification",
+      "file": "question.svg"
+    },
+    {
+      "name": "contents",
+      "family": "Reader Controls",
+      "purpose": "Show the table of contents",
+      "file": "contents.svg"
+    },
+    {
+      "name": "chevron",
+      "family": "Reader Controls",
+      "purpose": "Indicate a direction",
+      "file": "chevron.svg"
+    },
+    {
+      "name": "search",
+      "family": "Reader Controls",
+      "purpose": "Search within the content",
+      "file": "search.svg"
+    },
+    {
+      "name": "expand",
+      "family": "Reader Controls",
+      "purpose": "Expand the view",
+      "file": "expand.svg"
+    },
+    {
+      "name": "close",
+      "family": "Reader Controls",
+      "purpose": "Dismiss the view",
+      "file": "close.svg"
+    },
+    {
+      "name": "copy",
+      "family": "Reader Controls",
+      "purpose": "Copy the selection",
+      "file": "copy.svg"
+    },
+    {
+      "name": "download",
+      "family": "Reader Controls",
+      "purpose": "Download a file",
+      "file": "download.svg"
+    },
+    {
+      "name": "print",
+      "family": "Reader Controls",
+      "purpose": "Print the content",
+      "file": "print.svg"
+    },
+    {
+      "name": "zoom-in",
+      "family": "Reader Controls",
+      "purpose": "Increase magnification",
+      "file": "zoom-in.svg"
+    },
+    {
+      "name": "zoom-out",
+      "family": "Reader Controls",
+      "purpose": "Decrease magnification",
+      "file": "zoom-out.svg"
+    },
+    {
+      "name": "theme",
+      "family": "Reader Controls",
+      "purpose": "Change the document appearance",
+      "file": "theme.svg"
+    },
+    {
+      "name": "layout",
+      "family": "Reader Controls",
+      "purpose": "Arrange content within a layout",
+      "file": "layout.svg"
+    },
+    {
+      "name": "play",
+      "family": "Interactive Examples",
+      "purpose": "Run the example",
+      "file": "play.svg"
+    },
+    {
+      "name": "pause",
+      "family": "Interactive Examples",
+      "purpose": "Pause the example",
+      "file": "pause.svg"
+    },
+    {
+      "name": "step-forward",
+      "family": "Interactive Examples",
+      "purpose": "Advance one step",
+      "file": "step-forward.svg"
+    },
+    {
+      "name": "reset",
+      "family": "Interactive Examples",
+      "purpose": "Restore the initial state",
+      "file": "reset.svg"
+    },
+    {
+      "name": "settings",
+      "family": "Interactive Examples",
+      "purpose": "Adjust the controls",
+      "file": "settings.svg"
+    },
+    {
+      "name": "edit",
+      "family": "Interactive Examples",
+      "purpose": "Edit or draw",
+      "file": "edit.svg"
+    },
+    {
+      "name": "connection",
+      "family": "Relationships",
+      "purpose": "Connect two endpoints",
+      "file": "connection.svg"
+    },
+    {
+      "name": "branch",
+      "family": "Relationships",
+      "purpose": "Split one path into two",
+      "file": "branch.svg"
+    },
+    {
+      "name": "merge",
+      "family": "Relationships",
+      "purpose": "Combine paths into one",
+      "file": "merge.svg"
+    },
+    {
+      "name": "loop",
+      "family": "Relationships",
+      "purpose": "Repeat a cycle",
+      "file": "loop.svg"
+    },
+    {
+      "name": "hierarchy",
+      "family": "Relationships",
+      "purpose": "Show a parent and its children",
+      "file": "hierarchy.svg"
+    },
+    {
+      "name": "group",
+      "family": "Relationships",
+      "purpose": "Collect items in a group",
+      "file": "group.svg"
+    },
+    {
+      "name": "intersection",
+      "family": "Relationships",
+      "purpose": "Identify the overlap of two sets",
+      "file": "intersection.svg"
+    },
+    {
+      "name": "input",
+      "family": "Processes and Time",
+      "purpose": "Move into a system",
+      "file": "input.svg"
+    },
+    {
+      "name": "output",
+      "family": "Processes and Time",
+      "purpose": "Move out of a system",
+      "file": "output.svg"
+    },
+    {
+      "name": "transformation",
+      "family": "Processes and Time",
+      "purpose": "Change one form into another",
+      "file": "transformation.svg"
+    },
+    {
+      "name": "steps",
+      "family": "Processes and Time",
+      "purpose": "Follow an ordered process",
+      "file": "steps.svg"
+    },
+    {
+      "name": "clock",
+      "family": "Processes and Time",
+      "purpose": "Represent time or duration",
+      "file": "clock.svg"
+    },
+    {
+      "name": "history",
+      "family": "Processes and Time",
+      "purpose": "Review earlier states",
+      "file": "history.svg"
+    },
+    {
+      "name": "target",
+      "family": "Processes and Time",
+      "purpose": "Identify the intended outcome",
+      "file": "target.svg"
+    },
+    {
+      "name": "table",
+      "family": "Data and Comparison",
+      "purpose": "Read data in rows and columns",
+      "file": "table.svg"
+    },
+    {
+      "name": "line-chart",
+      "family": "Data and Comparison",
+      "purpose": "Trace a trend across values",
+      "file": "line-chart.svg"
+    },
+    {
+      "name": "bar-chart",
+      "family": "Data and Comparison",
+      "purpose": "Compare values by height",
+      "file": "bar-chart.svg"
+    },
+    {
+      "name": "scatter-plot",
+      "family": "Data and Comparison",
+      "purpose": "Inspect a set of paired observations",
+      "file": "scatter-plot.svg"
+    },
+    {
+      "name": "distribution",
+      "family": "Data and Comparison",
+      "purpose": "Inspect the shape of a distribution",
+      "file": "distribution.svg"
+    },
+    {
+      "name": "comparison",
+      "family": "Data and Comparison",
+      "purpose": "Compare two quantities",
+      "file": "comparison.svg"
+    },
+    {
+      "name": "filter",
+      "family": "Data and Comparison",
+      "purpose": "Restrict results to a subset",
+      "file": "filter.svg"
+    },
+    {
+      "name": "measurement",
+      "family": "Data and Comparison",
+      "purpose": "Measure a length",
+      "file": "measurement.svg"
+    },
+    {
+      "name": "code",
+      "family": "Software and Systems",
+      "purpose": "Identify source code",
+      "file": "code.svg"
+    },
+    {
+      "name": "terminal",
+      "family": "Software and Systems",
+      "purpose": "Work at a command prompt",
+      "file": "terminal.svg"
+    },
+    {
+      "name": "file",
+      "family": "Software and Systems",
+      "purpose": "Represent a generic file",
+      "file": "file.svg"
+    },
+    {
+      "name": "folder",
+      "family": "Software and Systems",
+      "purpose": "Organize files in a folder",
+      "file": "folder.svg"
+    },
+    {
+      "name": "package",
+      "family": "Software and Systems",
+      "purpose": "Represent a packaged component",
+      "file": "package.svg"
+    },
+    {
+      "name": "database",
+      "family": "Software and Systems",
+      "purpose": "Represent a data store",
+      "file": "database.svg"
+    },
+    {
+      "name": "server",
+      "family": "Software and Systems",
+      "purpose": "Represent a server",
+      "file": "server.svg"
+    },
+    {
+      "name": "network",
+      "family": "Software and Systems",
+      "purpose": "Represent linked machines",
+      "file": "network.svg"
+    },
+    {
+      "name": "person",
+      "family": "People and Context",
+      "purpose": "Identify an individual",
+      "file": "person.svg"
+    },
+    {
+      "name": "team",
+      "family": "People and Context",
+      "purpose": "Identify a group of people",
+      "file": "team.svg"
+    },
+    {
+      "name": "organization",
+      "family": "People and Context",
+      "purpose": "Identify an institution",
+      "file": "organization.svg"
+    },
+    {
+      "name": "globe",
+      "family": "People and Context",
+      "purpose": "Represent worldwide context",
+      "file": "globe.svg"
+    },
+    {
+      "name": "location",
+      "family": "People and Context",
+      "purpose": "Mark a place",
+      "file": "location.svg"
+    },
+    {
+      "name": "image",
+      "family": "People and Context",
+      "purpose": "Represent a picture",
+      "file": "image.svg"
+    },
+    {
+      "name": "cube",
+      "family": "Spatial",
+      "purpose": "Represent a solid in three dimensions",
+      "file": "cube.svg"
+    },
+    {
+      "name": "layers",
+      "family": "Spatial",
+      "purpose": "Separate stacked surfaces",
+      "file": "layers.svg"
+    },
+    {
+      "name": "plane",
+      "family": "Spatial",
+      "purpose": "Represent a flat surface",
+      "file": "plane.svg"
+    },
+    {
+      "name": "depth",
+      "family": "Spatial",
+      "purpose": "Measure below a surface",
+      "file": "depth.svg"
+    }
+  ]
+}

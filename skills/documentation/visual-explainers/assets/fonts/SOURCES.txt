@@ -1,0 +1,3 @@
+Manrope variable font and license: https://github.com/google/fonts/tree/main/ofl/manrope
+JetBrains Mono variable font and license: https://github.com/google/fonts/tree/main/ofl/jetbrainsmono
+Retrieved 2026-11-04. Both use SIL Open Font License 1.1; complete licenses are adjacent and embedded in generated HTML.
