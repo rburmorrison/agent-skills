@@ -22,6 +22,7 @@ class Document(_DocumentTitle, total=False):
 
     lang: str
     theme: str
+    """Theme set selected at generation time; defaults to plain."""
     description: str
     brand: str
     lead: str

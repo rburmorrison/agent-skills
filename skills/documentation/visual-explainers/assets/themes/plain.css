@@ -1,0 +1,23 @@
+body{
+  --bg:light-dark(#fafafa,#181818);
+  --paper:light-dark(#fff,#222);
+  --ink:light-dark(#202020,#eee);
+  --muted:light-dark(#606060,#b5b5b5);
+  --accent:light-dark(#333,#ddd);
+  --line:light-dark(#d4d4d4,#484848);
+  --table-head:light-dark(#e3e3e3,#383838);
+  --wash:light-dark(#f0f0f0,#2c2c2c);
+  --button-ink:light-dark(#fff,#181818);
+  --alert-note:light-dark(#236ac0,#8abfff);
+  --alert-tip:light-dark(#207942,#7dd69d);
+  --alert-important:light-dark(#8050b8,#c7a1f5);
+  --alert-warning:light-dark(#936500,#edca77);
+  --alert-caution:light-dark(#c13e48,#ff9da4);
+  --chart-secondary:light-dark(#c47732,#efb35d);
+  --chart-third:light-dark(#248c91,#69c9ca);
+  --chart-fourth:light-dark(#bf5682,#eea0bd);
+  --chart-fifth:light-dark(#4d83bc,#82b8f1);
+}
+.theme-swatch-system{background:linear-gradient(90deg,#fafafa 50%,#181818 50%)}
+.theme-swatch-light{background:#fafafa}
+.theme-swatch-dark{background:#181818}

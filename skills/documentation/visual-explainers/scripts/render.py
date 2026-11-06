@@ -31,7 +31,8 @@ if TYPE_CHECKING:
 
 SKILL = Path(__file__).resolve().parents[1]
 ASSETS = SKILL / "assets"
-THEMES = ("violet", "slate", "blue", "night")
+THEMES = {"plain": ASSETS / "themes" / "plain.css"}
+APPEARANCES = ("system", "light", "dark")
 BLOCKS = (
     "text",
     "heading",
@@ -996,7 +997,7 @@ class Renderer:
             OSError: A required asset cannot be read or resolved.
         """
         document = self.doc
-        theme = document.get("theme", "violet")
+        theme = document.get("theme", "plain")
         if not self.trusted_custom and (
             document.get("styles") or document.get("scripts")
         ):
@@ -1030,18 +1031,18 @@ class Renderer:
                 + "</div></section>"
             )
         menu = "".join(
-            '<button type="button" role="menuitemradio" data-theme-value="'
-            + t
+            '<button type="button" role="menuitemradio" data-appearance-value="'
+            + appearance
             + '" aria-checked="'
-            + str(t == theme).lower()
+            + str(appearance == "system").lower()
             + '"><span class="theme-swatch theme-swatch-'
-            + t
+            + appearance
             + '" aria-hidden="true"></span><span>'
-            + t.title()
+            + appearance.title()
             + '</span><span class="theme-check">'
             + self.icon("success")
             + "</span></button>"
-            for t in THEMES
+            for appearance in APPEARANCES
         )
         css = ""
         licenses: list[str] = []
@@ -1059,6 +1060,7 @@ class Renderer:
             for file in sorted((ASSETS / "fonts").glob("*-OFL.txt"))
         ]
         css += (ASSETS / "base.css").read_text(encoding="utf-8")
+        css += "\n" + THEMES[theme].read_text(encoding="utf-8")
         for file in document.get("styles", []):
             css += "\n" + self.file(file).read_text(encoding="utf-8")
         js = (
@@ -1106,13 +1108,13 @@ class Renderer:
             + css
             + '</style></head><body data-theme="'
             + theme
-            + '"><a class="skip" href="#main">Skip to Content</a><div class="progress" aria-hidden="true"></div><header><div class="header-start"><button id="toc-toggle" class="sidebar-toggle" type="button" aria-label="Hide Contents" title="Hide Contents" aria-controls="contents" aria-expanded="true">'
+            + '" data-appearance="system"><a class="skip" href="#main">Skip to Content</a><div class="progress" aria-hidden="true"></div><header><div class="header-start"><button id="toc-toggle" class="sidebar-toggle" type="button" aria-label="Hide Contents" title="Hide Contents" aria-controls="contents" aria-expanded="true">'
             + self.icon("contents")
             + '</button><span class="brand">'
             + esc(document.get("brand", document["title"]))
-            + '</span></div><div class="tools"><div class="theme-control"><button id="theme-toggle" class="header-icon-button" type="button" aria-label="Change Theme" title="Change Theme" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu">'
+            + '</span></div><div class="tools"><div class="theme-control"><button id="theme-toggle" class="header-icon-button" type="button" aria-label="Change Appearance" title="Change Appearance" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu">'
             + self.icon("theme")
-            + '</button><div id="theme-menu" class="theme-menu" role="menu" aria-label="Color Theme" hidden>'
+            + '</button><div id="theme-menu" class="theme-menu" role="menu" aria-label="Appearance" hidden>'
             + menu
             + '</div></div><button class="header-icon-button" data-print type="button" aria-label="Print" title="Print">'
             + self.icon("print")

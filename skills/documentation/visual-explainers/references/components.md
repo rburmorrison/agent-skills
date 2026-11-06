@@ -4,9 +4,15 @@ Use JSON, not Python code. Strings inside `blocks` are paragraphs. All paths are
 
 ## Document
 
-Required: `title`. Optional: `brand` (short header name; defaults to title), `lead`, `description`, `theme` (`violet`, `slate`, `blue`, `night`), `lang` (default `en`), `intro` (blocks below the lead), `sections` (list of `{title, blocks, id?}`), `scripts` (local JS file paths), `styles` (local CSS file paths). All asset paths must be relative and remain within the JSON directory after resolving symlinks. `html` blocks and nonempty `scripts`/`styles` require the operator's `--trusted-custom` option; see [custom.md](custom.md).
+Required: `title`. Optional: `brand` (short header name; defaults to title), `lead`, `description`, `theme` (theme set; currently only `plain`, the default), `lang` (default `en`), `intro` (blocks below the lead), `sections` (list of `{title, blocks, id?}`), `scripts` (local JS file paths), `styles` (local CSS file paths). All asset paths must be relative and remain within the JSON directory after resolving symlinks. `html` blocks and nonempty `scripts`/`styles` require the operator's `--trusted-custom` option; see [custom.md](custom.md).
 
 The shell creates H1. Sections create H2 and ToC entries. You choose all section names and ordering. Heading blocks create H3/H4; H3 joins the ToC except inside tabs. Component titles are labels, not extra sections. On mobile the header stays sticky and its contents icon opens a vertical drawer. Selecting a heading closes the drawer and scrolls smoothly to it below the header. The selected link stays highlighted during navigation, including near the end of the document. Manual scrolling resumes section tracking; reduced-motion preferences disable animation. No footer or source section is forced. Use paragraphs/links or a section when sources are useful.
+
+## Theme Sets
+
+`theme` selects one supported set at generation time, for example `"theme": "plain"`. Only `plain` is currently supported. Each output embeds just that set’s paired light/dark palettes; the reader cannot switch sets. The header menu always starts in System and offers only System, Light, and Dark. System follows the reader’s OS/browser appearance preference live; choosing Light or Dark fixes the appearance until System is selected again.
+
+To add a supported set, place its paired color tokens and menu swatches in `assets/themes/<name>.css` and register its path in `THEMES` in `scripts/render.py`. Use `assets/themes/plain.css` as the token contract: its `light-dark()` values resolve through the shell’s selected color scheme. Keep set-specific styling in that asset so it is embedded only when selected. The shared shell owns layout, appearance switching, and print behavior.
 
 ## Inline Text
 

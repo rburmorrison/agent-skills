@@ -60,7 +60,7 @@ Every control should visibly change the relevant result; use one state to derive
 
 Use tokens `--bg`, `--paper`, `--ink`, `--muted`, `--accent`, `--line`, `--wash`, `--table-head`, and `--radius-media`. Available classes include `.visual`, `.visual-label`, `.visual-body`, `.controls`, `.control-group`, `.metric`, `.caption`, `.card`, `.two`, and `.sr-only`. Use `currentColor` for icons. SVG text inherits the embedded document font. Use `viewBox`, padding for labels, and responsive widths. Keep label/connector geometry clear at narrow widths; use a horizontally scrollable container when genuine diagram complexity requires it.
 
-Controls need visible labels, native keyboard behavior or equivalent key handling, and focus indication. SVG/canvas visuals need descriptive accessible text and a nearby textual result or data table where the information is otherwise inaccessible. Honor `prefers-reduced-motion`; avoid animation unrelated to the explanation. Test all four themes if custom colors are used.
+Controls need visible labels, native keyboard behavior or equivalent key handling, and focus indication. SVG/canvas visuals need descriptive accessible text and a nearby textual result or data table where the information is otherwise inaccessible. Honor `prefers-reduced-motion`; avoid animation unrelated to the explanation. Test both Light and Dark appearances of the selected theme set if custom colors are used, including System under both OS/browser preferences.
 
 For custom icons, embed an existing file from `assets/icons/NAME.svg`; its viewBox is 24×24 and stroke width 1.75. Do not turn the icon gallery into article content unless the user asks for it.
 

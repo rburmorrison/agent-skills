@@ -3,18 +3,76 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from typing import Mapping, cast
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from render import Renderer, check_html, validate_chart
+from render import THEMES, Renderer, check_html, validate_chart
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
 class RenderTests(unittest.TestCase):
+    def test_plain_theme_defaults_to_system_with_only_appearance_choices(self) -> None:
+        output = Renderer({"title": "Appearance"}, FIXTURES).render()
+
+        self.assertIn('<body data-theme="plain" data-appearance="system">', output)
+        self.assertEqual(
+            ["system"],
+            re.findall(r'data-appearance-value="([a-z]+)" aria-checked="true"', output),
+        )
+        self.assertEqual(
+            ["system", "light", "dark"],
+            re.findall(r'data-appearance-value="([a-z]+)"', output),
+        )
+
+    def test_explicit_theme_matches_the_default_output(self) -> None:
+        default = Renderer({"title": "Appearance"}, FIXTURES).render()
+        explicit = Renderer(
+            {"title": "Appearance", "theme": "plain"}, FIXTURES
+        ).render()
+
+        self.assertEqual(default, explicit)
+
+    def test_output_embeds_only_the_selected_theme_set(self) -> None:
+        plain_css = THEMES["plain"].read_text(encoding="utf-8")
+        warm_css = "body{--bg:light-dark(#fff0ed,#211b18)}"
+        with tempfile.TemporaryDirectory() as directory:
+            warm = Path(directory) / "warm.css"
+            _ = warm.write_text(warm_css, encoding="utf-8")
+            with patch.dict(THEMES, {"warm": warm}):
+                plain = Renderer({"title": "Appearance"}, FIXTURES).render()
+                alternate = Renderer(
+                    {"title": "Appearance", "theme": "warm"}, FIXTURES
+                ).render()
+
+        self.assertIn(plain_css, plain)
+        self.assertNotIn(warm_css, plain)
+        self.assertIn(warm_css, alternate)
+        self.assertNotIn(plain_css, alternate)
+        self.assertIn('<body data-theme="warm" data-appearance="system">', alternate)
+
+    def test_removed_palettes_and_unknown_theme_sets_are_rejected(self) -> None:
+        for theme in [
+            "violet",
+            "slate",
+            "blue",
+            "night",
+            "system",
+            "light",
+            "dark",
+            "unknown",
+        ]:
+            with self.subTest(theme=theme), self.assertRaisesRegex(
+                ValueError, "theme must be plain"
+            ):
+                _ = Renderer({"title": "Appearance", "theme": theme}, FIXTURES).render()
+
     def test_all_block_and_chart_variants_build_one_offline_document(self) -> None:
         document = cast(
             "Mapping[str, object]",
