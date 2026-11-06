@@ -41,7 +41,7 @@ I can't create a GitMoji commit proposal because there are no changes to commit.
 
 ## Message Rules
 
-- Use GitMoji shortcodes only, never literal emoji characters.
+- Use GitMoji shortcodes in commit messages, proposals, and commands. Use literal emoji only in the post-commit user-facing record described below.
 - Before choosing a shortcode, read [references/gitmoji-shortcodes.md](references/gitmoji-shortcodes.md) and choose from that bundled snapshot.
 - Use this subject format: `:shortcode: Imperative message`.
 - Do not use scopes.
@@ -93,7 +93,7 @@ I made the following commit:
 
 ---
 
-:tada: Initial commit
+🎉 Initial commit
 
 - All Repository Files
 
@@ -176,6 +176,8 @@ After the commits succeed, show the framed record below. Then report the commit 
 
 Use this format only after the commit succeeds, as a record of what was done. The frame ends after the file list.
 
+In this user-facing record only, display the subject's GitMoji as its corresponding literal emoji (for example, `:lock:` becomes 🔒). Keep the rest of the subject unchanged and retain shortcodes everywhere else, including the stored commit message and commands.
+
 For one subject-only commit:
 
 ```markdown
@@ -183,7 +185,7 @@ I made the following commit:
 
 ---
 
-:memo: Document GitMoji commit workflow
+📝 Document GitMoji commit workflow
 
 - skills/gitmoji-commits/SKILL.md
 - skills/gitmoji-commits/references/gitmoji-shortcodes.md
@@ -198,7 +200,7 @@ I made the following commit:
 
 ---
 
-:boom: Require signed webhook payloads
+💥 Require signed webhook payloads
 
 > - Required HMAC verification before processing webhook events.
 > - Updated local webhook setup to require signed test payloads.
@@ -216,14 +218,14 @@ I made the following commits:
 
 ---
 
-:sparkles: Add repository import workflow
+✨ Add repository import workflow
 
 - src/importer.ts
 - src/repository.ts
 
 ---
 
-:white_check_mark: Cover importer edge cases
+✅ Cover importer edge cases
 
 - tests/importer.test.ts
 - tests/fixtures/import-source.json
