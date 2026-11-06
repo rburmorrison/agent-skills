@@ -11,14 +11,14 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 - [implement-changes](skills/engineering/implement-changes/SKILL.md) - Implements agreed changes with clear responsibility boundaries, readable behavior tests, automatic review, and a concise handoff.
 - [review-changes](skills/engineering/review-changes/SKILL.md) - Reviews a completed change or targeted fixes using fresh context and the shared documentation guidance.
 - [setup-project](skills/engineering/setup-project/SKILL.md) - Establishes strict project tooling, with Rust and Python profiles.
-- [document-usage](skills/engineering/document-usage/SKILL.md) - Keeps quick-start READMEs, built-in help, and concise user guides aligned with the software.
+- [document-usage](skills/engineering/document-usage/SKILL.md) - Maintains task-focused READMEs, built-in help, and user guides, with details placed where readers need them.
 - [document-code](skills/engineering/document-code/SKILL.md) - Uses concise briefs and complete contracts, keeps type documentation self-contained, and reserves short bodies for exceptional caller-facing context.
 - [align-codebase](skills/engineering/align-codebase/SKILL.md) (manual) - Plans and applies a scoped, behavior-preserving alignment of an existing codebase with these conventions.
 - [implement-verified-steps](skills/engineering/implement-verified-steps/SKILL.md) (manual) - Checks and independently reviews each planned step, with targeted follow-up only for concrete unresolved risks.
 
 **Documentation**:
 
-- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone HTML explainers with embedded fonts and images, themes, full-width text, a sticky header with desktop sidebar and mobile contents drawer with smooth navigation and section tracking, diagrams, eight interactive chart types, and 72 SVG icons. A Python standard-library builder packages the document for offline use; the user chooses its content and structure.
+- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone HTML explainers with reusable content components, diagrams, eight interactive chart types, and 72 SVG icons. Includes themes, full-width text, and responsive contents navigation with section tracking. A Python standard-library builder embeds fonts, images, and other assets for offline use; the user chooses the content and structure.
 
 ## Usage
 

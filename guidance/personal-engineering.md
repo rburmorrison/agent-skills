@@ -18,7 +18,7 @@ If completing a change requires altering agreed behavior or scope, finish useful
 
 Keep the final handoff concise. Explain what changed, why, and the useful details of the approach in plain sentences. Summarize important tested behavior and verification results. When human attention would help, provide a small, prioritized table of clickable local file links with verified line numbers and the decision worth inspecting. It is acceptable to recommend no targeted human review.
 
-Use `document-usage` for quick-start READMEs, built-in help, and concise user guides. Use `document-code` for brief but complete interface contracts and selective implementation comments. Update affected documentation alongside code changes. Follow documentation lints even for otherwise internal items, and use Title Case for authored headings.
+Read and apply `document-usage` before editing READMEs, built-in help, or user guides, including during fixes and skill maintenance. Use `document-code` for brief but complete interface contracts and selective implementation comments. Update documentation when the change affects what readers need to know or do. Follow documentation lints even for otherwise internal items, and use Title Case for authored headings.
 
 These conventions are defaults. Follow explicit task-specific instructions that override them, retain unaffected defaults, and record the overrides in the plan so they survive model changes. An explicitly requested review cadence replaces the default cadence rather than adding another mandatory review.
 

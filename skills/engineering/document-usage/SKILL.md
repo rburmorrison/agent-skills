@@ -1,11 +1,11 @@
 ---
 name: document-usage
-description: Write or update quick-start READMEs, built-in help, and concise user guides when usage changes or documentation work is requested. Keep examples and captured CLI usage aligned with the software.
+description: Write or update quick-start READMEs, built-in help, and concise user guides. Use whenever editing these documents, including during fixes or skill maintenance, and when usage changes require documentation updates.
 ---
 
 # Document Usage
 
-Help readers reach a useful result quickly, then explore through the software's own help. Apply this skill to affected user documentation during implementation as well as explicit documentation tasks. Use `document-code` for source documentation and comments.
+Help readers reach a useful result quickly, then explore through the software's own help. Read and apply this skill before editing a README, built-in help, or user guide, even when documentation is incidental to a fix or skill update. Use `document-code` for source documentation and comments.
 
 ## Establish the Reader's Task
 
@@ -27,12 +27,16 @@ Put substantial workflows or concepts in separate documents only when readers ne
 
 ## Keep Documentation Current
 
-Update affected README examples, built-in help, guides, and captured output in the same change as the behavior they describe. Follow the actual effect of a change: an internal refactor may need no user-documentation edits. Preserve unrelated documentation and avoid creating a changelog entry or new guide unless the task or project requires it.
+Before editing, identify what the reader must understand or do differently and which existing statement or example becomes inaccurate. If the document remains accurate and sufficient, leave it unchanged; a bug fix or internal refinement does not by itself require a README edit.
+
+Revise the owning passage at its existing level of detail rather than appending a sentence about each fix. Keep README summaries focused on purpose, capabilities, and getting started. Put necessary operational details in the relevant help, interface contract, or task guide; omit details that do not help the reader act or decide. A requirement to keep documentation current is not a requirement to describe every change. Do not rewrite accurate prose merely to produce a documentation diff.
+
+Update affected examples, built-in help, guides, and captured output in the same change as the behavior they describe. Preserve unrelated documentation and avoid creating a changelog entry or new guide unless the task or project requires it.
 
 Keep ordinary commands understandable through their names and help. Improve help within the agreed scope when a changed option or workflow needs explanation; use `document-code` for affected source comments and public contracts. Reuse an existing documentation generation mechanism when present. Do not introduce a generator, dependency, or CI workflow merely to refresh a small output block.
 
 ## Verify the Reader's Path
 
-Run relevant examples and compare captured usage with the actual program where feasible, using temporary inputs and avoiding unintended external effects. Check links, prerequisites, and consistency between help, examples, and current behavior. Run existing documentation checks when applicable; accurately report unavailable execution or unverified output.
+Run relevant examples and compare captured usage with the actual program where feasible, using temporary inputs and avoiding unintended external effects. Check links, prerequisites, and consistency between help, examples, and current behavior. Review added prose for duplicated facts and change-history narration, and confirm each detail belongs at that document's level. Run existing documentation checks when applicable; accurately report unavailable execution or unverified output.
 
 Use the task's existing review cadence and concise handoff. Documentation does not require an additional review round. Report material verification limitations without turning the handoff into another user guide.
