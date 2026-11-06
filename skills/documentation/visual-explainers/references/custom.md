@@ -2,6 +2,16 @@
 
 Use a custom HTML/SVG/canvas fragment when the built-in components cannot explain the subject. Keep the standard document shell, spacing, typography, and tokens. No required framework. The builder embeds local files verbatim; custom code must be self-contained.
 
+Review the document's custom HTML, CSS, JavaScript, and referenced files as executable code, then build with an explicit operator opt-in:
+
+```bash
+python3 <skill-directory>/scripts/render.py document.json -o explanation.html --trusted-custom
+```
+
+Without that option, the builder rejects all `html` blocks and nonempty `scripts` or `styles`. A JSON field cannot grant this permission. Trusted custom content is not sanitized or sandboxed; only enable it for code you trust. File paths remain restricted to relative paths inside the JSON directory, including symlink targets. Copy outside assets into that directory rather than relaxing this boundary. The builder assumes that directory is not being modified concurrently by an untrusted process.
+
+Generated documents include a Content Security Policy that blocks runtime network resources, frames, objects, base URL changes, and form submissions. Default documents authorize only the generated bundled script; trusted custom mode also permits inline scripts and event handlers. The policy is defense in depth, not a sandbox for trusted custom code. `--check` checks resource references and IDs, not whether custom code is safe.
+
 Document fields:
 
 ```json

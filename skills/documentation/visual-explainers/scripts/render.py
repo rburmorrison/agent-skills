@@ -2,6 +2,7 @@
 """Build one independent HTML file. Python 3.8+, standard library only."""
 import argparse
 import base64
+import hashlib
 import html
 import json
 import math
@@ -95,8 +96,17 @@ def check_html(text):
     c=DependencyCheck();c.feed(text);return c.finish()
 
 class Renderer:
-    def __init__(self, doc, base):
-        self.doc=doc;self.base=base;self.counter=0;self.ids=set();self.used_charts=False
+    def __init__(self, doc, base, *, trusted_custom=False):
+        """Configure a document build with confined asset reads.
+
+        Args:
+            doc: Document configuration; it cannot enable trusted custom content.
+            base: Document directory containing all referenced asset files.
+            trusted_custom: Operator opt-in for verbatim HTML, CSS, and JavaScript.
+                These inputs must be reviewed as code; they are not sanitized.
+        """
+        self.doc=doc;self.base=Path(base).resolve();self.trusted_custom=trusted_custom
+        self.counter=0;self.ids=set();self.used_charts=False
     def uid(self, requested=None):
         self.counter+=1;ident=requested or f've-{self.counter}'
         if not re.fullmatch('[A-Za-z][A-Za-z0-9_-]*',ident):raise ValueError('IDs must start with a letter and contain letters, digits, _ or -: '+ident)
@@ -109,7 +119,26 @@ class Renderer:
         text=file.read_text(encoding='utf-8');text=re.sub(r'<svg\b', '<svg class="icon" aria-hidden="true"',text,count=1)
         text=re.sub(r'<title>.*?</title>','',text,flags=re.S)
         return text
-    def file(self, value): return (self.base/value).resolve()
+    def file(self, value):
+        """Resolve an existing document asset inside the document directory.
+
+        Args:
+            value: Relative asset path, with symlinks resolved before containment.
+
+        Returns:
+            Absolute path to a regular file within the document directory.
+
+        Raises:
+            ValueError: The path is absolute, escapes the directory, or is not a file.
+            OSError: The asset cannot be resolved or inspected.
+        """
+        path=Path(value)
+        if path.is_absolute():raise ValueError('Asset paths must be relative to the document directory: '+str(value))
+        path=(self.base/path).resolve(strict=True)
+        try:path.relative_to(self.base)
+        except ValueError:raise ValueError('Asset path escapes the document directory: '+str(value)) from None
+        if not path.is_file():raise ValueError('Asset path must be a regular file: '+str(value))
+        return path
     def data_uri(self,path):
         p=self.file(path);mime=mimetypes.guess_type(p.name)[0] or 'application/octet-stream'
         return 'data:'+mime+';base64,'+base64.b64encode(p.read_bytes()).decode()
@@ -168,6 +197,8 @@ class Renderer:
             ident=self.uid(b.get('id'));label='<label for="'+ident+'">'+inline(b['label'])+'</label>'
             if t=='range':
                 lo,hi,value=b.get('min',0),b.get('max',100),b.get('value',b.get('min',0))
+                numbers=(lo,hi,value,b.get('step',1))
+                if any(isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) for v in numbers):raise ValueError('Range values must be finite numbers')
                 if not lo<=value<=hi or b.get('step',1)<=0:raise ValueError('Range requires min <= value <= max and step > 0')
                 control=f'<input type="range" id="{ident}" min="{lo}" max="{hi}" step="{b.get("step",1)}" value="{value}"><output for="{ident}" id="{ident}-value">{value}</output>'
             else:
@@ -176,6 +207,7 @@ class Renderer:
         if t=='diagram':return self.diagram(b)
         if t=='chart':return self.chart(b)
         if t=='html':
+            if not self.trusted_custom:raise ValueError('Custom HTML requires --trusted-custom; review all custom content as code first')
             markup=self.file(b['file']).read_text(encoding='utf-8') if 'file' in b else b['html']
             # Inline local <img> resources in custom fragments too.
             def embed(m):
@@ -281,6 +313,7 @@ class Renderer:
         return '<figure class="chart visual" id="'+ident+'" data-chart="'+esc(json.dumps(c,separators=(',',':'),allow_nan=False))+'"><div class="visual-label"><strong>'+self.heading(b['title'])+'</strong></div><div class="chart-body"><div class="chart-legend" aria-label="Legend"></div><div class="chart-canvas"></div><div class="chart-tooltip" role="tooltip" hidden></div><p class="chart-status" aria-live="polite"></p>'+('<figcaption>'+inline(b['caption'])+'</figcaption>' if b.get('caption') else '')+'<details class="chart-data"><summary>View Data</summary><div class="table-wrap"></div></details></div></figure>'
     def render(self):
         d=self.doc;theme=d.get('theme','violet')
+        if not self.trusted_custom and (d.get('styles') or d.get('scripts')):raise ValueError('Custom styles and scripts require --trusted-custom; review all custom content as code first')
         if theme not in THEMES:raise ValueError('theme must be '+', '.join(THEMES))
         sections=d.get('sections',[])
         body='<section class="hero"><h1>'+self.heading(d['title'])+'</h1>'+('<p class="lead">'+inline(d['lead'])+'</p>' if d.get('lead') else '')+self.blocks(d.get('intro',[]))+'</section>'
@@ -300,7 +333,12 @@ class Renderer:
         for file in d.get('scripts',[]):js+='\n;(()=>{\n'+self.file(file).read_text(encoding='utf-8')+'\n})();\n'
         js=re.sub('</script',r'<\/script',js,flags=re.I)
         if re.search('</style',css,re.I):raise ValueError('Custom CSS may not contain </style')
+        # Only the bundled script may execute by default. Trusted custom mode
+        # permits inline code, but neither mode needs runtime network resources.
+        script_policy="'unsafe-inline'" if self.trusted_custom else "'sha256-"+base64.b64encode(hashlib.sha256(js.encode('utf-8')).digest()).decode()+"'"
+        policy="default-src 'none'; script-src "+script_policy+"; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"
         result='<!doctype html><html lang="'+esc(d.get('lang','en'))+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="'+esc(d.get('description',d.get('lead','')))+'"><title>'+esc(d['title'])+'</title><style>'+css+'</style></head><body data-theme="'+theme+'"><a class="skip" href="#main">Skip to Content</a><div class="progress" aria-hidden="true"></div><header><div class="header-start"><button id="toc-toggle" class="sidebar-toggle" type="button" aria-label="Hide Contents" title="Hide Contents" aria-controls="contents" aria-expanded="true">'+self.icon('contents')+'</button><span class="brand">'+esc(d.get('brand',d['title']))+'</span></div><div class="tools"><div class="theme-control"><button id="theme-toggle" class="header-icon-button" type="button" aria-label="Change Theme" title="Change Theme" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu">'+self.icon('theme')+'</button><div id="theme-menu" class="theme-menu" role="menu" aria-label="Color Theme" hidden>'+menu+'</div></div><button class="header-icon-button" data-print type="button" aria-label="Print" title="Print">'+self.icon('print')+'</button></div></header><div class="contents-backdrop" aria-hidden="true"></div><div class="layout"><div class="contents-slot"><aside id="contents" aria-labelledby="contents-title"><div class="contents-heading"><p id="contents-title">On This Page</p><button class="contents-close" type="button" aria-label="Close Contents">'+self.icon('close')+'</button></div><nav aria-label="Table of Contents"></nav></aside></div><main id="main">'+body+'</main></div><script>'+js+'</script><template id="font-licenses"><pre>'+esc('\n\n'.join(licenses))+'</pre></template></body></html>'
+        result=result.replace('<head>','<head><meta http-equiv="Content-Security-Policy" content="'+esc(policy)+'">',1)
         problems=check_html(result)
         if problems:raise ValueError('\n'.join(problems))
         return result
@@ -342,6 +380,7 @@ def main():
     parser.add_argument('input',type=Path,help='Document JSON, or standalone HTML when --check is used')
     parser.add_argument('-o','--output',type=Path)
     parser.add_argument('--check',action='store_true',help='Check HTML resources and IDs without building')
+    parser.add_argument('--trusted-custom',action='store_true',help='Allow reviewed custom HTML, CSS, and JavaScript; asset paths remain confined to the document directory')
     args=parser.parse_args()
     try:
         if args.check:
@@ -349,7 +388,7 @@ def main():
             if problems:raise ValueError('\n'.join(problems))
             print('PASS: one H1, unique IDs, no external asset dependencies. Inspect appearance and interactions in a browser too.');return
         if not args.output:parser.error('Building requires -o output.html')
-        doc=json.loads(args.input.read_text(encoding='utf-8'));result=Renderer(doc,args.input.resolve().parent).render()
+        doc=json.loads(args.input.read_text(encoding='utf-8'));result=Renderer(doc,args.input.resolve().parent,trusted_custom=args.trusted_custom).render()
         args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(result,encoding='utf-8')
         print(f'Built {args.output} ({len(result.encode()):,} bytes). Fonts, styles, scripts and media are embedded.')
     except (ValueError,KeyError,TypeError,OSError) as error:

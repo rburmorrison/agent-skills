@@ -4,7 +4,7 @@ Use JSON, not Python code. Strings inside `blocks` are paragraphs. All paths are
 
 ## Document
 
-Required: `title`. Optional: `brand` (short header name; defaults to title), `lead`, `description`, `theme` (`violet`, `slate`, `blue`, `night`), `lang` (default `en`), `intro` (blocks below the lead), `sections` (list of `{title, blocks, id?}`), `scripts` (local JS file paths), `styles` (local CSS file paths).
+Required: `title`. Optional: `brand` (short header name; defaults to title), `lead`, `description`, `theme` (`violet`, `slate`, `blue`, `night`), `lang` (default `en`), `intro` (blocks below the lead), `sections` (list of `{title, blocks, id?}`), `scripts` (local JS file paths), `styles` (local CSS file paths). All asset paths must be relative and remain within the JSON directory after resolving symlinks. `html` blocks and nonempty `scripts`/`styles` require the operator's `--trusted-custom` option; see [custom.md](custom.md).
 
 The shell creates H1. Sections create H2 and ToC entries. You choose all section names and ordering. Heading blocks create H3/H4; H3 joins the ToC except inside tabs. Component titles are labels, not extra sections. On mobile the header stays sticky and its contents icon opens a vertical drawer. Selecting a heading closes the drawer and scrolls smoothly to it below the header. The selected link stays highlighted during navigation, including near the end of the document. Manual scrolling resumes section tracking; reduced-motion preferences disable animation. No footer or source section is forced. Use paragraphs/links or a section when sources are useful.
 
