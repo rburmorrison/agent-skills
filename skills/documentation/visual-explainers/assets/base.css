@@ -63,4 +63,6 @@ html{color-scheme:light}body[data-theme="night"]{color-scheme:dark}.layout{max-w
 @container(min-width:1362px){.flow[data-count="7"] .flow-icon:empty{display:block}}
 @container(min-width:1564px){.flow[data-count="8"] .flow-icon:empty{display:block}}
 
+.disclosure-body .codebox pre{background:var(--paper);border-top:1px solid var(--line)}
+
 html{scrollbar-gutter:stable}

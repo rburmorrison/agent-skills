@@ -51,6 +51,7 @@ The shell supplies Violet, Slate, Blue, and Night themes; a sticky header, an an
 
 - State useful information directly. Omit decorative format badges, prototype labels, and commentary about how the document was generated, embedded, or made portable.
 - Use Title Case for headings. The builder capitalizes English heading initials and preserves internal capitalization; check acronyms and identifiers yourself. Use code formatting for commands, filenames, APIs, and commit hashes.
+- Keep inline formatting unnested: use backticks alone for inline code, without wrapping them in bold or emphasis. The renderer treats nested markup literally.
 - Use whitespace and hierarchy to separate sections. Let prose and headings fill the available content width. Keep the provided compact spacing; avoid horizontal rules between ordinary sections, oversized empty hero areas, or inflated margins.
 - Use components where they help comprehension. Do not add alerts, metrics, diagrams, interactive controls, checklists, or source sections just to demonstrate their availability. Match the user's requested content.
 - Every interactive example must visibly change a relevant result. Keep explanations, calculations, chart values, units, and controls consistent. Label simulated or illustrative data near its chart.
