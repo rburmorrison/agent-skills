@@ -10,7 +10,7 @@ The shell creates H1. Sections create H2 and ToC entries. You choose all section
 
 ## Inline Text
 
-Paragraphs, table cells, captions, labels, and list items accept `**bold**`, `*emphasis*`, backtick-delimited inline code, and `[label](https://url)`. Literal HTML is escaped. Inline formatting is deliberately simple and does not nest. Write multiline code in a code block. Use an `html` block for MathML, complex links, SVG, or other markup. Links can be `https:`, `http:`, `mailto:`, or fragment anchors.
+Paragraphs, table cells, captions, labels, and list items accept `**bold**`, `*emphasis*`, backtick-delimited inline code, and `[label](https://url)`. Literal HTML is escaped. Inline formatting is deliberately simple and does not nest. Write multiline code in a code block. Use an `equation` block for formulas and an `html` block for complex links, SVG, or other markup. Links can be `https:`, `http:`, `mailto:`, or fragment anchors.
 
 ## Writing and Layout
 
@@ -25,7 +25,21 @@ Paragraphs, table cells, captions, labels, and list items accept `**bold**`, `*e
 {"type":"timeline","items":[{"label":"Optional time or phase","title":"Event","text":"What happens."}]}
 ```
 
-`heading.level` is 3 or 4, default 3. `columns` accepts 1–3 lists of blocks and stacks when its container is narrow. `card.title` and `card.icon` are optional. Metrics are for meaningful figures, not invented decoration. The equation is styled text, not a TeX interpreter; Unicode operators are supported. For structured mathematical notation use offline native MathML through an HTML block.
+`heading.level` is 3 or 4, default 3. `columns` accepts 1–3 lists of blocks and stacks when its container is narrow. `card.title` and `card.icon` are optional. Metrics are for meaningful figures, not invented decoration.
+
+## Math Formulas
+
+Use `equation.text` for simple Unicode formulas. For typeset fractions, roots, scripts, sums, integrals, or matrices, supply `mathml` instead of `text` and a nonempty, plain-language `label`. Both forms accept an optional `caption` with inline formatting. MathML uses the browser's native math rendering, works offline, and needs no `--trusted-custom` option. TeX/LaTeX strings and inline math delimiters are not interpreted.
+
+```json
+{"type":"equation","mathml":"<math><mi>x</mi><mo>=</mo><mfrac><mrow><mo>−</mo><mi>b</mi><mo>±</mo><msqrt><mrow><msup><mi>b</mi><mn>2</mn></msup><mo>−</mo><mn>4</mn><mi>a</mi><mi>c</mi></mrow></msqrt></mrow><mrow><mn>2</mn><mi>a</mi></mrow></mfrac></math>","label":"x equals negative b plus or minus the square root of b squared minus four a c, all divided by two a","caption":"The quadratic formula."}
+```
+
+Supply one `<math>` root, with no namespace or `xmlns="http://www.w3.org/1998/Math/MathML"`; display mode is always block. Use Unicode symbols (`∑`, `∫`, `∞`, `≤`) or numeric references such as `&#x2211;`, rather than named entities such as `&sum;`. Text and attribute values are escaped on output. Unsupported markup is rejected, including HTML, links, event handlers, styles, declarations, comments, and processing instructions.
+
+Supported presentation elements: `mrow`, `mi`, `mn`, `mo`, `mtext`, `ms`, `mspace`, `mfrac`, `msqrt`, `mroot`, `msub`, `msup`, `msubsup`, `munder`, `mover`, `munderover`, `mmultiscripts`, `mprescripts`, `none`, `mtable`, `mtr`, `mtd`, `mstyle`, `mphantom`. Group multi-part numerators, denominators, and script operands in `mrow`. Use `munderover` for sum limits and `mtable`/`mtr`/`mtd` for matrices. Explicit `<mo>` parentheses work as matrix delimiters.
+
+Supported presentation attributes: `displaystyle`, `scriptlevel`, `mathvariant`, `stretchy`, `symmetric`, `largeop`, `movablelimits`, `fence`, `separator`, `form`, `accent`, `accentunder`, `columnalign`, `rowalign`, `columnspan`, `rowspan`. A root `display="block"` is also accepted. Keep nesting within 64 levels. The builder checks the vocabulary, not mathematical correctness or operand counts; verify the notation in the browser. See [MathML Core](https://www.w3.org/TR/mathml-core/) for element semantics.
 
 ## Information
 

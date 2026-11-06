@@ -38,7 +38,8 @@ Custom HTML, CSS, and JavaScript require `--trusted-custom`; see [custom.md](ref
 
 ## Components Available
 
-- **Writing:** paragraphs, nested headings, ordered/unordered lists, inline code, links, equations, timelines.
+- **Writing:** paragraphs, nested headings, ordered/unordered lists, inline code, links, timelines.
+- **Math:** equation blocks with Unicode text or native MathML for fractions, roots, scripts, sums, and matrices. See [components.md](references/components.md#math-formulas) for fields and supported notation; no custom HTML is needed.
 - **Layout:** columns, cards, metric groups, comparison layouts using columns or tables.
 - **Information:** striped tables with distinct headers; Note, Tip, Important, Warning, and Caution alerts; disclosures with tinted body containers; code blocks with copy controls.
 - **Images:** embedded local images, rounded corners, centered captions, click-to-enlarge viewer with fit/actual size and keyboard dismissal.

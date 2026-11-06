@@ -169,9 +169,11 @@ class TimelineBlock(TypedDict):
     items: list[TimelineItem]
 
 
-class EquationBlock(TextBlock, total=False):
-    """Equation text with optional accessible label and caption."""
+class EquationBlock(TypedDict, total=False):
+    """Exactly one of text or MathML; MathML requires a nonempty string label."""
 
+    text: object
+    mathml: str
     label: object
     caption: object
 

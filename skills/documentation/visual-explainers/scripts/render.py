@@ -23,6 +23,7 @@ from diagram_layout import (
     layout_graph,
     rounded_path,
 )
+from mathml import render_mathml
 
 if TYPE_CHECKING:
     import document_types as spec
@@ -608,12 +609,26 @@ class Renderer:
 
     def _equation_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.EquationBlock", values)
+        if ("text" in block) == ("mathml" in block):
+            raise ValueError("Equations need exactly one of text or mathml")
+        if "mathml" in block:
+            source = values["mathml"]
+            label = block.get("label")
+            if not isinstance(source, str) or not isinstance(label, str):
+                raise ValueError("MathML equations need string mathml and label fields")
+            content = render_mathml(source, label)
+        else:
+            text = block.get("text")
+            content = (
+                '<div aria-label="'
+                + esc(block.get("label", text))
+                + '">'
+                + inline(text)
+                + "</div>"
+            )
         return (
-            '<figure class="equation"><div aria-label="'
-            + esc(block.get("label", block["text"]))
-            + '">'
-            + inline(block["text"])
-            + "</div>"
+            '<figure class="equation">'
+            + content
             + (
                 "<figcaption>" + inline(block.get("caption")) + "</figcaption>"
                 if block.get("caption")
