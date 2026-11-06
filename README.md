@@ -51,3 +51,21 @@ npx skills add rburmorrison/agent-skills --global --skill visual-explainers
 ## Personal Guidance
 
 Add the contents of [personal-engineering.md](guidance/personal-engineering.md) to your global `AGENTS.md` or `CLAUDE.md`.
+
+## Development
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/),
+[Just](https://just.systems/man/en/), and Node.js, then run:
+
+```bash
+just setup
+just check
+```
+
+`just check` verifies Python formatting, Ruff lints, strict basedpyright types,
+Python behavior tests, and JavaScript navigation tests. Use `just format` to
+format Python files, or run `just lint`, `just typecheck`, and `just test`
+separately. `just --list` shows all recipes.
+
+The Python scripts remain standard-library-only and support Python 3.8+.
+Development tools are managed by uv and pinned in `uv.lock`.

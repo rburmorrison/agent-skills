@@ -1,0 +1,50 @@
+[project]
+name = "agent-skills"
+version = "0.1.0"
+requires-python = ">=3.8"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "basedpyright",
+    "ruff",
+]
+
+[tool.ruff]
+include = ["*.py", "*.pyi", "pyproject.toml"]
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+    "E4", "E7", "E9", "F", "W", "I", "UP", "B", "A", "C4",
+    "N", "YTT", "ASYNC", "EXE", "ISC", "INT", "FA", "PYI", "SLOT",
+    "SIM", "RET", "RUF", "C901", "BLE", "PGH", "ANN",
+    "ARG", "DTZ", "ICN", "LOG", "G", "PIE", "TID", "TCH",
+    "PTH", "FLY", "PERF", "FURB", "PLC", "PLE", "PLW", "RSE",
+    # Security checks, excluding the cryptographic-RNG rule: geometry tests
+    # intentionally use seeded pseudo-random graphs for repeatable coverage.
+    "S1", "S2", "S30", "S310", "S312", "S313", "S314", "S315",
+    "S316", "S317", "S318", "S319", "S32", "S5", "S7",
+    # Keep shell/injection checks; S603 cannot distinguish the CLI tests'
+    # argument lists from untrusted commands, even with shell=False.
+    "S601", "S602", "S604", "S605", "S606", "S607", "S608", "S609", "S610", "S611", "S612",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.basedpyright]
+include = ["skills/documentation/visual-explainers/scripts", "skills/documentation/visual-explainers/tests"]
+extraPaths = ["skills/documentation/visual-explainers/scripts"]
+pythonVersion = "3.8"
+typeCheckingMode = "strict"
+failOnWarnings = true
+reportAny = "error"
+reportExplicitAny = "error"
+reportIgnoreCommentWithoutRule = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportInvalidCast = "error"
+reportUnannotatedClassAttribute = "error"
+reportUnusedCallResult = "error"
+reportUnreachable = "error"
+reportImplicitStringConcatenation = "error"

@@ -1,0 +1,362 @@
+{
+  "title": "Characterization",
+  "lead": "Example",
+  "intro": [
+    "Intro"
+  ],
+  "sections": [
+    {
+      "title": "All blocks",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Hello **world** [link](https://example.com)"
+        },
+        {
+          "type": "heading",
+          "text": "a heading"
+        },
+        {
+          "type": "list",
+          "items": [
+            "One",
+            "Two"
+          ],
+          "ordered": true
+        },
+        {
+          "type": "alert",
+          "kind": "tip",
+          "text": "Useful"
+        },
+        {
+          "type": "code",
+          "language": "Python",
+          "text": "print(1)"
+        },
+        {
+          "type": "table",
+          "headers": [
+            "A",
+            "B"
+          ],
+          "rows": [
+            [
+              1,
+              2
+            ]
+          ],
+          "caption": "Data"
+        },
+        {
+          "type": "image",
+          "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NDAiIGhlaWdodD0iMjQwIiB2aWV3Qm94PSIwIDAgNjQwIDI0MCI+PHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIyNDAiIHJ4PSIxMiIgZmlsbD0iI2Y2ZjNmZiIvPjxwYXRoIGQ9Ik01NiAzOFYxOTZINTk0IiBmaWxsPSJub25lIiBzdHJva2U9IiM3NTZiODkiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik01NiAxNzJMMTg4IDEzNkwzMjAgMTUwTDQ1MiA4OEw1ODQgNTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzY4NDhhNiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48ZyBmaWxsPSIjNjg0OGE2Ij48Y2lyY2xlIGN4PSI1NiIgY3k9IjE3MiIgcj0iNiIvPjxjaXJjbGUgY3g9IjE4OCIgY3k9IjEzNiIgcj0iNiIvPjxjaXJjbGUgY3g9IjMyMCIgY3k9IjE1MCIgcj0iNiIvPjxjaXJjbGUgY3g9IjQ1MiIgY3k9Ijg4IiByPSI2Ii8+PGNpcmNsZSBjeD0iNTg0IiBjeT0iNTIiIHI9IjYiLz48L2c+PC9zdmc+",
+          "alt": "Example"
+        },
+        {
+          "type": "disclosure",
+          "title": "More",
+          "blocks": [
+            "Details"
+          ],
+          "open": true
+        },
+        {
+          "type": "columns",
+          "columns": [
+            [
+              "Left"
+            ],
+            [
+              "Right"
+            ]
+          ]
+        },
+        {
+          "type": "card",
+          "title": "Card",
+          "icon": "book",
+          "blocks": [
+            "Body"
+          ]
+        },
+        {
+          "type": "metrics",
+          "items": [
+            {
+              "value": 42,
+              "label": "Count",
+              "detail": "Things",
+              "icon": "book"
+            }
+          ]
+        },
+        {
+          "type": "tabs",
+          "tabs": [
+            {
+              "title": "One",
+              "blocks": [
+                "A"
+              ]
+            },
+            {
+              "title": "Two",
+              "blocks": [
+                "B"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "timeline",
+          "items": [
+            {
+              "label": "Now",
+              "title": "Event",
+              "text": "Happened"
+            }
+          ]
+        },
+        {
+          "type": "equation",
+          "text": "a + b",
+          "caption": "Sum"
+        },
+        {
+          "type": "range",
+          "label": "Amount",
+          "min": 0,
+          "max": 1,
+          "value": 0.5,
+          "step": 0.1
+        },
+        {
+          "type": "choice",
+          "label": "Pick",
+          "options": [
+            {
+              "value": "one",
+              "label": "One"
+            }
+          ],
+          "value": "one"
+        },
+        {
+          "type": "diagram",
+          "kind": "flow",
+          "nodes": [
+            {
+              "label": "Start",
+              "icon": "book",
+              "text": "Here"
+            },
+            {
+              "label": "End"
+            }
+          ]
+        },
+        {
+          "type": "diagram",
+          "kind": "graph",
+          "nodes": [
+            {
+              "id": "a",
+              "label": "Start"
+            },
+            {
+              "id": "b",
+              "label": "End"
+            }
+          ],
+          "edges": [
+            {
+              "from": "a",
+              "to": "b",
+              "label": "Continue"
+            }
+          ]
+        },
+        {
+          "type": "diagram",
+          "kind": "sequence",
+          "actors": [
+            "Client",
+            "Server"
+          ],
+          "messages": [
+            {
+              "from": 0,
+              "to": 1,
+              "label": "Request"
+            },
+            {
+              "from": 1,
+              "to": 1,
+              "label": "Work"
+            },
+            {
+              "from": 1,
+              "to": 0,
+              "label": "Response"
+            }
+          ]
+        },
+        {
+          "type": "chart",
+          "kind": "line",
+          "data": {
+            "categories": [
+              "A",
+              "B"
+            ],
+            "series": [
+              {
+                "name": "Count",
+                "values": [
+                  1,
+                  2
+                ]
+              }
+            ]
+          },
+          "title": "line",
+          "xLabel": "X",
+          "yLabel": "Y"
+        },
+        {
+          "type": "chart",
+          "kind": "area",
+          "data": {
+            "categories": [
+              "A",
+              "B"
+            ],
+            "series": [
+              {
+                "name": "Count",
+                "values": [
+                  1,
+                  2
+                ]
+              }
+            ]
+          },
+          "title": "area",
+          "xLabel": "X",
+          "yLabel": "Y"
+        },
+        {
+          "type": "chart",
+          "kind": "bar",
+          "data": {
+            "categories": [
+              "A",
+              "B"
+            ],
+            "values": [
+              1,
+              2
+            ]
+          },
+          "title": "bar",
+          "xLabel": "X",
+          "yLabel": "Y"
+        },
+        {
+          "type": "chart",
+          "kind": "donut",
+          "data": {
+            "categories": [
+              "A",
+              "B"
+            ],
+            "values": [
+              1,
+              2
+            ]
+          },
+          "title": "donut",
+          "xLabel": "X",
+          "yLabel": "Y"
+        },
+        {
+          "type": "chart",
+          "kind": "scatter",
+          "data": {
+            "points": [
+              {
+                "label": "A",
+                "x": 1,
+                "y": 2
+              }
+            ]
+          },
+          "title": "scatter",
+          "xLabel": "X",
+          "yLabel": "Y"
+        },
+        {
+          "type": "chart",
+          "kind": "histogram",
+          "data": {
+            "bins": [
+              {
+                "low": 0,
+                "high": 1,
+                "count": 2
+              },
+              {
+                "low": 1,
+                "high": 2,
+                "count": 1
+              }
+            ]
+          },
+          "title": "histogram",
+          "xLabel": "X",
+          "yLabel": "Y"
+        },
+        {
+          "type": "chart",
+          "kind": "heatmap",
+          "data": {
+            "rows": [
+              "A"
+            ],
+            "columns": [
+              "B"
+            ],
+            "values": [
+              [
+                1
+              ]
+            ]
+          },
+          "title": "heatmap",
+          "xLabel": "X",
+          "yLabel": "Y"
+        },
+        {
+          "type": "chart",
+          "kind": "box",
+          "data": {
+            "groups": [
+              {
+                "name": "A",
+                "min": 0,
+                "q1": 1,
+                "median": 2,
+                "q3": 3,
+                "max": 4
+              }
+            ]
+          },
+          "title": "box",
+          "xLabel": "X",
+          "yLabel": "Y"
+        }
+      ]
+    }
+  ]
+}
