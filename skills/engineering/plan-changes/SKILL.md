@@ -15,9 +15,11 @@ Use available project context before asking for information. Distinguish establi
 
 ## Resolve Decisions
 
-Ask one consequential question at a time. Explain its practical effect and offer a recommendation when useful. Wait for the answer before asking the next question or deciding dependent behavior. Allow follow-up discussion; there is no fixed question quota.
+Ask as many questions as necessary to reach agreement, one consequential question at a time. Explain the options, practical effects, and reason for your recommendation. Wait for the answer before asking the next question or deciding dependent behavior. Do not shorten the interview to meet a question quota, avoid bothering the user, or rush to a plan. Reuse explicit answers already given; silence, an unanswered recommendation, and general permission to implement are not agreement to a new consequential choice.
 
-Questions belong here when they change observable behavior, scope, public contracts, persistence, compatibility, or architectural commitments. Choose routine technical details using the requirements and project conventions. Describe consequential technical choices in the plan so the user can understand them before implementation.
+Questions belong here when they change observable behavior, scope, public contracts, persistence, compatibility, or architectural commitments. Include edge cases, failure policy, dependencies, and documentation additions when they affect those commitments. A choice being technical or recommended does not make it routine. Confirm new consequential choices with the user before encoding them as settled; do not first reveal them in a completed plan. Choose routine technical details using the requirements and project conventions, and explain material implementation choices in the plan.
+
+Keep a decision record: each consequential choice, its rationale, and the user answer or established requirement that supports it. Distinguish confirmed decisions, existing behavior to preserve, routine technical choices, and open questions. Audit the proposed happy path, failures, and edge cases for assumptions that could surprise the user. Resolve any consequential open question before declaring the plan ready.
 
 Establish the outcome and exclusions. Include necessary supporting changes and explain why they are needed. Keep optional improvements separate. Plan for plausible evolution supported by the requirements, without speculative frameworks or abstractions.
 
@@ -28,26 +30,32 @@ For new projects, use `setup-project` if available to select tooling and support
 Make the following explicit when relevant, without imposing empty sections on small tasks:
 
 - Agreed behavior, acceptance criteria, and exclusions.
-- Consequential decisions and their reasons, including answers from the conversation and task-specific overrides to the usual conventions or review cadence.
+- The decision record, including answers from the conversation and task-specific overrides to the usual conventions or review cadence.
 - Existing file paths and symbols to change; distinguish proposed new locations from existing ones.
-- Responsibilities, named domain types, interfaces, invariants, and data flow.
-- I/O ownership, validation, error propagation, and partial-failure behavior.
-- Existing interface documentation, built-in help, and user examples that may need accuracy updates, with relevant verification; distinguish user-requested additions.
-- Implementation sequence and dependencies between steps.
-- Meaningful behavior and failure cases to verify, plus runnable project check commands.
+- Responsibilities, exact boundary signatures or equivalent contracts, named domain types and fields, invariants, and data flow.
+- I/O ownership, precise validation rules, error categories and presentation, and partial-failure behavior. Include pseudocode where ordering or algorithm choices affect correctness.
+- A documentation change map, including an explicit statement when no usage-documentation edits are planned.
+- Implementation steps, each with affected paths and symbols, concrete changes, existing mechanisms to reuse, dependencies, and acceptance criteria.
+- Meaningful behavior and failure cases with inputs and expected outcomes, plus runnable project check commands.
+- A feasible user-workflow check: setup, actual application entry point, actions, expected visible results and state, and cleanup. Record known obstacles to execution.
+- The routine details left to implementation; do not leave consequential choices implicit.
 - Independent review coverage for non-trivial changes and any known verification limitations.
 
-When source documentation or caller-facing behavior changes, read the relevant documentation standards in `code-authoring` from the available skill locations without executing its authoring workflow. If unavailable, state the limitation and use the supplied requirements. Identify existing documentation, its core purpose, and the claims or examples that may become inaccurate. Plan a final documentation accuracy check, leaving accurate documentation unchanged. For affected interface documentation, keep member facts on members and distinguish type-wide guarantees from operation-specific guarantees. Specify ownership without drafting every comment. Documentation additions require the user's direction; do not add them to the plan solely because code changes. Surface project requirements that would need additions beyond the requested scope.
+When source documentation or caller-facing behavior changes, read the relevant documentation standards in `code-authoring` from the available skill locations without executing its authoring workflow. If unavailable, state the limitation and use the supplied requirements.
+
+For READMEs, guides, standalone reference material, built-in help, and user examples, name each planned edit's path and section or symbol, the existing claim made inaccurate by the change, the required correction, and its verification. Listing a file or saying "update documentation" is not sufficient scope. Leave accurate content unchanged. New documents, sections, examples, or previously undocumented facts require an explicit user request or confirmation, even inside an existing passage. You may ask whether the user wants a specific addition and explain why; wait for confirmation before including it. Record that authorization in the map. If none is needed or requested, state "No usage-documentation edits planned." The implementer must not edit usage documentation outside this map; a newly discovered need requires a confirmed plan amendment.
+
+Source implementation comments and API doc comments/docstrings remain allowed within the affected code under `code-authoring`; they do not require listing every comment in the map. Assign contract facts to their owning interfaces, keep member facts on members, and distinguish type-wide guarantees from operation-specific guarantees. This allowance does not authorize expanding guides or standalone documentation. Plan a final accuracy inspection, including related documentation outside the edit map; inspection does not authorize unplanned edits. Surface project requirements that would need additions beyond the requested scope.
 
 Make responsibility boundaries a concrete planning deliverable for non-trivial changes. For each substantial operation, specify:
 
 - Its proposed function or method name, module, and responsibility.
-- Its inputs and result, including the named types or fields that cross the boundary.
+- Its inputs and result, including exact named types and fields that cross the boundary, their meaning, and relevant constraints.
 - Whether it performs I/O, and which operation owns coordination, errors, and any transaction or snapshot.
 
 When substantial calculations would otherwise sit among I/O operations, plan a pure operation accepting ordinary values and a separate operation that coordinates external effects. Keep reads, calculations, and writes within the required consistency boundary. Choose these boundaries from the actual behavior and code; a step such as "implement storage logic" leaves that design unfinished.
 
-Before finishing, trace a representative request through the proposed operations. Check that each responsibility has an owner and the implementer can connect their contracts without choosing the major decomposition. Keep cohesive sequences together; do not prescribe every helper, create layers without a concrete purpose, or use function-length targets.
+Before finishing, trace a representative request and a meaningful failure through the proposed operations. Check that each responsibility has an owner and the implementer can connect their contracts without choosing the major decomposition. Connect acceptance criteria to implementation steps and verification scenarios. Check that paths and reused capabilities were inspected, consequential choices have agreement and reasons, the documentation map is bounded, and remaining discretion is only routine. Keep cohesive sequences together; do not prescribe every helper, create layers without a concrete purpose, or use function-length targets.
 
 When error categories are part of the contract, identify relevant parser or adapter failure families as well as domain-validation failures; inspect the boundary implementation when needed.
 
@@ -61,4 +69,4 @@ Use the chat for the plan unless the user or project asks for a saved artifact. 
 
 Once planning is complete and implementation is authorized, carry forward the plan and decisions; do not restart the interview after a model switch. Use `code-authoring` if available.
 
-The implementation fallback is fixed: handle local obstacles autonomously; if completion requires changing an agreed decision, finish useful independent work and clearly report the blocker and incomplete work at the end. Known unresolved behavioral decisions must be settled before starting, rather than deferred to that fallback.
+Handle routine local obstacles autonomously. If implementation reveals a missing consequential choice or requires changing an agreed decision or documentation scope, explain it and ask the user immediately. Pause dependent work, continue useful independent work, and update the plan with the answer and rationale before resuming. Do not silently substitute behavior or postpone the question until handoff. Known unresolved behavioral decisions must be settled before starting. If no answer or required capability is available, keep affected work explicitly incomplete.

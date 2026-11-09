@@ -33,6 +33,6 @@ Give dependencies, source files, and modules homes justified by the actual proje
 
 Run formatting checks, linting, type checks where applicable, and relevant tests with the configured project tools. Check the actual configuration is discovered and covers the intended production and test code. Adapt feature/platform coverage to supported combinations.
 
-Make the agreed verification commands easy to run through existing project or CI mechanisms. When adding CI, use the same tool versions and commands exercised locally. Keep usage documentation concise, with detailed guidance only where it is useful.
+Make the agreed verification commands easy to run through existing project or CI mechanisms. When adding CI, use the same tool versions and commands exercised locally. Apply `code-authoring`'s documentation boundary: usage-documentation edits must be planned accuracy corrections or explicitly requested additions; setup alone does not authorize new guides or facts.
 
 Report what was configured and verified, plus material limitations. If a required tool or capability is unavailable, do not silently weaken the profile; finish independent setup work and clearly report the roadblock. Use the implementation and independent-review workflow for non-trivial setup changes when those skills are available.

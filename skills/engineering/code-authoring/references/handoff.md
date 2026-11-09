@@ -14,7 +14,7 @@ Replace the illustrative cells with actual locations and decisions. Link to loca
 
 It is acceptable to say that no targeted human review is recommended when the change is routine and the evidence supports that judgment. Omit the table in that case. Do not claim all checks or independent review passed unless they actually ran and their results support the claim.
 
-Summarize the important behavioral commitments established by tests, the relevant checks run, and material verification limitations. Group related cases; avoid a test-function inventory. Mention significant independent review findings and their resolution when useful. Always surface unresolved findings.
+Summarize the important behavioral commitments established by tests, the actual user workflow exercised and its observed results, and material verification limitations. Distinguish tests from application execution; if the workflow could not run, say why and what remains unverified. Group related cases; avoid a test-function inventory. State whether planned usage-documentation edits were made or no edits were needed, and surface any unplanned need awaiting confirmation. Mention significant independent review findings and their resolution when useful. Always surface unresolved findings.
 
 If blocked, clearly state that the task is incomplete, what independent work was finished, what remains blocked, and what decision or capability is needed. A passing subset of tests does not make blocked acceptance criteria complete.
 
