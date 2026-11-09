@@ -5,7 +5,7 @@ description: Implement an agreed plan through distinct steps with checks and one
 
 # Implement Verified Steps
 
-Use only when explicitly invoked or when the user explicitly requests this workflow. It is available for any model; do not infer model capability or change model selection. This workflow replaces the usual review cadence for the task. Reuse `plan-changes`, `implement-changes`, and `review-changes` for their shared policies rather than adding a separate coding standard. Disclose unavailable supporting skills or reviewer capability.
+Use only when explicitly invoked or when the user explicitly requests this workflow. It is available for any model; do not infer model capability or change model selection. This workflow replaces the usual review cadence for the task. Reuse `plan-changes`, `code-authoring`, and `review-changes` for their shared policies rather than adding a separate coding standard. Disclose unavailable supporting skills or reviewer capability.
 
 ## Set the Checkpoints before Implementation
 
@@ -17,7 +17,7 @@ Record the requested review cadence and other overrides in the plan. Keep a comp
 
 ## Complete One Step at a Time
 
-1. Implement the current step using `implement-changes`, within the agreed scope.
+1. Implement the current step using `code-authoring`, within the agreed scope.
 2. Run its relevant checks. Confirm that tests exercise the claimed behavior and failure boundary; an earlier failure must not masquerade as proof of a later error path.
 3. Obtain one independent review of the step using `review-changes`. Start the reviewer with fresh context (`fork_turns="none"` where supported). Supply the overall plan, current step and its starting/reviewed state, actual changes including new files, relevant surrounding contracts, and check results. Mark planned future work so it is not mistaken for a current defect. Use the task's reviewer model or normal inheritance; do not silently upgrade it.
 4. Assess findings, fix validated issues within scope, and rerun affected checks. Resolve optional suggestions against the agreed requirements rather than accumulating cleanup work.

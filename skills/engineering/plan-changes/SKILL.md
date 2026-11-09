@@ -32,12 +32,12 @@ Make the following explicit when relevant, without imposing empty sections on sm
 - Existing file paths and symbols to change; distinguish proposed new locations from existing ones.
 - Responsibilities, named domain types, interfaces, invariants, and data flow.
 - I/O ownership, validation, error propagation, and partial-failure behavior.
-- Affected interface documentation, built-in help, and user examples, with relevant verification.
+- Existing interface documentation, built-in help, and user examples that may need accuracy updates, with relevant verification; distinguish user-requested additions.
 - Implementation sequence and dependencies between steps.
 - Meaningful behavior and failure cases to verify, plus runnable project check commands.
 - Independent review coverage for non-trivial changes and any known verification limitations.
 
-When source documentation or caller-facing behavior changes, read `document-code` and, for affected user workflows, `document-usage` from the available skill locations. If a supporting skill is unavailable, state the limitation and use the supplied requirements. For affected interfaces or cohesive groups, identify documentation targets and essential contracts, keeping member facts on members and distinguishing type-wide guarantees from operation-specific guarantees. Specify ownership without drafting every comment or expanding the documentation scope.
+When source documentation or caller-facing behavior changes, read the relevant documentation standards in `code-authoring` from the available skill locations without executing its authoring workflow. If unavailable, state the limitation and use the supplied requirements. Identify existing documentation, its core purpose, and the claims or examples that may become inaccurate. Plan a final documentation accuracy check, leaving accurate documentation unchanged. For affected interface documentation, keep member facts on members and distinguish type-wide guarantees from operation-specific guarantees. Specify ownership without drafting every comment. Documentation additions require the user's direction; do not add them to the plan solely because code changes. Surface project requirements that would need additions beyond the requested scope.
 
 Make responsibility boundaries a concrete planning deliverable for non-trivial changes. For each substantial operation, specify:
 
@@ -59,6 +59,6 @@ Use the chat for the plan unless the user or project asks for a saved artifact. 
 
 ## Transition
 
-Once planning is complete and implementation is authorized, carry forward the plan and decisions; do not restart the interview after a model switch. Use `implement-changes` if available.
+Once planning is complete and implementation is authorized, carry forward the plan and decisions; do not restart the interview after a model switch. Use `code-authoring` if available.
 
 The implementation fallback is fixed: handle local obstacles autonomously; if completion requires changing an agreed decision, finish useful independent work and clearly report the blocker and incomplete work at the end. Known unresolved behavioral decisions must be settled before starting, rather than deferred to that fallback.

@@ -79,6 +79,79 @@ def handle_event(event: FileEvent, index: SearchIndex) -> None:
 
 The arms form one unit; indentation provides the structure. Use ordinary conditionals for straightforward predicates.
 
+## Implementation Comments
+
+### Top of a Block
+
+A comment can immediately follow the opening of its enclosing block. Explain the reason for otherwise surprising behavior:
+
+```python
+if cache_entry is not None:
+    # Expired entries remain available while a refresh is in progress.
+    if refresh_pending or cache_entry.expires_at > now:
+        return cache_entry.value
+```
+
+### Within a Block
+
+After preceding code, leave a blank line above the comment and keep it adjacent to the code it explains:
+
+```python
+records = parse_records(source)
+
+# Preserve input order because later entries depend on earlier ones.
+for record in records:
+    apply_record(record)
+```
+
+### Longer Explanations
+
+Use consecutive single-line comments as one group, with a blank line above the group. Do not use a block comment or a standalone string for an implementation explanation:
+
+```rust
+let boundary = buffer.len() - overlap;
+
+// Retain the overlapping suffix because a delimiter may span two chunks.
+// The next read will prepend these bytes before scanning again.
+buffer.drain(..boundary);
+```
+
+This fragment assumes `overlap` is no greater than the buffer length and that the surrounding reader scans the retained bytes with the next chunk.
+
+### API Documentation Syntax
+
+Keep native documentation syntax for API contracts. For example, Rust uses `///` for the function's caller-facing brief and `//` for the implementation rationale:
+
+```rust
+/// Return whether the entry is unexpired at `now` or a refresh is in progress.
+fn can_serve(entry: &CacheEntry, now: Instant, refresh_pending: bool) -> bool {
+    // Expired entries remain available while a refresh is in progress.
+    refresh_pending || entry.expires_at > now
+}
+```
+
+Python API docstrings likewise retain their normal triple-quoted syntax. The single-line implementation-comment rule does not replace API documentation formats; see the [Python](documentation-python.md) and [Rust](documentation-rust.md) references for their contract requirements.
+
+### Keeping Existing Comments Accurate
+
+Suppose a change adds forced refreshes, leaving this existing comment inaccurate:
+
+```python
+# Refresh only after the cached entry expires.
+if force_refresh or cache_entry.expires_at <= now:
+    refresh_cache()
+```
+
+Update the comment to reflect the changed condition and preserve useful intent:
+
+```python
+# Honor forced refreshes even when cached data has not expired.
+if force_refresh or cache_entry.expires_at <= now:
+    refresh_cache()
+```
+
+Check existing comments in touched logic even when their lines are absent from the code diff. Leave an accurate explanation unchanged; remove a stale comment if the code already conveys its meaning and no useful rationale remains.
+
 ## Responsibilities and I/O
 
 A catalog import with actual parsing, domain rules, and storage responsibilities can use modules such as:

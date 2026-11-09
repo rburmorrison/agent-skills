@@ -7,7 +7,7 @@ description: Align an existing codebase with the user's engineering conventions 
 
 Use this workflow only when the user explicitly invokes it or requests codebase alignment. It is not an automatic cleanup phase of ordinary feature or bug-fix work. Keep the work language-agnostic and use the project's supported language versions and conventions.
 
-Use `plan-changes` and `implement-changes` for the shared planning, coding, testing, review, and handoff policies. Read their instructions when entering those phases; do not maintain a second set of coding rules here. If supporting guidance is unavailable, disclose it and proceed only where the supplied requirements and project guidance are sufficient.
+Use `plan-changes` and `code-authoring` for the shared planning, coding, testing, review, and handoff policies. Read their instructions when entering those phases; do not maintain a second set of coding rules here. If supporting guidance is unavailable, disclose it and proceed only where the supplied requirements and project guidance are sufficient.
 
 ## Assess and Plan
 
@@ -27,7 +27,7 @@ Use existing behavior tests and add focused characterization only where a change
 
 Complete planning before edits. Respect planning-only requests. When implementation is already authorized and consequential decisions are settled, proceed without adding another approval checkpoint.
 
-Use `implement-changes` for execution and review. If the user also explicitly requests `implement-verified-steps`, follow that cadence instead of stacking two review workflows. Do not activate that manual workflow merely because the refactor is large.
+Use `code-authoring` for execution and review. If the user also explicitly requests `implement-verified-steps`, follow that cadence instead of stacking two review workflows. Do not activate that manual workflow merely because the refactor is large.
 
 Keep changes tied to the agreed improvements. Preserve compatibility through existing interfaces or a small adapter when needed; avoid gratuitous abstraction or splitting. Compare verification results with the baseline and resolve introduced regressions.
 

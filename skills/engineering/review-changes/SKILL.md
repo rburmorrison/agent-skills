@@ -17,9 +17,11 @@ For a targeted follow-up, review the stated unresolved risk, the fix, and paths 
 
 ## Assess the Change
 
-Before assessing source documentation, read the `document-code` skill. Before assessing README, help, or user-guide changes, read `document-usage`. Use the host's available skill locations rather than assuming sibling directories. If a required skill is unavailable, report that coverage limitation and use the supplied documentation requirements. Apply the guidance within the current review.
+Read the relevant code and documentation standards in `code-authoring` when assessing the change, using the host's available skill locations rather than assuming sibling directories. Apply those standards within this read-only review without executing its authoring workflow or starting another reviewer. If unavailable, report that coverage limitation and use the supplied requirements.
 
-Apply `document-code` to each affected source documentation block, checking contract accuracy, completeness, and unnecessary explanation. When recommending shortening, identify the facts to preserve and their destinations. Retain concise bodies that meet the skill's exception criteria. Report actionable findings and material coverage limitations.
+Check affected source documentation for contract accuracy, completeness within the authorized documentation scope, and unnecessary explanation. When recommending shortening, identify the facts to preserve and their destinations. Retain concise bodies that meet the authoring standards' exception criteria. Inspect existing documentation related to changed behavior even when it is absent from the diff; identify stale claims or examples at the document's existing level of detail. Leave accurate documentation unchanged and do not require additions the user has not requested. Report project requirements that would need such additions as a scope conflict. Report actionable findings and material coverage limitations.
+
+For each automatic documentation edit, check which existing statement or example the code change made inaccurate and whether the edit only corrects it. Flag unrequested new facts even when inserted into an existing paragraph or taken from implementation requirements. Apply the separate allowance for useful implementation comments from `code-authoring`.
 
 - Does it implement the agreed behavior, including errors, edge cases, and partial failures?
 - Are public contracts, domain invariants, validation, and data ownership preserved?
@@ -33,6 +35,16 @@ Apply `document-code` to each affected source documentation block, checking cont
 - Do affected interface contracts, help, and usage examples match the implemented behavior and documentation lints? Check completeness and unnecessary prose without expanding the review into unrelated documentation.
 
 Apply lighter style expectations to tests. Do not report an allowed test failure shortcut as a production-style violation. Distinguish a concrete readability problem from personal taste; identify the cost or contract at stake.
+
+## Separate Behavior From Instruction Compliance
+
+Perform two distinct assessments of the completed change. First check behavior, contracts, and tests. Then check compliance with the agreed scope and the concrete instructions in `code-authoring` and project guidance. Passing tests and correct behavior do not excuse an instruction violation. A specific violation of an explicit instruction is an actionable finding, even when it does not change runtime behavior; distinguish it from personal preference.
+
+For documentation, compare added and rewritten factual claims with the original text. Identify the existing statement made inaccurate by the implementation and whether each new claim is needed to correct it. Flag a claim that merely adds an accurate but previously undocumented fact unless the user requested the addition. A code requirement is not permission to expand documentation. Point to the extra clause and recommend removing only that clause while keeping necessary corrections. Retain the separate allowance for useful implementation comments.
+
+For implementation comments, apply the actual syntax and spacing requirements to each touched group. Check the line before the group's first comment, not just lines within the group. Verify ordinary single-line syntax and the required blank line unless the group starts its enclosing block. Keep API documentation syntax separate. Formatting tools passing does not establish these checks passed.
+
+Check existing documentation related to changed behavior even when it is absent from the diff. Do not let the compliance check become an excuse to leave an already documented claim inaccurate.
 
 ## Report Findings
 
