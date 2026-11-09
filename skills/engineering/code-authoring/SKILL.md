@@ -5,17 +5,21 @@ description: Write or modify code, tests, interface documentation, READMEs, help
 
 # Code Authoring
 
-Use for new code, features, fixes, refactors, and source or usage documentation edits. For planning or review tasks, apply the relevant standards without executing the authoring workflow. Code changes allow useful inline implementation comments and source API doc comments/docstrings for affected code. READMEs, guides, standalone reference material, built-in help, and user examples follow the stricter planned-edit boundary below.
-
-Edit usage documentation only where the agreed plan names the location and specific accuracy correction or user-requested addition. An omitted documentation map is not permission to choose edits; if no usage-documentation edits are planned, leave it untouched. A direct, explicit documentation request supplies scope and may use a brief plan. Adding a previously undocumented fact to an existing passage is still an addition, even if accurate, relevant, or mentioned in the code requirements. New documentation or facts require an explicit user request or confirmation recorded in the plan. Do not infer that permission from a code request, general plan approval, or your judgment that more documentation would help.
+Use for new code, features, fixes, refactors, and source or usage documentation edits. For planning or review tasks, apply the relevant standards without executing the authoring workflow.
 
 Use the agreed plan and decisions from the conversation. If consequential behavior or scope remains unresolved, complete planning with the user one question at a time before editing; use `plan-changes` if available. A small unambiguous task needs only proportionate planning.
+
+## Documentation Scope
+
+Code changes allow useful inline implementation comments and source API doc comments/docstrings for affected code without listing each in the plan. Usage documentation—READMEs, guides, standalone reference material, built-in help, and user examples—requires a bounded documentation map: exact location, existing inaccurate claim and correction or explicitly requested addition, and verification. Correct claims at their existing level of detail; leave accurate content unchanged. An omitted map permits no usage-documentation edits. A direct, explicit documentation request supplies scope and may use a brief plan.
+
+New documents, sections, examples, or previously undocumented facts require an explicit user request or confirmation recorded in the plan, even inside an existing passage. Do not infer permission from code requirements, general plan approval, or your judgment that an addition would help. An accuracy inspection, reviewer finding, or documentation lint does not expand scope. For an unplanned edit, leave the material unchanged and use the immediate-question procedure under Roadblocks and Handoff.
 
 ## Execute Within Scope
 
 Choose only routine local implementation details within the plan's remaining discretion, preserving agreed behavior, public contracts, architectural boundaries, and scope. Do not invent missing validation rules, error policies, compatibility decisions, or architecture and call them implementation details. Follow the plan's contracts and rationale; when a consequential gap or conflict appears, use the immediate-question policy below. Necessary supporting changes must serve the requested outcome. Keep optional cleanup, new features, dependency upgrades, and reorganizations outside the change unless planned.
 
-Concentrate filesystem, network, database, clock, and environment access at explicit boundaries where applicable. Pass ordinary values into core transformations and decisions. Use the project's existing boundary mechanisms; introduce abstractions only when they make a concrete responsibility or dependency easier to manage.
+Concentrate filesystem, network, database, clock, and environment access at explicit boundaries where applicable. Separate substantial domain calculations from orchestration, passing ordinary values into core transformations and decisions while preserving transaction and snapshot boundaries. Use the project's existing mechanisms; introduce abstractions only for a concrete responsibility or dependency.
 
 Manage dependencies through the project's package manager. Use actual package information and supported-version constraints; do not guess versions or hand-edit dependency entries as a shortcut. Respect existing workspace dependencies and lockfile policy. If the needed tool is unavailable, apply the blocker policy instead of silently bypassing it.
 
@@ -25,7 +29,6 @@ Manage dependencies through the project's package manager. Use actual package in
 - Prefer named records, fields, and explicit variants for domain values crossing boundaries. Local, immediately unpacked tuples remain useful. Add runtime validation at external boundaries when required; do not add a validation dependency merely to name internal fields.
 - Group statements that perform one conceptual step. Separate changes of purpose with whitespace. Compact match arms generally form one unit and need no extra blank lines.
 - Extract coherent operations with meaningful names. Keep a simple sequence together when splitting it would add navigation without improving comprehension.
-- When substantial domain calculations sit among I/O operations, separate the calculation from the orchestration. Preserve transaction and snapshot boundaries while doing so.
 - Organize modules by responsibility and reasons to change. Keep types near the code that owns their meaning. Treat size and complexity as inspection signals rather than incentives to create trivial files or helpers.
 - Use idioms supported by the declared language version. Pattern matching suits meaningful variants and structured alternatives; ordinary predicates can remain conditionals.
 - Keep affected interface documentation and source comments accurate using the documentation standards below.
@@ -41,17 +44,17 @@ Add implementation comments only when they explain something the code does not m
 - Put a blank line above each comment group unless it is the first content at the top of its enclosing code block. Keep the comment adjacent to the code it explains.
 - Keep API documentation syntax separate: native docstrings and documentation comments follow the interface documentation standards below, not these implementation-comment formatting rules.
 
-When modifying code, inspect its existing implementation comments even when the comment lines themselves are unchanged. Check that they still describe the logic, assumptions, and rationale accurately. Correct or remove stale comments after checking current behavior, preserve useful rationale when shortening them, and leave accurate comments unchanged. Include these comments in the final documentation accuracy check.
+When correcting or shortening existing comments, preserve useful rationale. Include unchanged comments in the final documentation accuracy check.
 
 See [the implementation comment examples](references/code-examples.md#implementation-comments) when choosing comment placement or syntax, or updating a stale explanation.
 
 ## Document Interfaces and Decisions
 
-Apply these standards to source API doc comments/docstrings for affected code and to standalone interface documentation within the planned documentation scope. Useful source contracts may be added or updated as part of implementation; do not use this allowance to expand READMEs, guides, or other standalone material. Inspect the affected code, callers, existing documentation, and tooling before promising a contract.
+Apply these standards to source API doc comments/docstrings and authorized standalone interface documentation. Inspect the affected code, callers, existing documentation, and tooling before promising a contract.
 
 Interfaces intended for other components, including within the project, are the boundary for caller-facing contracts. Include types and relevant members, not just functions. Visibility keywords, underscores, and module names are evidence of intent rather than the sole definition of that boundary. Truly internal implementation details usually need no documentation comment.
 
-- Within the authorized documentation scope, use a concise brief and complete applicable contract sections in the project's native documentation format. For usage documentation, these standards do not authorize adding previously undocumented facts. Omit inapplicable sections and boilerplate; do not restate type annotations without explaining meaning.
+- Use a concise brief and complete applicable contract sections in the project's native documentation format. Omit inapplicable sections and boilerplate; do not restate type annotations without explaining meaning.
 - Keep free-form bodies exceptional: use a short body only for a caller-facing concept or interaction that must be understood together and cannot be explained clearly in the brief, members, or contract sections. Importance or non-obviousness alone does not justify a body.
 - Assign facts to their owning interfaces. Put input and result semantics in the brief or applicable contract sections, failures in the error section, and member facts on members. Remove duplication rather than moving it under Notes or Details or overloading the brief.
 - Keep type documentation self-contained: describe intrinsic meaning, members, enforced invariants, and obligations for correct use. Avoid narrating external parsers, factories, or consumers. Put an operation's behavior and guarantees on that operation; public construction or mutation may bypass validation, so do not promise that every instance is validated when only one operation guarantees it.
@@ -62,19 +65,19 @@ Read [Python documentation](references/documentation-python.md) or [Rust documen
 
 Private doc comments are useful only for otherwise unclear contracts or constraints. Documentation-only work does not authorize restructuring code or changing behavior to fit a comment.
 
-Follow project documentation lints, including for otherwise internal items. Source doc comments required for affected code are within the allowance above. Do not weaken checks, change visibility, or rename items to evade them. If a check requires usage-documentation additions beyond the agreed scope, ask for the required plan amendment rather than silently adding documentation or suppressing the check.
+Follow project documentation lints, including for otherwise internal items, within Documentation Scope. Do not weaken checks, change visibility, or rename items to evade them.
 
 ## Write Usage Documentation Within Scope
 
 Before editing a README, built-in help, or user guide, identify its audience, core purpose, and the task it helps the reader complete. Inspect the relevant entry points, supported installation method, examples, and actual help. Preserve prerequisites, consequential limitations, compatibility information, and applicable project conventions.
 
-Match each edit to the plan's documentation map: exact location, existing inaccurate claim and correction, or explicitly requested addition, plus verification. Correct only that claim at the existing level of detail. If the needed edit is absent from the map, leave the document unchanged and ask the user to confirm an amendment. A final accuracy check or reviewer finding does not bypass this boundary.
+Match each edit to the agreed documentation map before writing.
 
-Keep a README focused on its purpose, necessary setup, and a representative path to a useful result. Revise the owning passage at its existing level of detail. Keep prose concise and direct, with Title Case for authored headings. Preserve accurate content; avoid redundant feature inventories, implementation narration, and change-history details. Do not impose a fixed section template.
+Keep a README focused on its purpose, necessary setup, and a representative path to a useful result. Revise the owning passage with concise, direct prose and Title Case for authored headings. Avoid redundant feature inventories, implementation narration, and change-history details. Do not impose a fixed section template.
 
 Keep existing examples runnable from their stated starting conditions, with required inputs and enough observable output to recognize success. Capture help from the actual documented command and version, identify the command, and preserve the captured text verbatim. Do not reconstruct help, silently edit it, apply Title Case inside it, or present a shortened block as complete. Use an identified subcommand's help or a link when full help would overwhelm the document.
 
-Use existing help and references for discovery. New sections, examples, guides, or expanded explanations require the user's request. When additions are requested, put substantial workflows or concepts in separate documents only when readers need them, link from the relevant starting point, and avoid duplicating help or API reference material. Reuse existing documentation-generation mechanisms; do not introduce tooling merely to refresh a small output block.
+Use existing help and references for discovery. For authorized additions, put substantial workflows or concepts in separate documents only when readers need them, link from the relevant starting point, and avoid duplicating help or API reference material. Reuse existing documentation-generation mechanisms; do not introduce tooling merely to refresh a small output block.
 
 ## Verify Behavior
 
@@ -104,10 +107,9 @@ If reviewer capability is unavailable, perform a distinct self-review and disclo
 
 At the end of every code change, after implementation and review fixes and before handoff, explicitly check whether existing documentation needs updating:
 
-1. Identify the existing documentation related to the changed behavior: interface contracts, inline implementation comments in touched code, READMEs, built-in help, guides, and examples. Inspect the relevant content even if no documentation file or comment line was edited during implementation. Check existing comments against the current logic, assumptions, and rationale alongside the rest of the documentation.
-2. Identify each document's core point, audience, and level of detail. For usage documentation, identify the existing claim, instruction, or example made inaccurate and match any correction to the plan's documentation map. If an unplanned correction or addition is needed, leave it unchanged and immediately ask for a plan amendment; continue independent work while awaiting the answer. Inspection itself does not authorize an edit.
-3. Correct source comments and doc comments within the affected code as needed. For usage documentation, apply only planned accuracy corrections and explicitly requested additions. Leave accurate content unchanged. If related documentation does not exist, this check does not authorize creating it.
-4. Review the usage-documentation diff for unplanned edits and new facts inserted alongside valid corrections, including facts taken from implementation requirements. Remove unauthorized additions while preserving planned corrections and the separate source-comment allowance. Verify permitted edits with the applicable documentation checks above. Keep them within the task's review cadence; do not add a documentation-only review round. Repeat the affected accuracy check if later code changes invalidate its result.
+1. Discover existing documentation related to the changed behavior in the repository; the plan's file list and edit map are not an exhaustive inspection list. Include interface contracts, inline implementation comments in touched code, READMEs, built-in help, guides, and examples. Inspect relevant content even if its file or comment lines were unchanged. Check existing comments against the current logic, assumptions, and rationale.
+2. Identify each document's core point, audience, and level of detail. Match needed corrections to Documentation Scope and the plan's map; ask immediately about unplanned usage-documentation needs. Correct or remove stale source comments within affected code.
+3. Audit the usage-documentation diff for unplanned edits and new facts inserted alongside valid corrections, including facts taken from implementation requirements. Remove unauthorized additions while preserving planned corrections. Verify permitted edits with the applicable documentation checks above, within the task's review cadence; do not add a documentation-only review round. Repeat the affected accuracy check if later code changes invalidate its result.
 
 Briefly state in the handoff whether planned documentation was updated, no update was needed, or an unplanned need remains awaiting a decision. Report unmet project requirements without expanding scope.
 

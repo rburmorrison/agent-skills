@@ -15,7 +15,7 @@ Use available project context before asking for information. Distinguish establi
 
 ## Resolve Decisions
 
-Ask as many questions as necessary to reach agreement, one consequential question at a time. Explain the options, practical effects, and reason for your recommendation. Wait for the answer before asking the next question or deciding dependent behavior. Do not shorten the interview to meet a question quota, avoid bothering the user, or rush to a plan. Reuse explicit answers already given; silence, an unanswered recommendation, and general permission to implement are not agreement to a new consequential choice.
+Ask as many questions as necessary to reach agreement, one consequential question at a time. Do not bundle independent choices into a single confirmation; a shared topic does not make them one decision. Explain the options, practical effects, and reason for your recommendation. Wait for the answer before asking the next question or deciding dependent behavior. Do not shorten the interview to meet a question quota, avoid bothering the user, or rush to a plan. Reuse explicit answers already given; silence, an unanswered recommendation, and general permission to implement are not agreement to a new consequential choice.
 
 Questions belong here when they change observable behavior, scope, public contracts, persistence, compatibility, or architectural commitments. Include edge cases, failure policy, dependencies, and documentation additions when they affect those commitments. A choice being technical or recommended does not make it routine. Confirm new consequential choices with the user before encoding them as settled; do not first reveal them in a completed plan. Choose routine technical details using the requirements and project conventions, and explain material implementation choices in the plan.
 
@@ -32,13 +32,12 @@ Make the following explicit when relevant, without imposing empty sections on sm
 - Agreed behavior, acceptance criteria, and exclusions.
 - The decision record, including answers from the conversation and task-specific overrides to the usual conventions or review cadence.
 - Existing file paths and symbols to change; distinguish proposed new locations from existing ones.
-- Responsibilities, exact boundary signatures or equivalent contracts, named domain types and fields, invariants, and data flow.
-- I/O ownership, precise validation rules, error categories and presentation, and partial-failure behavior. Include pseudocode where ordering or algorithm choices affect correctness.
+- Concrete operation contracts as specified below, including invariants and data flow.
 - A documentation change map, including an explicit statement when no usage-documentation edits are planned.
 - Implementation steps, each with affected paths and symbols, concrete changes, existing mechanisms to reuse, dependencies, and acceptance criteria.
 - Meaningful behavior and failure cases with inputs and expected outcomes, plus runnable project check commands.
 - A feasible user-workflow check: setup, actual application entry point, actions, expected visible results and state, and cleanup. Record known obstacles to execution.
-- The routine details left to implementation; do not leave consequential choices implicit.
+- Remaining routine discretion, such as incidental helper extraction and idiomatic syntax.
 - Independent review coverage for non-trivial changes and any known verification limitations.
 
 When source documentation or caller-facing behavior changes, read the relevant documentation standards in `code-authoring` from the available skill locations without executing its authoring workflow. If unavailable, state the limitation and use the supplied requirements.
@@ -50,16 +49,14 @@ Source implementation comments and API doc comments/docstrings remain allowed wi
 Make responsibility boundaries a concrete planning deliverable for non-trivial changes. For each substantial operation, specify:
 
 - Its proposed function or method name, module, and responsibility.
-- Its inputs and result, including exact named types and fields that cross the boundary, their meaning, and relevant constraints.
-- Whether it performs I/O, and which operation owns coordination, errors, and any transaction or snapshot.
+- Its exact boundary signature or equivalent input/result contract, including named types and fields, their meaning, and relevant constraints.
+- Whether it performs I/O, and which operation owns coordination, error handling, and any transaction or snapshot.
+- Precise validation rules, error categories and presentation, and partial-failure behavior. Include relevant parser or adapter failure families as well as domain failures; inspect the boundary implementation when needed.
+- Pseudocode where ordering or algorithm choices affect correctness.
 
 When substantial calculations would otherwise sit among I/O operations, plan a pure operation accepting ordinary values and a separate operation that coordinates external effects. Keep reads, calculations, and writes within the required consistency boundary. Choose these boundaries from the actual behavior and code; a step such as "implement storage logic" leaves that design unfinished.
 
 Before finishing, trace a representative request and a meaningful failure through the proposed operations. Check that each responsibility has an owner and the implementer can connect their contracts without choosing the major decomposition. Connect acceptance criteria to implementation steps and verification scenarios. Check that paths and reused capabilities were inspected, consequential choices have agreement and reasons, the documentation map is bounded, and remaining discretion is only routine. Keep cohesive sequences together; do not prescribe every helper, create layers without a concrete purpose, or use function-length targets.
-
-When error categories are part of the contract, identify relevant parser or adapter failure families as well as domain-validation failures; inspect the boundary implementation when needed.
-
-Resolve the design sufficiently for implementation to proceed within agreed behavior, scope, public contracts, and architectural boundaries. Leave routine details such as incidental helper extraction and idiomatic syntax to implementation.
 
 Do not assume the same model will implement. A model switch in the same chat preserves the conversation, but the plan must still state the decisions and concrete work. Avoid vague steps such as "add validation" or unresolved menus of approaches. Read [the plan example](references/plan-example.md) when calibrating the necessary detail.
 
@@ -69,4 +66,4 @@ Use the chat for the plan unless the user or project asks for a saved artifact. 
 
 Once planning is complete and implementation is authorized, carry forward the plan and decisions; do not restart the interview after a model switch. Use `code-authoring` if available.
 
-Handle routine local obstacles autonomously. If implementation reveals a missing consequential choice or requires changing an agreed decision or documentation scope, explain it and ask the user immediately. Pause dependent work, continue useful independent work, and update the plan with the answer and rationale before resuming. Do not silently substitute behavior or postpone the question until handoff. Known unresolved behavioral decisions must be settled before starting. If no answer or required capability is available, keep affected work explicitly incomplete.
+Carry this rule into the handoff: a new consequential choice or change to agreed decisions or documentation scope requires an immediate user question. Pause dependent work, continue independent work, and record the answer and rationale before resuming. Follow `code-authoring`'s Roadblocks and Handoff procedure when available. Work awaiting an answer or required capability remains explicitly incomplete.
