@@ -1,27 +1,38 @@
 # Final Handoff
 
-Start with plain sentences explaining what changed, why, and the useful parts of the approach. Avoid obligatory "Recap:" and "Human review:" prefixes. Scale the response to the work.
+Start with a short paragraph explaining what changed and why. Then explain the resulting code in a concise numbered list, beginning with the relevant entry point and following the flow of the changed behavior. Identify what invokes that entry point, such as a command, request, user action, or caller; it may be existing code rather than a changed function.
 
-Recommend human review only for decisions that benefit from judgment: consequential behavior, contracts, architectural tradeoffs, or unresolved uncertainty. Prioritize a small number of useful locations. Do not enumerate every changed file or send the user through routine plumbing.
+Give each item a bold, factual label and the function or component name, a clickable source link, and short labeled lines explaining its role. Use labels such as **Trigger**, **Role**, **Input → output**, **Behavior**, **Effect**, and **Reason** where useful. Describe how the parts connect, what happens to the data or state, and the important logic or design reasons needed to understand the code. Explain unfamiliar types when they matter to that flow.
 
-Use a table when it helps scanning:
+Use descriptive wording such as "Entry point", "Parsing and validation", or "Persistence". Keep the explanation factual; avoid directions such as "Start here", "Follow the data", or "Review this". Use the numbered list rather than a table, and do not turn it into a checklist of work for the user.
 
-| Location | Decision to inspect |
-| --- | --- |
-| Clickable file name and verified line | The specific behavior or tradeoff worth the user's attention |
+Scale the explanation to the change. A small fix may need only one item. Include the locations and relationships that help the user understand the output; do not enumerate every changed file or narrate every line. Adapt the labels to the information rather than filling every field mechanically. For documentation-only changes, explain the relevant documents and their relationships without inventing a runtime flow.
 
-Replace the illustrative cells with actual locations and decisions. Link to local files using an absolute path and one-based line, for example `[import.py:84](/absolute/project/import.py:84)`. Verify every path and line after all fixes; never copy the illustrative path or invent a link. Include enough path context in labels to distinguish duplicate file names. Link directly to the smallest useful function, branch, or contract.
+Every code location named in the handoff must have a clickable Markdown link to its source using an absolute path and a one-based line. Verify paths and lines after all fixes, and link directly to the relevant function, component, branch, or contract. Use plain link labels with enough path context to distinguish duplicate file names; do not wrap links in backticks. Links support understanding even when no human review is needed.
 
-It is acceptable to say that no targeted human review is recommended when the change is routine and the evidence supports that judgment. Omit the table in that case. Do not claim all checks or independent review passed unless they actually ran and their results support the claim.
-
-Summarize the important behavioral commitments established by tests, the actual user workflow exercised and its observed results, and material verification limitations. Distinguish tests from application execution; if the workflow could not run, say why and what remains unverified. Group related cases; avoid a test-function inventory. State whether planned usage-documentation edits were made or no edits were needed, and surface any unplanned need awaiting confirmation. Mention significant independent review findings and their resolution when useful. Always surface unresolved findings.
+Keep verification separate from the code explanation in a short closing paragraph. Summarize important behavior established by tests, the actual user workflow exercised and its observed results, and material limitations. Distinguish tests from application execution; if the workflow could not run, say why and what remains unverified. Group related cases; avoid a test-function inventory. State whether planned usage-documentation edits were made or no edits were needed, and surface any unplanned need awaiting confirmation. Mention significant independent review findings and their resolution when useful. Always surface unresolved findings. Do not claim checks or independent review passed unless they actually ran and their results support the claim.
 
 If blocked, clearly state that the task is incomplete, what independent work was finished, what remains blocked, and what decision or capability is needed. A passing subset of tests does not make blocked acceptance criteria complete.
 
-Example prose, to adapt only when supported by the actual change and evidence:
+Illustrative Markdown example with fictional paths, line numbers, and results. Replace them with verified locations and actual evidence; never copy the example links or claims into a handoff unchanged.
 
-> Added CSV import with validation before database writes, so malformed input cannot leave a partially imported catalog. The existing transaction boundary handles inserts and updates together.
->
-> Tests cover valid inserts and updates, row-specific validation errors, and rollback after a storage failure. Formatting, linting, type checking, and the affected tests passed. Independent review found an error-propagation issue; it was fixed and the affected checks passed again.
+```markdown
+Added CSV import with validation before database writes.
 
-Add targeted local review links only if they help the user assess a meaningful decision. Avoid unnecessary sections, context, or implementation narration.
+1. **Entry point — `import_catalog()`**\
+   [commands/import.py:84](/absolute/project/commands/import.py:84)\
+   **Trigger:** The `catalog import` command.\
+   **Role:** Coordinates reading the file, validating rows, and saving records.
+
+2. **Parsing and validation — `parse_rows()`**\
+   [catalog/parser.py:26](/absolute/project/catalog/parser.py:26)\
+   **Input → output:** CSV text → `CatalogEntry` objects, each containing one record's validated values.\
+   **Behavior:** Rejects malformed rows before any records reach storage.
+
+3. **Persistence — `save_entries()`**\
+   [catalog/store.py:51](/absolute/project/catalog/store.py:51)\
+   **Effect:** Writes the validated records to the database in one transaction.\
+   **Reason:** A storage failure rolls back the entire import, preventing partially saved results.
+
+Tests passed for valid imports, invalid rows, and rollback after storage failure. Running the CLI with valid input saved the expected records; invalid input reported the row error and left the database unchanged. No usage-documentation updates were needed.
+```
