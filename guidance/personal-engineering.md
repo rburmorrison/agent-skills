@@ -8,7 +8,7 @@ Use `code-authoring` to carry out an agreed change. Choose local implementation 
 
 Alongside tests, exercise the changed application as a user would through its actual CLI, UI, API, or caller when feasible. Use authorized, disposable inputs and inspect visible results and relevant state. If execution is unavailable, use the closest feasible check and clearly report what remains unverified; passing tests do not establish that an unexecuted workflow works.
 
-Prefer meaningful domain names, explicit data contracts, cohesive functions and modules, and concentrated I/O boundaries. Use whitespace between conceptual units; compact match arms usually form one unit. Test readability matters more than applying every production style restriction to tests.
+Prefer meaningful domain names, explicit data contracts, cohesive functions and modules, and concentrated I/O boundaries. In functions with more than one logical step, introduce each meaningful stage with a short, imperative comment, including stages inside loops or branches. Explain consequential decisions near the relevant code. Separate conceptual units with whitespace, and put a blank line above each comment group unless it starts its enclosing block. Straightforward single-step predicates and mappings usually need no comments; compact match arms form one unit. Apply the same readability standard to tests while allowing their failure-on-error shortcuts. Use `code-authoring` for the detailed standard and examples.
 
 Use `setup-project` when establishing a new project. Establish strict tooling appropriate to its language and supported versions. Manage dependencies through the project's package manager rather than guessing versions and editing dependency entries by hand.
 

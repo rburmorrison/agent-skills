@@ -36,7 +36,7 @@ For each usage-documentation edit, check its planned location and correction or 
 - Are tooling changes justified? Are suppressions rare, narrow, and accompanied by a specific reason, including configuration-level exceptions?
 - Do affected interface contracts, help, and usage examples match the implemented behavior and documentation lints? Check completeness and unnecessary prose without expanding the review into unrelated documentation.
 
-Apply lighter style expectations to tests. Do not report an allowed test failure shortcut as a production-style violation. Distinguish a concrete readability problem from personal taste; identify the cost or contract at stake.
+Apply lighter style expectations to test failure shortcuts, while retaining logical grouping and step comments for multistep tests. Do not report an allowed test failure shortcut as a production-style violation. Distinguish a concrete readability problem from personal taste; identify the cost or contract at stake.
 
 ## Separate Behavior From Instruction Compliance
 
@@ -44,7 +44,9 @@ Perform two distinct assessments of the completed change. First check behavior, 
 
 For usage documentation, compare added and rewritten factual claims with both the original text and the plan's documentation map. A code requirement, reviewer suggestion, or accuracy inspection is not permission to expand the edit scope. Point to unauthorized clauses and recommend removing them while keeping authorized corrections. Treat useful source implementation comments and API doc comments/docstrings under their separate standards.
 
-For implementation comments, apply the actual syntax and spacing requirements to each touched group. Check the line before the group's first comment, not just lines within the group. Verify ordinary single-line syntax and the required blank line unless the group starts its enclosing block. Keep API documentation syntax separate. Formatting tools passing does not establish these checks passed.
+For implementation comments, first identify the logical stages in each affected function, including short functions and nested processing. Flag missing short, imperative stage comments, missing whitespace between stages, and unexplained consequential decisions or ordering requirements. A broad comment naming several stages does not replace comments at their transitions. Also check smaller whitespace breaks between setup and traversal or completed processing and a final return. Identify the specific stage or rationale the reader must reconstruct. Do not demand comments for routine initialization, final returns, or straightforward single-step predicates and mappings, or recommend trivial helper extraction to avoid comments.
+
+Then check comment syntax and placement. Check the line before each group's first comment, not just lines within the group. Verify ordinary single-line syntax and the required blank line unless the group starts its enclosing block. Keep API documentation syntax separate. Formatting tools passing does not establish these checks passed.
 
 Check related existing documentation even when absent from the diff. Surface unplanned stale claims as unresolved plan amendments; do not silently ignore them or authorize their repair yourself.
 

@@ -27,7 +27,7 @@ Manage dependencies through the project's package manager. Use actual package in
 
 - Name domain concepts, responsibilities, and operations using the problem's vocabulary.
 - Prefer named records, fields, and explicit variants for domain values crossing boundaries. Local, immediately unpacked tuples remain useful. Add runtime validation at external boundaries when required; do not add a validation dependency merely to name internal fields.
-- Group statements that perform one conceptual step. Separate changes of purpose with whitespace. Compact match arms generally form one unit and need no extra blank lines.
+- Group statements that perform one conceptual step. Separate changes of purpose with whitespace. Within a stage, also separate setup from traversal, and completed loops or early-return guards from subsequent result construction or a final return. These smaller breaks need no extra comment. Compact match arms generally form one unit and need no extra blank lines.
 - Extract coherent operations with meaningful names. Keep a simple sequence together when splitting it would add navigation without improving comprehension.
 - Organize modules by responsibility and reasons to change. Keep types near the code that owns their meaning. Treat size and complexity as inspection signals rather than incentives to create trivial files or helpers.
 - Use idioms supported by the declared language version. Pattern matching suits meaningful variants and structured alternatives; ordinary predicates can remain conditionals.
@@ -35,9 +35,13 @@ Manage dependencies through the project's package manager. Use actual package in
 
 Read [the code examples](references/code-examples.md) for non-trivial implementation or when resolving a style tradeoff. Their languages illustrate shared principles rather than restricting the skill's scope.
 
-### Explain Non-Trivial Logic
+### Explain Steps and Decisions
 
-Add implementation comments only when they explain something the code does not make clear, such as a non-obvious assumption, meaningful edge case, or reason a decision is necessary. Do not add comments merely because the logic is complex; complex code that already communicates its meaning needs no explanatory comment. Prefer clear names and cohesive code where they convey the meaning directly. Place useful comments near the relevant code, and do not narrate assignments, branches, or obvious calls.
+For every function with more than one logical step, introduce each meaningful stage with a short, imperative implementation comment and separate stages with blank lines. Sketch these stage comments before filling in the implementation, and revise them when the flow changes. Apply this to short functions too, and to distinct stages within loops or branches. A logical step is a coherent purpose, not an individual statement: collecting values and then organizing them are separate stages; sorting and deduplicating those values can form one stage. Routine buffer initialization and a final return do not automatically need their own comments.
+
+A broad comment naming several distinct stages does not replace comments at their transitions. Selecting whether work is allowed and performing that work are separate stages, as are writing a heading and rendering its entries. Place each comment where its stage begins.
+
+Use step comments to make the process scannable even when individual statements are clear. Explain consequential decisions, ordering requirements, assumptions, and constraints near the relevant code, including why a check or exception is necessary. A single-step function usually needs no comment unless its rationale is otherwise unclear; a straightforward predicate or mapping remains one step regardless of its line count. Keep clear names and cohesive code, and avoid narrating every assignment or match arm. Do not fragment a coherent function merely to avoid step comments.
 
 - Use standalone single-line comments in the language's ordinary comment syntax, such as `#` or `//`. Do not use multiline or block-comment syntax for implementation comments.
 - For longer explanations, use consecutive single-line comments as one group, without blank lines between them.
@@ -46,7 +50,13 @@ Add implementation comments only when they explain something the code does not m
 
 When correcting or shortening existing comments, preserve useful rationale. Include unchanged comments in the final documentation accuracy check.
 
-See [the implementation comment examples](references/code-examples.md#implementation-comments) when choosing comment placement or syntax, or updating a stale explanation.
+See [the implementation comment examples](references/code-examples.md#implementation-comments) for short multistep functions, nested stages, single-step exceptions, and decision rationale.
+
+After formatting and before independent review or handoff, perform a separate readability pass on the finished source, including changed tests:
+
+1. Read each affected function and its nested blocks in execution order. Identify where the purpose changes, then check that a local stage comment marks each transition; reading only the existing comments can conceal an omitted stage.
+2. Check each comment group's preceding line and its attachment to the stage it describes. Check the smaller whitespace breaks around setup, traversal, guards, and results even where no new comment is needed.
+3. In tests, trace setup, action, assertions, and each new scenario. Correct broad or misplaced comments and missing paragraphs before reporting the work ready. Passing formatters and tests does not complete this pass.
 
 ## Document Interfaces and Decisions
 
