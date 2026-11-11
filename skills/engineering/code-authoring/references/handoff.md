@@ -2,21 +2,21 @@
 
 Start with a short paragraph explaining what changed and why. Put any verification gap that materially affects confidence near the beginning, especially when the change has not been executed. Use simple wording: describe what happens before explaining how it works. Keep sentences short and explain unfamiliar terms only when needed.
 
-## Structure And Coverage
+## Structure and Coverage
 
 Use these section headings, with clear spacing between sections:
 
 - **Invariants**: guarantees the change establishes or preserves.
-- **Failure Modes And Recovery**: relevant ways the changed behavior can fail, what the user or caller sees, what state remains, and how recovery works or where it stops.
-- **Verification And Remaining Uncertainty**: checks actually run, observed workflow results, and anything still unverified or incomplete.
+- **Failure Modes and Recovery**: relevant ways the changed behavior can fail, what the user or caller sees, what state remains, and how recovery works or where it stops.
+- **Verification and Remaining Uncertainty**: checks actually run, observed workflow results, and anything still unverified or incomplete.
 
 Use the example below as the default layout. Put a horizontal rule (`---`) before each major section, separating the opening summary from Invariants and separating subsequent sections. Give each distinct invariant and failure mode its own short, plain-language subheading (`###`). Bold the first sentence of each item or standalone paragraph, including the opening summary. Make that sentence a self-contained core point; put supporting explanation in regular text. Reading only the bold sentences should reveal the important guarantees, failure responses, and gaps.
 
 Cover every consequential invariant and failure mode in the change; do not impose an item cap. Include details that affect correctness, user-visible behavior, compatibility, data integrity, recovery, or confidence in the change. Do not invent speculative failure catalogs or enumerate unrelated guarantees. Keep distinct guarantees visible rather than hiding them in a broad combined claim. Reduce repetition and unnecessary mechanics, not coverage.
 
-Scale supporting detail to the change. Keep explanations brief, but retain the evidence needed to assess each claim under Evidence And Links below. Include entry points, internal names, data flow, and design reasons only when they help assess a claim or limitation. Do not require a numbered code tour or an inventory of changed files. For small changes, keep applicable sections brief and omit empty sections. For documentation-only changes, describe the guidance and its limits without inventing runtime behavior.
+Scale supporting detail to the change. Keep explanations brief, but retain the evidence needed to assess each claim under Evidence and Links below. Include entry points, internal names, data flow, and design reasons only when they help assess a claim or limitation. Do not require a numbered code tour or an inventory of changed files. For small changes, keep applicable sections brief and omit empty sections. For documentation-only changes, describe the guidance and its limits without inventing runtime behavior.
 
-## Evidence And Links
+## Evidence and Links
 
 For each consequential invariant or failure response, include a short fenced excerpt when available source directly shows the check, state change, error handling, or assertion supporting it. A source link alone does not replace that evidence. Put the block beneath the plain-language claim and explanation, followed by its verified source link. Use a language tag; do not substitute inline snippets.
 
@@ -28,7 +28,7 @@ Every named code location must have a clickable Markdown source link with an abs
 
 Distinguish intended guarantees, source evidence, and observed results. Source inspection shows how a guarantee is implemented; an existing test is not evidence that it passed. Describe only what executed checks establish, and state limits beside claims when needed. Do not present desired behavior as an observed success.
 
-## Verification And Incomplete Work
+## Verification and Incomplete Work
 
 Prefer a verification table when several behaviors map clearly to evidence and results or gaps. Use columns such as **Behavior**, **Evidence**, and **Result Or Gap**; adapt them to the information. Link relevant test or source locations in the evidence column, and distinguish passed checks from inspected-but-unrun tests. Keep cells brief and put longer explanations outside the table. Use prose when there is only one check or when the information does not form a useful mapping. Do not force a table, repeat the same coverage in prose, or use a table as a substitute for evidence blocks in the earlier sections.
 
@@ -62,7 +62,7 @@ with transaction.atomic():
 
 ---
 
-## Failure Modes And Recovery
+## Failure Modes and Recovery
 
 ### Invalid Input
 
@@ -83,7 +83,7 @@ save_in_transaction(validated_rows)
 
 ---
 
-## Verification And Remaining Uncertainty
+## Verification and Remaining Uncertainty
 
 **Tests and CLI checks confirmed the main import behaviors.** Connection loss during commit remains outside the executed checks.
 
