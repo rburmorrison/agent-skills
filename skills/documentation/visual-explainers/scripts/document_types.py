@@ -7,9 +7,11 @@ validate input or authorize executable custom content.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Mapping, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from diagram_layout import GraphEdge, GraphNode, Point, PositionedLabel
 
 

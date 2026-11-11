@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import bisect
 import struct
-from typing import TYPE_CHECKING, Tuple, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-Point = Tuple[float, float]
+Point = tuple[float, float]
 
 
 class GraphNode(TypedDict):

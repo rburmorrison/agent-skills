@@ -1,7 +1,5 @@
 """Render a restricted vocabulary of offline presentation MathML."""
 
-from __future__ import annotations
-
 import html
 import re
 import xml.etree.ElementTree as ET
@@ -103,7 +101,7 @@ def _element(element: ET.Element, *, root: bool = False, depth: int = 0) -> str:
     if depth > 64:
         raise ValueError("MathML exceeds 64 nested levels")
     prefix = "{" + NAMESPACE + "}"
-    tag = element.tag[len(prefix) :] if element.tag.startswith(prefix) else element.tag
+    tag = element.tag.removeprefix(prefix)
     if (root and tag != "math") or (not root and tag not in ELEMENTS):
         raise ValueError("Unsupported MathML element: " + tag)
 

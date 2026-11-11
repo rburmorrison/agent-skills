@@ -56,7 +56,7 @@ Supported presentation attributes: `displaystyle`, `scriptlevel`, `mathvariant`,
 {"type":"disclosure","title":"A Useful Question","open":false,"blocks":["The answer."]}
 ```
 
-Alerts accept `kind`: `note`, `tip`, `important`, `warning`, `caution`. Instead of `text`, an alert can use `blocks`; `title` overrides its default variant label. Do not choose a severe variant for visual variety. Code `language` labels the block; it does not invoke syntax highlighting or execute code. Optional `id` lets a custom script update the code element with `textContent`. Rows must have exactly as many cells as headers. Tables scroll within their rounded container when needed. Disclosures have a plain summary and a padded, tinted body.
+Alerts accept `kind`: `note`, `tip`, `important`, `warning`, `caution`. Instead of `text`, an alert can use `blocks`; `title` overrides its default variant label. Do not choose a severe variant for visual variety. Code `language` labels the block and selects syntax highlighting during generation; it does not execute code. Optional `id` lets a custom script replace the highlighted code with plain text using `textContent`. Rows must have exactly as many cells as headers. Tables scroll within their rounded container when needed. Disclosures have a plain summary and a padded, tinted body.
 
 ## Images
 

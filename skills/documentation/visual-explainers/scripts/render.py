@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build one independent HTML file. Python 3.8+, standard library only."""
+"""Build one independent HTML file with Python 3.11+ and bundled highlighting."""
 
 from __future__ import annotations
 
@@ -14,9 +14,10 @@ import re
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Mapping, Sequence, cast
+from typing import TYPE_CHECKING, cast
 from urllib.parse import unquote_to_bytes
 
+from code_highlighting import highlight_code, highlight_styles
 from diagram_layout import (
     FontMetrics,
     label_geometry,
@@ -26,6 +27,8 @@ from diagram_layout import (
 from mathml import render_mathml
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
+
     import document_types as spec
     from diagram_layout import Point, PositionedLabel
 
@@ -255,6 +258,7 @@ class Renderer:
         self.counter: int = 0
         self.ids: set[str] = set()
         self.used_charts: bool = False
+        self.code_categories: set[str] = set()
         self._metrics: FontMetrics | None = None
 
     def uid(self, requested: str | None = None) -> str:
@@ -425,9 +429,14 @@ class Renderer:
         )
 
     def _code_block(self, values: Mapping[str, object]) -> str:
+        # Preserve labels and IDs while highlighting the literal source.
         block = cast("spec.CodeBlock", values)
         ident = self.uid(block.get("id"))
         label = block.get("language", "Code")
+        highlighted = highlight_code(str(block["text"]), block.get("language", ""))
+        self.code_categories.update(highlighted.categories)
+
+        # Keep copy controls bound to the code's unchanged text content.
         return (
             '<div class="codebox"><div class="codebar"><span>'
             + esc(label)
@@ -436,7 +445,7 @@ class Renderer:
             + '">Copy</button></div><pre><code id="'
             + ident
             + '">'
-            + esc(block["text"])
+            + highlighted.markup
             + "</code></pre></div>"
         )
 
@@ -924,7 +933,7 @@ class Renderer:
                 + self.svg_text(label["lines"], x + w / 2, y + 17)
                 + "</g>"
             )
-        for x, lines in zip(centers, actor_lines):
+        for x, lines in zip(centers, actor_lines, strict=False):
             body += f'<rect x="{x - 80}" y="20" width="160" height="{actor_h}" rx="8" fill="var(--wash)"/>'
             body += self.svg_text(
                 lines, x, 20 + actor_h / 2 - (len(lines) - 1) * 9 + 5, 14
@@ -1061,6 +1070,11 @@ class Renderer:
         ]
         css += (ASSETS / "base.css").read_text(encoding="utf-8")
         css += "\n" + THEMES[theme].read_text(encoding="utf-8")
+        if self.code_categories:
+            css += "\n" + highlight_styles(
+                self.code_categories,
+                (ASSETS / "themes" / "syntax.css").read_text(encoding="utf-8"),
+            )
         for file in document.get("styles", []):
             css += "\n" + self.file(file).read_text(encoding="utf-8")
         js = (

@@ -1,7 +1,5 @@
 """Geometry contracts for the actual offline diagram builder."""
 
-from __future__ import annotations
-
 import random
 import sys
 import unittest
@@ -81,7 +79,7 @@ class DiagramGeometryTests(unittest.TestCase):
                 self.assertFalse(overlaps(label, other), (label, other))
         for route in layout["edges"]:
             self.assertTrue(rounded_path(route["points"]).startswith("M"))
-            for a, b in zip(route["points"], route["points"][1:]):
+            for a, b in zip(route["points"], route["points"][1:], strict=False):
                 for node in layout["nodes"]:
                     self.assertFalse(segment_enters_node(a, b, node), (route, node))
         return layout

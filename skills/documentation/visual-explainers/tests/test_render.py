@@ -1,18 +1,19 @@
 """Document output and rejection contracts across renderer variants."""
 
-from __future__ import annotations
-
 import json
 import re
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Mapping, cast
+from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from render import THEMES, Renderer, check_html, validate_chart
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
@@ -68,8 +69,9 @@ class RenderTests(unittest.TestCase):
             "dark",
             "unknown",
         ]:
-            with self.subTest(theme=theme), self.assertRaisesRegex(
-                ValueError, "theme must be plain"
+            with (
+                self.subTest(theme=theme),
+                self.assertRaisesRegex(ValueError, "theme must be plain"),
             ):
                 _ = Renderer({"title": "Appearance", "theme": theme}, FIXTURES).render()
 
@@ -130,8 +132,9 @@ class RenderTests(unittest.TestCase):
     def test_unknown_blocks_keep_their_error(self) -> None:
         renderer = Renderer({"title": "Invalid"}, FIXTURES)
         for block in [None, 7, {}, {"type": "missing"}]:
-            with self.subTest(block=block), self.assertRaisesRegex(
-                ValueError, "Unknown block type:"
+            with (
+                self.subTest(block=block),
+                self.assertRaisesRegex(ValueError, "Unknown block type:"),
             ):
                 _ = renderer.block(block)
 
@@ -183,8 +186,9 @@ class RenderTests(unittest.TestCase):
             ),
         ]
         for kind, data, message in cases:
-            with self.subTest(kind=kind, data=data), self.assertRaisesRegex(
-                ValueError, message
+            with (
+                self.subTest(kind=kind, data=data),
+                self.assertRaisesRegex(ValueError, message),
             ):
                 validate_chart(kind, data)
 

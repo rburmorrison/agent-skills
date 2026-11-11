@@ -1,7 +1,5 @@
 """Formula rendering and its boundary with executable custom markup."""
 
-from __future__ import annotations
-
 import sys
 import unittest
 import xml.etree.ElementTree as ET

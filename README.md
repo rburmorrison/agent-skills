@@ -16,7 +16,7 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 
 **Documentation**:
 
-- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone HTML explainers with reusable content components, math formulas, diagrams, eight interactive chart types, and 72 SVG icons. Includes paired light/dark appearance with system matching by default, full-width text, and responsive contents navigation with section tracking. A Python standard-library builder embeds fonts, images, and other assets for offline use; the user chooses the content and structure.
+- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone HTML explainers with reusable content components, math formulas, diagrams, eight interactive chart types, and 72 SVG icons. Includes paired light/dark appearance with system matching by default, full-width text, and responsive contents navigation with section tracking. A Python 3.11+ builder with a bundled syntax highlighter embeds fonts, images, and other assets for offline use; the user chooses the content and structure.
 
 ## Usage
 
@@ -63,5 +63,5 @@ Python behavior tests, and JavaScript navigation tests. Use `just format` to
 format Python files, or run `just lint`, `just typecheck`, and `just test`
 separately. `just --list` shows all recipes.
 
-The Python scripts remain standard-library-only and support Python 3.8+.
+The explainer builder requires Python 3.11+ and includes its syntax highlighter; generation and viewing work offline without installing dependencies.
 Development tools are managed by uv and pinned in `uv.lock`.

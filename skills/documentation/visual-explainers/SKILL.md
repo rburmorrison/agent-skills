@@ -11,7 +11,7 @@ Produce one HTML document that opens directly from disk and works offline. The u
 
 1. Establish the content from the user's material or appropriate sources. Distinguish facts, illustrative data, and assumptions. Do not turn illustrative measurements into benchmark claims.
 2. Write a document JSON beside any local images or custom visualization files. Read [components.md](references/components.md) for exact fields. Use the bundled components for repeated UI mechanics; spend effort on the explanation. **For the supported chart types, use a `chart` block and read charts.md before composing it.** This preserves exact-value hover, tap, keyboard inspection, and the data table. Reserve custom plotting code for forms the library does not support. Every custom plot must also expose exact values on hover/tap and keyboard focus, with an accessible textual equivalent; an animated marker or changing bar alone does not provide inspection.
-3. Run `python3 <skill-directory>/scripts/render.py document.json -o explanation.html`. This uses Python 3.8+ and its standard library. Resolve `<skill-directory>` from this file's location; no agent-specific command, package manager, server, or account is needed.
+3. Run `python3 <skill-directory>/scripts/render.py document.json -o explanation.html`. This uses Python 3.11+ and the bundled syntax highlighter, with no dependency installation or network access. Resolve `<skill-directory>` from this file's location; no agent-specific command, package manager, server, or account is needed.
 4. Open the resulting HTML in an available browser. Inspect the whole document at a normal desktop width and a narrow width. Exercise the controls actually used, including boundaries, one-item values, and live text. Repair clipping, cramped labels, broken diagrams, ineffective interactions, or excessive spacing. Run `python3 <skill-directory>/scripts/render.py explanation.html --check` after changes. If browser access is unavailable, report that visual verification remains unperformed.
 5. Deliver the HTML file. The JSON and custom files can be retained as editable source; the reader needs only the HTML.
 
@@ -40,7 +40,7 @@ Custom HTML, CSS, and JavaScript require `--trusted-custom`; see [custom.md](ref
 - **Writing:** paragraphs, nested headings, ordered/unordered lists, inline code, links, timelines.
 - **Math:** equation blocks with Unicode text or native MathML for fractions, roots, scripts, sums, and matrices. See [components.md](references/components.md#math-formulas) for fields and supported notation; no custom HTML is needed.
 - **Layout:** columns, cards, metric groups, comparison layouts using columns or tables.
-- **Information:** striped tables with distinct headers; Note, Tip, Important, Warning, and Caution alerts; disclosures with tinted body containers; code blocks with copy controls.
+- **Information:** striped tables with distinct headers; Note, Tip, Important, Warning, and Caution alerts; disclosures with tinted body containers; syntax-highlighted code blocks with copy controls.
 - **Images:** embedded local images, rounded corners, centered captions, click-to-enlarge viewer with fit/actual size and keyboard dismissal.
 - **Diagrams:** flow, sequence, and directed acyclic graph layouts. See [diagrams.md](references/diagrams.md) when using them.
 - **Charts:** line, area, bar, scatter, histogram, donut, heatmap, and box plots, with exact-value hover/tap/focus details, keyboard navigation, and data tables. See [charts.md](references/charts.md) when plotting.

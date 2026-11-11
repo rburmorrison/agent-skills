@@ -1,0 +1,10 @@
+.syn-comment{color:light-dark(#58616e,#a7b0be)}
+.syn-keyword{color:light-dark(#7540a0,#d7a8ff)}
+.syn-string{color:light-dark(#246b38,#91d5a2)}
+.syn-number{color:light-dark(#9b481d,#ffbc8c)}
+.syn-function{color:light-dark(#155fa0,#8dc7ff)}
+.syn-type{color:light-dark(#086970,#88d3d7)}
+.syn-attribute{color:light-dark(#80531b,#ebc58b)}
+.syn-operator{color:light-dark(#7540a0,#d7a8ff)}
+.syn-deleted{color:light-dark(#a42c3a,#ffabb5)}
+.syn-inserted{color:light-dark(#246b38,#91d5a2)}

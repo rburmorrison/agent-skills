@@ -12,12 +12,14 @@ import tempfile
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import TYPE_CHECKING, Mapping, TypedDict, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from render import Renderer, check_html
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from document_types import Section
 
 
@@ -91,9 +93,10 @@ class RenderSecurityTests(unittest.TestCase):
                 (None, {"scripts": [path]}),
             ]
             for block, fields in consumers:
-                with self.subTest(
-                    path=path, block=block, fields=fields
-                ), self.assertRaisesRegex(ValueError, "relative|escapes"):
+                with (
+                    self.subTest(path=path, block=block, fields=fields),
+                    self.assertRaisesRegex(ValueError, "relative|escapes"),
+                ):
                     _ = self.build(block, trusted=True, fields=fields)
 
     def test_local_images_subdirectories_and_internal_symlinks_still_embed(
@@ -123,13 +126,15 @@ class RenderSecurityTests(unittest.TestCase):
         ]:
             block = {"type": "html", "html": markup}
             for candidate in [block, {"type": "card", "blocks": [block]}]:
-                with self.subTest(candidate=candidate), self.assertRaisesRegex(
-                    ValueError, "--trusted-custom"
+                with (
+                    self.subTest(candidate=candidate),
+                    self.assertRaisesRegex(ValueError, "--trusted-custom"),
                 ):
                     _ = self.build(candidate, fields={"trusted_custom": True})
         for fields in [{"scripts": ["missing.js"]}, {"styles": ["missing.css"]}]:
-            with self.subTest(fields=fields), self.assertRaisesRegex(
-                ValueError, "--trusted-custom"
+            with (
+                self.subTest(fields=fields),
+                self.assertRaisesRegex(ValueError, "--trusted-custom"),
             ):
                 _ = self.build(fields=fields)
         with self.assertRaisesRegex(ValueError, "--trusted-custom"):
