@@ -10,21 +10,27 @@ Use these section headings, with clear spacing between sections:
 - **Failure Modes And Recovery**: relevant ways the changed behavior can fail, what the user or caller sees, what state remains, and how recovery works or where it stops.
 - **Verification And Remaining Uncertainty**: checks actually run, observed workflow results, and anything still unverified or incomplete.
 
-Give distinct items short descriptive subheadings when that helps scanning. Bold the first sentence of each item or standalone paragraph, including the opening summary. Make that sentence a self-contained core point; put supporting explanation in regular text. Reading only the bold sentences should reveal the important guarantees, failure responses, and gaps. Use section dividers when they help readers see where longer sections end.
+Use the example below as the default layout. Put a horizontal rule (`---`) before each major section, separating the opening summary from Invariants and separating subsequent sections. Give each distinct invariant and failure mode its own short, plain-language subheading (`###`). Bold the first sentence of each item or standalone paragraph, including the opening summary. Make that sentence a self-contained core point; put supporting explanation in regular text. Reading only the bold sentences should reveal the important guarantees, failure responses, and gaps.
 
 Cover every consequential invariant and failure mode in the change; do not impose an item cap. Include details that affect correctness, user-visible behavior, compatibility, data integrity, recovery, or confidence in the change. Do not invent speculative failure catalogs or enumerate unrelated guarantees. Keep distinct guarantees visible rather than hiding them in a broad combined claim. Reduce repetition and unnecessary mechanics, not coverage.
 
-Scale supporting detail to the change. A straightforward item may need only a sentence and a source link; a subtle guarantee may need an explanation and evidence. Include entry points, internal names, data flow, and design reasons only when they help assess a claim or limitation. Do not require a numbered code tour or an inventory of changed files. For small changes, keep applicable sections brief and omit empty sections. For documentation-only changes, describe the guidance and its limits without inventing runtime behavior.
+Scale supporting detail to the change. Keep explanations brief, but retain the evidence needed to assess each claim under Evidence And Links below. Include entry points, internal names, data flow, and design reasons only when they help assess a claim or limitation. Do not require a numbered code tour or an inventory of changed files. For small changes, keep applicable sections brief and omit empty sections. For documentation-only changes, describe the guidance and its limits without inventing runtime behavior.
 
 ## Evidence And Links
 
-Attach evidence to the claim it supports. Use short fenced code blocks with a language tag for source excerpts, assertions, or command output when they make the claim easier to assess. Do not use inline snippets for evidence, force a block into every item, or repeat the same evidence in several sections. Copy source and output accurately; label omissions or illustrative material. Include enough context to avoid making an excerpt appear to prove more than it does.
+For each consequential invariant or failure response, include a short fenced excerpt when available source directly shows the check, state change, error handling, or assertion supporting it. A source link alone does not replace that evidence. Put the block beneath the plain-language claim and explanation, followed by its verified source link. Use a language tag; do not substitute inline snippets.
+
+Choose the smallest excerpt that supports the claim without hiding necessary context. Do not add decorative blocks, reproduce whole functions unnecessarily, or repeat the same evidence across sections. When a claim depends on a broader flow that no short excerpt explains, describe that flow briefly and link its relevant locations. Documentation-only changes need excerpts only when the wording itself helps assess the change. Copy source and output accurately; label omissions or illustrative material.
+
+Before sending a code-change handoff with no fenced evidence, check whether the source contains a short excerpt that directly supports an important claim. If it does, include it. Omit blocks only when they would not provide meaningful evidence; never invent code or results to fill the format.
 
 Every named code location must have a clickable Markdown source link with an absolute path and verified one-based line number. Link directly to the relevant implementation, contract, or test after all fixes. Use short descriptive labels, not directions to read or review code, and do not wrap links in backticks. Link changed guidance the same way when handing off documentation-only work.
 
 Distinguish intended guarantees, source evidence, and observed results. Source inspection shows how a guarantee is implemented; an existing test is not evidence that it passed. Describe only what executed checks establish, and state limits beside claims when needed. Do not present desired behavior as an observed success.
 
 ## Verification And Incomplete Work
+
+Prefer a verification table when several behaviors map clearly to evidence and results or gaps. Use columns such as **Behavior**, **Evidence**, and **Result Or Gap**; adapt them to the information. Link relevant test or source locations in the evidence column, and distinguish passed checks from inspected-but-unrun tests. Keep cells brief and put longer explanations outside the table. Use prose when there is only one check or when the information does not form a useful mapping. Do not force a table, repeat the same coverage in prose, or use a table as a substitute for evidence blocks in the earlier sections.
 
 Summarize important behavior checked by tests separately from the actual user workflow exercised and its visible results or state changes. If the workflow did not run, say why and what remains unverified. Group related cases instead of listing every test function or command; do not repeat evidence already attached to an item. State whether planned documentation was updated, no update was needed, or an unplanned need awaits a decision. Mention significant independent review findings and their resolution when useful; always surface unresolved findings. Do not claim checks or independent review passed unless they ran and support that claim.
 
@@ -79,7 +85,14 @@ save_in_transaction(validated_rows)
 
 ## Verification And Remaining Uncertainty
 
-**Tests passed for valid input, invalid rows, and rollback after a write failure.** The CLI also imported a valid disposable file and rejected an invalid final row without changing stored records.
+**Tests and CLI checks confirmed the main import behaviors.** Connection loss during commit remains outside the executed checks.
+
+| Behavior | Evidence | Result Or Gap |
+| --- | --- | --- |
+| Invalid rows leave stored records unchanged | [Validation Test](/absolute/project/tests/test_importer.py:42) | Passed |
+| Write failures before commit roll back the import | [Rollback Test](/absolute/project/tests/test_importer.py:68) | Passed |
+| Valid and invalid files work through the CLI | Disposable imports and database inspection | Valid file saved expected records; invalid final row left records unchanged |
+| Connection loss during commit | No executed check | Retry safety remains unverified |
 
 **No usage-documentation updates were needed.** Existing instructions remain accurate.
 ````
