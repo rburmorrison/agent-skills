@@ -13,6 +13,8 @@ Read applicable project instructions and the code relevant to the requested beha
 
 Use available project context before asking for information. Distinguish established facts, user decisions, technical choices, and unresolved assumptions. Check external contracts and tool capabilities where the proposed design depends on them.
 
+Before designing custom parsing, formatting, layout, scheduling, or other behavior covered by an existing dependency, inspect the supported version's documentation or implementation and relevant call sites. Identify the built-in capability, the application policy it leaves to the caller, and any concrete contract gap. Prefer using or configuring that capability; a wrapper or replacement must own a responsibility the dependency does not already satisfy. Do not add a dependency merely to avoid a small cohesive operation. Record unavailable evidence as uncertainty rather than assuming a capability exists or is missing.
+
 ## Resolve Decisions
 
 Ask as many questions as necessary to reach agreement, one consequential question at a time. Do not bundle independent choices into a single confirmation; a shared topic does not make them one decision. Explain the options, practical effects, and reason for your recommendation. Wait for the answer before asking the next question or deciding dependent behavior. Do not shorten the interview to meet a question quota, avoid bothering the user, or rush to a plan. Reuse explicit answers already given; silence, an unanswered recommendation, and general permission to implement are not agreement to a new consequential choice.
