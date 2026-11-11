@@ -574,22 +574,87 @@ if (images.length) {
     }
   );
 }
+// Connect range notes to source backgrounds without altering persistent overlap rails.
+$$('.code-content').forEach(code => {
+  const rows = Array.from(code.children).filter(row => row.classList.contains('code-line'));
+  const notes = [...code.querySelectorAll('.code-annotation[data-range-start]')];
+  const baseline = rows.map(row => row.dataset.codeColor);
+  let hovered = null;
+  let focused = null;
+
+  function show(note) {
+    // Restore unrelated rows and emphasize the active note's full source range.
+    rows.forEach((row, index) => {
+      const number = Number(row.dataset.sourceLine);
+      const active = note && number >= Number(note.dataset.rangeStart) && number <= Number(note.dataset.rangeEnd);
+      const color = active ? note.dataset.codeColor : baseline[index];
+      if (color === undefined) delete row.dataset.codeColor;
+      else row.dataset.codeColor = color;
+    });
+
+    // Tint only the active descriptor while retaining every note's colored rail.
+    notes.forEach(item => item.toggleAttribute('data-range-active', item === note));
+  }
+
+  // Preserve the other interaction when pointer hover or keyboard focus ends.
+  notes.forEach(note => {
+    note.addEventListener('pointerenter', () => { hovered = note; show(note); });
+    note.addEventListener('pointerleave', () => { hovered = null; show(focused); });
+    note.addEventListener('focusin', () => { focused = note; show(note); });
+    note.addEventListener('focusout', event => {
+      if (note.contains(event.relatedTarget)) return;
+      focused = null;
+      show(hovered);
+    });
+  });
+});
+
 $$('[data-copy]').forEach(b => b.addEventListener(
   'click',
   async () => {
-    // Copy the selected code block to the clipboard when available.
+    // Collect only source rows, preserving their original line endings.
     const code = document.getElementById(b.dataset.copy);
+    const rows = [...code.querySelectorAll(':scope > .code-line')];
+    const source = rows.length
+      ? rows.map(row => row.querySelector('.code-line-text').textContent + row.dataset.ending).join('')
+      : code.textContent;
+
+    // Copy the source without line numbers or annotation text.
     try {
-      await navigator.clipboard.writeText(code.textContent);
+      await navigator.clipboard.writeText(source);
       b.textContent = 'Copied';
     }
     catch {
-      // Select the code for manual copying when clipboard access fails.
-      const r = document.createRange();
-      r.selectNodeContents(code);
-      const s = getSelection();
-      s.removeAllRanges();
-      s.addRange(r);
+      // Offer a source-only selection when clipboard access is unavailable.
+      // Select a text node directly so annotations and gutters cannot be copied.
+      // Overlay the source area so focus changes cannot shift nearby copy controls.
+      const box = code.closest('.codebox');
+      box.querySelector('.code-copy-fallback')?.remove();
+      const fallback = document.createElement('pre');
+      fallback.className = 'code-copy-fallback';
+      fallback.style.top = code.offsetTop + 'px';
+      fallback.tabIndex = 0;
+      fallback.setAttribute('aria-label', 'Source for manual copying');
+
+      // Append source and a hidden end marker that keeps trailing newlines visible.
+      const sourceNode = document.createTextNode(source);
+      const endMarker = document.createElement('span');
+      endMarker.setAttribute('aria-hidden', 'true');
+      endMarker.textContent = '\u200b';
+      fallback.append(sourceNode, endMarker);
+
+      // Focus the overlay and remove it when manual copying loses focus.
+      box.append(fallback);
+      fallback.addEventListener('blur', () => fallback.remove(), { once: true });
+      fallback.focus({ preventScroll: true });
+
+      // Select only the original source, excluding the hidden end marker.
+      const range = document.createRange();
+      range.setStart(sourceNode, 0);
+      range.setEnd(sourceNode, source.length);
+      const selection = getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
       b.textContent = 'Selected; press Ctrl/Cmd+C';
     }
 

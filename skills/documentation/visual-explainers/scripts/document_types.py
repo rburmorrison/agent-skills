@@ -76,11 +76,29 @@ class AlertBlock(TypedDict, total=False):
     blocks: list[object]
 
 
+class _CodeAnnotationText(TypedDict):
+    text: str
+    """Nonblank explanatory text accepting safe inline formatting."""
+
+
+class CodeAnnotation(_CodeAnnotationText, total=False):
+    """One note positioned outside the copyable source."""
+
+    title: str
+    """Optional title accepting safe inline formatting."""
+    lines: int | list[int]
+    """One line or inclusive [start, end]; independent of position, omitted for general notes."""
+    position: str | int
+    """Top (default), bottom, or a one-based source line to follow."""
+
+
 class CodeBlock(TextBlock, total=False):
-    """Literal code with optional language and ID."""
+    """Numbered literal code with optional language, annotations, and ID."""
 
     id: str
     language: str
+    annotations: list[CodeAnnotation]
+    """Notes in input order within each placement; invalid input is rejected."""
 
 
 class _TableContent(TypedDict):

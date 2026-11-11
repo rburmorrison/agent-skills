@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from urllib.parse import unquote_to_bytes
 
+from code_blocks import RANGE_PALETTE_SIZE, CodeAnnotation, prepare_code_block
 from code_highlighting import highlight_code, highlight_styles
 from diagram_layout import (
     FontMetrics,
@@ -607,29 +608,133 @@ class Renderer:
             + "</div>"
         )
 
-    def _code_block(self, values: Mapping[str, object]) -> str:
-        # Read the code block fields.
-        block = cast("spec.CodeBlock", values)
+    def _code_annotation(self, annotation: CodeAnnotation, index: int | None) -> str:
+        # Render the optional title with the same safe inline vocabulary as text.
+        title = (
+            '<span class="code-annotation-title">'
+            + inline(annotation.title)
+            + "</span>"
+            if annotation.title
+            else ""
+        )
 
-        # Reserve the code block ID and choose its display language.
+        # Label referenced bounds independently of where the note is placed.
+        attributes = ""
+        badge = ""
+        if annotation.lines is not None and index is not None:
+            start, end = annotation.lines.start, annotation.lines.end
+            label = f"Line {start}" if start == end else f"Lines {start}\u2013{end}"
+            attributes = (
+                f' tabindex="0" data-range-start="{start}" data-range-end="{end}"'
+                f' data-code-color="{index % RANGE_PALETTE_SIZE}"'
+            )
+            badge = '<span class="code-range-label">' + label + "</span>"
+
+        # Keep explanatory content separate from every copyable source span.
+        return (
+            '<span class="code-annotation" role="note"'
+            + attributes
+            + ">"
+            + '<span class="code-annotation-heading">'
+            + badge
+            + title
+            + "</span>"
+            + '<span class="code-annotation-text">'
+            + inline(annotation.text)
+            + "</span></span>"
+        )
+
+    def _code_block(self, values: Mapping[str, object]) -> str:
+        # Validate annotations and highlight the whole source before rendering rows.
+        block = cast("spec.CodeBlock", values)
+        source = highlight_code(str(block["text"]), block.get("language", ""))
+        prepared = prepare_code_block(source, block.get("annotations", []))
+        self.code_categories.update(prepared.source.categories)
+
+        # Reserve the copy target and a gutter wide enough for every line number.
         ident = self.uid(block.get("id"))
         label = block.get("language", "Code")
+        digits = max(2, len(str(len(prepared.source.lines))))
+        overlaps = max(map(len, prepared.line_ranges), default=0)
+        gutter_extra = (
+            f";--code-rail-extra:{4 * (overlaps - 1)}px" if overlaps > 1 else ""
+        )
 
-        # Highlight literal source and collect its required styles.
-        highlighted = highlight_code(str(block["text"]), block.get("language", ""))
-        self.code_categories.update(highlighted.categories)
+        # Place introductory notes above the first source row.
+        content = [
+            self._code_annotation(
+                note, prepared.ranges.get(note.lines) if note.lines else None
+            )
+            for note in prepared.annotations.get("top", [])
+        ]
 
-        # Keep copy controls bound to the code's unchanged text content.
+        # Render numbered source rows followed by their notes in input order.
+        endings = {"": "", "\n": "&#10;", "\r": "&#13;", "\r\n": "&#13;&#10;"}
+        for number, line in enumerate(prepared.source.lines, 1):
+            # Stack every covering range while using the earliest background at rest.
+            covering = prepared.line_ranges[number - 1]
+            attributes = f' data-source-line="{number}"'
+            if covering:
+                stops: list[str] = []
+
+                for slot, index in enumerate(covering):
+                    color = index % RANGE_PALETTE_SIZE
+                    stops.append(
+                        f"var(--code-range-ink-{color}) {slot * 4}px {slot * 4 + 3}px"
+                    )
+                    stops.append(f"transparent {slot * 4 + 3}px {slot * 4 + 4}px")
+
+                attributes += "".join(
+                    [
+                        f' data-code-color="{covering[0] % RANGE_PALETTE_SIZE}"',
+                        f' style="--code-rail-width:{len(covering) * 4 - 1}px;',
+                        "--code-rails:linear-gradient(to right,",
+                        ",".join(stops),
+                        ')"',
+                    ]
+                )
+
+            # Keep literal source and its original ending separate from decoration.
+            content.append(
+                '<span class="code-line"'
+                + attributes
+                + ' data-ending="'
+                + endings[line.ending]
+                + '"><span class="code-line-number" aria-hidden="true">'
+                + str(number)
+                + '</span><span class="code-line-text">'
+                + line.markup
+                + "</span></span>"
+            )
+
+            # Insert notes immediately after their specified source line.
+            content.extend(
+                self._code_annotation(
+                    note, prepared.ranges.get(note.lines) if note.lines else None
+                )
+                for note in prepared.annotations.get(number, [])
+            )
+
+        # Append bottom notes and bind Copy to the source-bearing code container.
+        content.extend(
+            self._code_annotation(
+                note, prepared.ranges.get(note.lines) if note.lines else None
+            )
+            for note in prepared.annotations.get("bottom", [])
+        )
         return (
             '<div class="codebox"><div class="codebar"><span>'
             + esc(label)
             + '</span><button type="button" data-copy="'
             + ident
-            + '">Copy</button></div><pre><code id="'
+            + '">Copy</button></div><code id="'
             + ident
+            + '" class="code-content" style="--code-digits:'
+            + str(digits)
+            + gutter_extra
             + '">'
-            + highlighted.markup
-            + "</code></pre></div>"
+            + "".join(content)
+            + "</code></div>"
         )
 
     def _table_block(self, values: Mapping[str, object]) -> str:

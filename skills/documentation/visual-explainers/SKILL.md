@@ -40,7 +40,7 @@ Custom HTML, CSS, and JavaScript require `--trusted-custom`; see [custom.md](ref
 - **Writing:** paragraphs, nested headings, ordered/unordered lists, inline code, links, timelines.
 - **Math:** equation blocks with Unicode text or native MathML for fractions, roots, scripts, sums, and matrices. See [components.md](references/components.md#math-formulas) for fields and supported notation; no custom HTML is needed.
 - **Layout:** columns, cards, metric groups, comparison layouts using columns or tables.
-- **Information:** striped tables with distinct headers; Note, Tip, Important, Warning, and Caution alerts; disclosures with tinted body containers; syntax-highlighted code blocks with copy controls.
+- **Information:** striped tables with distinct headers; Note, Tip, Important, Warning, and Caution alerts; disclosures with tinted body containers; numbered, syntax-highlighted code blocks with optional top, bottom, or after-line annotations and source-only copy controls.
 - **Images:** embedded local images, rounded corners, centered captions, click-to-enlarge viewer with fit/actual size and keyboard dismissal.
 - **Diagrams:** flow, sequence, and directed acyclic graph layouts. See [diagrams.md](references/diagrams.md) when using them.
 - **Charts:** line, area, bar, scatter, histogram, donut, heatmap, and box plots, with exact-value hover/tap/focus details, keyboard navigation, and data tables. See [charts.md](references/charts.md) when plotting.

@@ -71,7 +71,7 @@ class HighlightingTests(unittest.TestCase):
         self.assertEqual(1, output.count(".syn-keyword{"))
         self.assertNotIn(".syn-function{", output)
         self.assertIn('data-copy="source"', output)
-        self.assertIn('<code id="source">', output)
+        self.assertIn('<code id="source" ', output)
         self.assertNotIn("pygments", output.lower())
         self.assertNotIn("</code><script>", output)
 

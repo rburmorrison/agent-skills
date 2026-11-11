@@ -21,3 +21,18 @@ body{
 .theme-swatch-system{background:linear-gradient(90deg,#fafafa 50%,#181818 50%)}
 .theme-swatch-light{background:#fafafa}
 .theme-swatch-dark{background:#181818}
+
+body{
+  --code-range-ink-0:light-dark(#28618e,#8bc5f1);
+  --code-range-wash-0:light-dark(#e7f1f9,#253746);
+  --code-range-ink-1:light-dark(#735298,#c7a4ef);
+  --code-range-wash-1:light-dark(#f0eaf7,#362c43);
+  --code-range-ink-2:light-dark(#226b5b,#86d5bc);
+  --code-range-wash-2:light-dark(#e4f3ed,#243c33);
+  --code-range-ink-3:light-dark(#79551d,#ebc58b);
+  --code-range-wash-3:light-dark(#f7efdf,#403625);
+  --code-range-ink-4:light-dark(#8b4260,#efa9bf);
+  --code-range-wash-4:light-dark(#f8e9ef,#402b34);
+  --code-range-ink-5:light-dark(#44618d,#a7bdf1);
+  --code-range-wash-5:light-dark(#ebeff9,#2d3445);
+}

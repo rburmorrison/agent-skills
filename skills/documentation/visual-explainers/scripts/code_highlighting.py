@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import importlib
+import re
 import sys
 from dataclasses import dataclass
 from functools import cache
@@ -33,13 +34,28 @@ class _Lexers(Protocol):
 
 
 @dataclass(frozen=True)
-class HighlightedCode:
-    """Escaped code markup and the style categories used by its spans."""
+class HighlightedLine:
+    """One source line, excluding its separately preserved newline sequence."""
 
     markup: str
-    """HTML containing only escaped text and renderer-owned span elements."""
+    """Escaped source with balanced highlighting spans, without its line ending."""
+    ending: str
+    """Original LF, CRLF, CR, or empty string for an unterminated final line."""
+
+
+@dataclass(frozen=True)
+class HighlightedCode:
+    """Independently renderable source lines and their used style categories."""
+
+    lines: tuple[HighlightedLine, ...]
+    """Source lines; empty source has one line, a final newline adds no extra row."""
     categories: frozenset[str]
     """Token category names required to style the markup."""
+
+    @property
+    def markup(self) -> str:
+        """Return escaped highlighted source with its original newline sequences."""
+        return "".join(line.markup + _escape_source(line.ending) for line in self.lines)
 
 
 @cache
@@ -93,35 +109,21 @@ def _escape_source(text: str) -> str:
     return html.escape(text, quote=True).replace("\r", "&#13;")
 
 
-def highlight_code(text: str, language: str) -> HighlightedCode:
-    """Color explicitly labeled code without changing its text.
-
-    Args:
-        text: Literal source, including whitespace to preserve.
-        language: Case-insensitive bundled lexer name or alias. Blank and unknown
-            labels yield plain escaped text; no language guessing is performed.
-
-    Returns:
-        Escaped spans and their used categories. Lexers that alter the source
-        instead of partitioning it yield plain escaped text.
-
-    Raises:
-        ValueError: The bundled archive is absent or another Pygments is loaded.
-    """
-    # Keep unlabeled code plain without loading the highlighter.
-    plain = HighlightedCode(_escape_source(text), frozenset())
+def _token_runs(text: str, language: str) -> list[tuple[int, int, str]]:
+    # Keep empty or unlabeled source plain without loading the highlighter.
+    plain = [(0, len(text), "")]
     if not language.strip() or not text:
         return plain
 
-    # Select the explicit bundled language without plugin or filename discovery.
+    # Resolve an explicit bundled language without plugin or filename discovery.
     lexers, aliases = _bundled_lexers()
     alias = aliases.get(language.strip().casefold())
     if alias is None:
         return plain
     lexer = lexers.get_lexer_by_name(alias)
 
-    # Coalesce adjacent categories while verifying a lossless source partition.
-    runs: list[tuple[str, list[str]]] = []
+    # Verify a lossless partition and coalesce neighboring style categories.
+    runs: list[tuple[int, int, str]] = []
     offset = 0
     for index, token, value in lexer.get_tokens_unprocessed(text):
         if index != offset or text[index : index + len(value)] != value:
@@ -130,26 +132,62 @@ def highlight_code(text: str, language: str) -> HighlightedCode:
         if not value:
             continue
         category = _category(token)
-        if runs and runs[-1][0] == category:
-            runs[-1][1].append(value)
+        if runs and runs[-1][2] == category:
+            runs[-1] = (runs[-1][0], offset, category)
         else:
-            runs.append((category, [value]))
+            runs.append((index, offset, category))
 
     if offset != len(text):
         return plain
+    return runs
 
-    # Escape every source fragment before wrapping renderer-owned class names.
-    parts: list[str] = []
+
+def highlight_code(text: str, language: str) -> HighlightedCode:
+    """Highlight whole-source syntax and split it into independently renderable lines.
+
+    Args:
+        text: Literal source, including whitespace and line endings to preserve.
+        language: Case-insensitive bundled lexer name or alias. Blank and unknown
+            labels yield plain escaped text; no language guessing is performed.
+
+    Returns:
+        Balanced spans per source line and the used style categories. LF, CRLF,
+        and CR delimit lines. Empty source has one line; a final newline does not
+        add an extra row. Lexers that alter the source yield plain escaped text.
+
+    Raises:
+        ValueError: The bundled archive is absent or another Pygments is loaded.
+    """
+    # Tokenize the entire source so multiline strings and comments retain context.
+    runs = _token_runs(text, language)
+    lines: list[HighlightedLine] = []
     categories: set[str] = set()
-    for category, fragments in runs:
-        escaped = _escape_source("".join(fragments))
-        if category:
-            categories.add(category)
-            parts.append(f'<span class="syn-{category}">{escaped}</span>')
-        else:
-            parts.append(escaped)
+    run_index = 0
 
-    return HighlightedCode("".join(parts), frozenset(categories))
+    # Walk source-line boundaries and token runs together without re-lexing lines.
+    for match in re.finditer(r"([^\r\n]*)(\r\n|\r|\n|$)", text):
+        if match.start() == len(text) and lines:
+            break
+        start, end = match.span(1)
+        parts: list[str] = []
+
+        # Emit balanced spans for the portion of each token on this source line.
+        while start < end:
+            while runs[run_index][1] <= start:
+                run_index += 1
+            _, run_end, category = runs[run_index]
+            stop = min(end, run_end)
+            escaped = _escape_source(text[start:stop])
+            if category:
+                categories.add(category)
+                parts.append(f'<span class="syn-{category}">{escaped}</span>')
+            else:
+                parts.append(escaped)
+            start = stop
+
+        lines.append(HighlightedLine("".join(parts), match[2]))
+
+    return HighlightedCode(tuple(lines), frozenset(categories))
 
 
 def highlight_styles(categories: set[str], theme_css: str) -> str:

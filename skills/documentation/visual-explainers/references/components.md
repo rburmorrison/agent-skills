@@ -56,7 +56,32 @@ Supported presentation attributes: `displaystyle`, `scriptlevel`, `mathvariant`,
 {"type":"disclosure","title":"A Useful Question","open":false,"blocks":["The answer."]}
 ```
 
-Alerts accept `kind`: `note`, `tip`, `important`, `warning`, `caution`. Instead of `text`, an alert can use `blocks`; `title` overrides its default variant label. Do not choose a severe variant for visual variety. Code `language` labels the block and selects syntax highlighting during generation; it does not execute code. Optional `id` lets a custom script replace the highlighted code with plain text using `textContent`. Rows must have exactly as many cells as headers. Tables scroll within their rounded container when needed. Disclosures have a plain summary and a padded, tinted body.
+Alerts accept `kind`: `note`, `tip`, `important`, `warning`, `caution`. Instead of `text`, an alert can use `blocks`; `title` overrides its default variant label. Do not choose a severe variant for visual variety. Rows must have exactly as many cells as headers. Tables scroll within their rounded container when needed. Disclosures have a plain summary and a padded, tinted body.
+
+### Code Blocks
+
+Code `language` labels the block and selects syntax highlighting during generation; it does not execute code. Use a recognized Pygments name or alias, such as `"Rust"` or `"rust"`; matching is case-insensitive. Missing or unknown languages render as plain text. Keep descriptions such as “Actual Source” in `annotations`, outside `language`: `"Rust · Actual Source"` is not a recognized language.
+
+Every code block has a right-aligned line-number gutter sized for its largest number. Numbers refer to source lines, including blank lines, rather than visually wrapped rows. LF, CRLF, and CR delimit source lines; a final newline adds no extra numbered row, and empty source displays one blank line. Copy includes only the original source, preserving its whitespace and line endings; numbers and annotations are excluded. If clipboard access is unavailable, a temporary source-only selection appears for manual copying and disappears when it loses focus.
+
+Use the optional `annotations` list for full-width explanatory notes. Each object requires a nonblank string `text` and accepts an optional string `title`; both use the existing safe inline formatting. `position` defaults to `"top"`, accepts `"bottom"`, or takes a positive integer meaning **after that source line**. Multiple notes at the same position keep their list order. Invalid fields, types, positions, or line numbers stop generation with an error; correct them rather than moving the note silently. Choose notes and positions that help explain the source; no annotation is required.
+
+Add `lines` to identify the source a note explains: an integer for one line or `[start, end]` for an inclusive range. This is independent of `position`; omitting it leaves a neutral general note. Bounds must be integers within the source, with start no greater than end; invalid bounds stop generation. Referenced notes show a line badge and matching source shading. Colors follow range start order, with annotation order breaking ties; identical ranges reuse a color, and the six-color palette repeats. Overlaps retain stacked 3 px rails with 1 px gaps, and the gutter reserves space for the widest stack. The earliest range supplies the resting background. Hovering or keyboard-focusing a note emphasizes its full range without hiding other rails; leaving restores the resting colors.
+
+```json
+{
+  "type": "code",
+  "language": "Rust",
+  "text": "fn total(values: &[i32]) -> i32 {\n    values.iter().sum()\n}",
+  "annotations": [
+    {"title": "Actual Source", "text": "Adds the values in a borrowed slice."},
+    {"position": 2, "lines": 2, "text": "`sum()` returns zero when the iterator is empty."},
+    {"position": "bottom", "lines": [1, 3], "title": "Result", "text": "The input slice is left unchanged."}
+  ]
+}
+```
+
+Optional `id` identifies the code container. A custom script can replace its contents with `textContent`; the replacement is plain text without highlighting, numbers, or annotations, and Copy uses that replacement text.
 
 ## Images
 
