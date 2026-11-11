@@ -67,3 +67,19 @@ separately. `just --list` shows all recipes.
 The explainer builder requires Python 3.11+ and includes its syntax highlighter; generation and viewing work offline without installing dependencies.
 Python development tools are managed by uv and pinned in `uv.lock`.
 JavaScript development tools are managed by npm and pinned in `package-lock.json`.
+
+## License
+
+Copyright (C) 2026 Ryan Burmeister-Morrison.
+
+Except for third-party material with its own license, this repository is licensed
+under the GNU Affero General Public License, version 3 or (at your option) any
+later version (`AGPL-3.0-or-later`). See [LICENSE](LICENSE) for the full terms.
+This work is provided without any warranty, including the implied warranties of
+merchantability or fitness for a particular purpose.
+
+The bundled [Manrope](skills/documentation/visual-explainers/assets/fonts/manrope-OFL.txt)
+and [JetBrains Mono](skills/documentation/visual-explainers/assets/fonts/jetbrainsmono-OFL.txt)
+fonts retain their SIL Open Font License 1.1 terms. The bundled
+[Pygments archive](skills/documentation/visual-explainers/scripts/vendor/pygments-2.21.0.zip)
+retains its BSD license and includes its upstream license and author notices.
