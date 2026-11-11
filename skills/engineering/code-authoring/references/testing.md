@@ -4,6 +4,8 @@ Derive cases from agreed behavior, invariants, and meaningful failures. Prefer a
 
 Test at the boundary where the behavior can actually be observed. Use focused tests for non-trivial pure logic and integration tests for interactions such as transactions and serialization. A fake that simply implements the desired behavior does not establish that the production adapter has it.
 
+When behavior is delegated to a dependency, exercise the application's real integration with that dependency. Verify application configuration, inputs, outputs, and error handling instead of recreating the dependency's parser, formatter, layout engine, or scheduler in a fake. Cover representative success and meaningful boundary or failure cases through the real caller. Use built-in dependency test facilities when they exercise the relevant behavior; disclose what a test double bypasses. Do not duplicate the dependency's entire test suite or freeze incidental output unless the application promises it.
+
 Name tests after the behavior they establish. Separate setup, action, and expected outcome with blank lines, and introduce meaningful stages with short, imperative comments describing the scenario rather than generic labels such as "Arrange" or "Act". Keep input and expected values close enough to understand together. Some repetition is preferable to a fixture hierarchy or generic test harness that hides the scenario.
 
 Give separate scenarios their own commented paragraphs, including additional boundary cases near the end of a test. Do not leave a new scenario under a comment describing only the preceding case.

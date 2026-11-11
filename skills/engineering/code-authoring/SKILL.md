@@ -21,6 +21,8 @@ Choose only routine local implementation details within the plan's remaining dis
 
 Concentrate filesystem, network, database, clock, and environment access at explicit boundaries where applicable. Separate substantial domain calculations from orchestration, passing ordinary values into core transformations and decisions while preserving transaction and snapshot boundaries. Use the project's existing mechanisms; introduce abstractions only for a concrete responsibility or dependency.
 
+Before implementing behavior an existing dependency may provide, inspect its supported-version documentation or implementation. Prefer its built-in behavior and configuration over custom parsing, help generation, layout arithmetic, or equivalent machinery. Keep custom code for a demonstrated application requirement or contract gap, and explain that gap near the adapter. A wrapper must add a cohesive responsibility, not merely rename or reproduce dependency behavior. If reuse would change an agreed contract, resolve that choice before switching; missing evidence is not proof that replacement is necessary.
+
 Manage dependencies through the project's package manager. Use actual package information and supported-version constraints; do not guess versions or hand-edit dependency entries as a shortcut. Respect existing workspace dependencies and lockfile policy. If the needed tool is unavailable, apply the blocker policy instead of silently bypassing it.
 
 ## Shape Readable Code

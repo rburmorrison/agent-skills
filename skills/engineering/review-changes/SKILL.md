@@ -29,9 +29,11 @@ For each usage-documentation edit, check its planned location and correction or 
 - Is I/O concentrated at clear boundaries, with core logic understandable independently?
 - Are names, logical grouping, functions, and modules readable without unnecessary indirection or fragmentation?
 - Do repeated collection lookups introduce avoidable scaling costs? Identify the actual traversal and lookup cost, rather than requesting speculative optimization.
+- Does custom code duplicate an existing dependency's capability? Inspect the supported version's documentation or implementation before proposing replacement. Identify the application-specific contract gap, if any; a wrapper, manual algorithm, or test fake is not justified merely because it already exists or passes tests. Preserve custom behavior the dependency cannot satisfy.
 - Do domain values retain meaning through named fields and appropriate types? Are idioms compatible with supported language versions?
 - Are all changed responsibilities and dependencies necessary for the agreed scope?
 - Do tests exercise meaningful behavior at the real boundary, with clear setup and assertions? Are they redundant or coupled to incidental implementation details?
+- Do dependency integration tests invoke the real configured capability and check application outcomes, including relevant failures? Identify claims established only by a fake or duplicate implementation.
 - Was the changed workflow exercised through the actual application entry point with observable results and relevant state, or is the execution limitation clearly stated? Distinguish workflow evidence from unit-test results; do not demand unavailable tools or unauthorized external actions.
 - Are tooling changes justified? Are suppressions rare, narrow, and accompanied by a specific reason, including configuration-level exceptions?
 - Do affected interface contracts, help, and usage examples match the implemented behavior and documentation lints? Check completeness and unnecessary prose without expanding the review into unrelated documentation.
