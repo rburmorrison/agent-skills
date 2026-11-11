@@ -40,16 +40,22 @@ def overlaps(a: Bounds, b: Bounds) -> bool:
 
 
 def segment_enters_node(a: Point, b: Point, node: PlacedNode) -> bool:
+    # Inset the node bounds to allow routes along its border.
     left, right = node["x"] + 0.001, node["x"] + node["width"] - 0.001
     top, bottom = node["y"] + 0.001, node["y"] + node["height"] - 0.001
+
+    # Check intersections for vertical and horizontal segments.
     if a[0] == b[0]:
         return left < a[0] < right and max(min(a[1], b[1]), top) < min(
             max(a[1], b[1]), bottom
         )
+
     if a[1] == b[1]:
         return top < a[1] < bottom and max(min(a[0], b[0]), left) < min(
             max(a[0], b[0]), right
         )
+
+    # Reject diagonal routes because the geometry contract is orthogonal.
     raise AssertionError("A routed segment is not orthogonal")
 
 
@@ -61,8 +67,11 @@ class DiagramGeometryTests(unittest.TestCase):
     def assert_clear(
         self, nodes: list[GraphNode], edges: list[GraphEdge]
     ) -> GraphLayout:
+        # Lay out the graph and collect its measured edge labels.
         layout = layout_graph(nodes, edges, self.font)
         labels = [r["label"] for r in layout["edges"] if r["label"]]
+
+        # Verify label bounds, node clearance, and measured text widths.
         for label in labels:
             self.assertTrue(
                 0 <= label["x"] < label["x"] + label["width"] <= layout["width"]
@@ -70,23 +79,35 @@ class DiagramGeometryTests(unittest.TestCase):
             self.assertTrue(
                 0 <= label["y"] < label["y"] + label["height"] <= layout["height"]
             )
+
+            # Verify that the label clears every node.
             for node in layout["nodes"]:
                 self.assertFalse(overlaps(label, node), (label, node))
+
+            # Verify each wrapped line fits inside the padded label.
             for line in label["lines"]:
                 self.assertLessEqual(
                     self.font.width(line, label["size"]), label["width"] - 15.9
                 )
+
+        # Verify that edge labels do not overlap one another.
         for i, label in enumerate(labels):
             for other in labels[i + 1 :]:
                 self.assertFalse(overlaps(label, other), (label, other))
+
+        # Verify path serialization and route clearance from every node.
         for route in layout["edges"]:
             self.assertTrue(rounded_path(route["points"]).startswith("M"))
+
+            # Verify that each orthogonal route segment clears every node.
             for a, b in zip(route["points"], route["points"][1:]):
                 for node in layout["nodes"]:
                     self.assertFalse(segment_enters_node(a, b, node), (route, node))
+
         return layout
 
     def test_connection_error_bypasses_middle_node(self) -> None:
+        # Compose adjacent connections and a labeled bypass edge.
         nodes: list[GraphNode] = [
             {"id": i, "label": i.title()} for i in ("request", "validate", "result")
         ]
@@ -95,23 +116,31 @@ class DiagramGeometryTests(unittest.TestCase):
             {"from": "validate", "to": "result", "label": "Valid"},
             {"from": "request", "to": "result", "label": "Connection error"},
         ]
+
+        # Lay out the graph and verify shared clearance invariants.
         layout = self.assert_clear(nodes, edges)
+
+        # Verify that single adjacent connections align with node centers.
         for route in layout["edges"][:2]:
             self.assertEqual(
                 1,
                 len({point[1] for point in route["points"]}),
                 "Single adjacent connections should align with node centers",
             )
+
+        # Verify that the bypass label stays above all graph nodes.
         bypass = layout["edges"][2]
         label = bypass["label"]
         if label is None:
             self.fail("The labeled bypass must retain its measured label")
+
         self.assertLess(
             label["y"] + label["height"],
             min(n["y"] for n in layout["nodes"]),
         )
 
     def test_asymmetric_branching_and_long_identifiers(self) -> None:
+        # Compose asymmetric branches with long and unbroken labels.
         nodes: list[GraphNode] = [
             {"id": str(i), "label": "Stage " + str(i)} for i in range(7)
         ]
@@ -128,12 +157,18 @@ class DiagramGeometryTests(unittest.TestCase):
                 (0, 6, "Connection error: request timed out"),
             ]
         ]
+
+        # Verify that measured labels and routes retain their reserved space.
         _ = self.assert_clear(nodes, edges)
 
     def test_many_small_dags_keep_labels_and_paths_outside_nodes(self) -> None:
+        # Seed graph generation for reproducible geometry coverage.
         randomizer = random.Random(17)
+
+        # Exercise multiple graph sizes and branching patterns.
         for count in range(2, 10):
             for case in range(8):
+                # Create an adjacent chain for this graph size.
                 nodes: list[GraphNode] = [
                     {"id": str(i), "label": "Stage " + str(i)} for i in range(count)
                 ]
@@ -141,6 +176,8 @@ class DiagramGeometryTests(unittest.TestCase):
                     {"from": str(i), "to": str(i + 1), "label": "Continue"}
                     for i in range(count - 1)
                 ]
+
+                # Add reproducible bypass edges with measured labels.
                 skipped_edges: list[GraphEdge] = [
                     {
                         "from": str(a),
@@ -152,15 +189,20 @@ class DiagramGeometryTests(unittest.TestCase):
                     if randomizer.random() < 0.3
                 ]
                 edges.extend(skipped_edges)
+
+                # Verify clearance for the complete generated graph.
                 with self.subTest(nodes=count, case=case):
                     _ = self.assert_clear(nodes, edges)
 
     def test_cycles_and_unknown_nodes_are_rejected(self) -> None:
+        # Compose a cycle and an edge with an unknown endpoint.
         nodes: list[GraphNode] = [{"id": "a", "label": "A"}, {"id": "b", "label": "B"}]
         invalid_edges: list[list[GraphEdge]] = [
             [{"from": "a", "to": "b"}, {"from": "b", "to": "a"}],
             [{"from": "a", "to": "missing"}],
         ]
+
+        # Verify that neither invalid graph can be laid out.
         for edges in invalid_edges:
             with self.assertRaises(ValueError):
                 _ = layout_graph(nodes, edges, self.font)
@@ -172,8 +214,12 @@ class DiagramGeometryTests(unittest.TestCase):
             "连接错误\uff1a请求超时",
             "Διαδρομή σφάλματος",
         ]:
+            # Wrap the label using the bundled font metrics.
             lines = self.font.wrap(text, 13, 120)
+
+            # Verify that wrapping preserves text and respects the line width.
             self.assertEqual("".join(text.split()), "".join("".join(lines).split()))
+
             for line in lines:
                 self.assertLessEqual(self.font.width(line, 13), 120)
 

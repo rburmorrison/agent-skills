@@ -80,17 +80,39 @@ MINOR = {
 
 
 def esc(value: object) -> str:
+    """Escape a value's string representation for HTML text or attributes.
+
+    Args:
+        value: Value to stringify and escape, including quotation marks.
+
+    Returns:
+        HTML-safe text.
+    """
     return html.escape(str(value), quote=True)
 
 
 def title_case(text: object) -> str:
+    """Capitalize English title initials while preserving internal capitalization.
+
+    Args:
+        text: Value to stringify; backtick spans and whitespace are preserved.
+
+    Returns:
+        Title text with interior minor words lowercased except after a colon or em dash.
+    """
+
     # Preserve acronyms, identifiers, and existing internal capitalization.
     tokens = re.split(r"(`[^`]+`|\s+)", str(text))
+
+    # Identify the word tokens while retaining original spacing.
     words = [i for i, t in enumerate(tokens) if t.strip() and not t.isspace()]
+
+    # Capitalize word initials and lowercase interior minor words.
     for pos, i in enumerate(words):
         w = tokens[i]
         if w.startswith("`"):
             continue
+
         if (
             w.lower() in MINOR
             and pos not in (0, len(words) - 1)
@@ -99,13 +121,29 @@ def title_case(text: object) -> str:
             tokens[i] = w.lower()
         else:
             tokens[i] = w[:1].upper() + w[1:]
+
+    # Reassemble the title with preserved whitespace and code spans.
     return "".join(tokens)
 
 
 def inline(value: object) -> str:
-    """Small inline vocabulary; literal HTML stays literal. Use html blocks for markup."""
+    """Render unnested code, emphasis, and links while escaping literal HTML.
+
+    Args:
+        value: Value to stringify and interpret using the small inline vocabulary.
+
+    Returns:
+        HTML for inline content; unsupported markup remains literal text.
+
+    Raises:
+        ValueError: A link uses a scheme other than HTTP, HTTPS, mailto, or an anchor.
+    """
+
+    # Tokenize the supported inline markup vocabulary.
     pattern = r"(`[^`\n]+`|\*\*[^*\n]+\*\*|\*[^*\n]+\*|\[[^\]\n]+\]\([^\s)]+\))"
     result: list[str] = []
+
+    # Escape literal content and render supported inline tokens.
     for token in re.split(pattern, str(value)):
         if token.startswith("`") and token.endswith("`"):
             result.append("<code>" + esc(token[1:-1]) + "</code>")
@@ -115,11 +153,15 @@ def inline(value: object) -> str:
             result.append("<em>" + esc(token[1:-1]) + "</em>")
         elif match := re.fullmatch(r"\[([^\]]+)\]\(([^\s)]+)\)", token):
             label, url = match.groups()
+
+            # Reject unsupported link schemes before emitting an anchor.
             if not url.startswith(("https://", "http://", "mailto:", "#")):
                 raise ValueError("Links must be https:, http:, mailto:, or # anchors")
+
             result.append('<a href="' + esc(url) + '">' + esc(label) + "</a>")
         else:
             result.append(esc(token))
+
     return "".join(result)
 
 
@@ -127,7 +169,10 @@ class DependencyCheck(HTMLParser):
     """Inspect actual resource attributes, not optional source hyperlinks or license text."""
 
     def __init__(self) -> None:
+        # Initialize parser state and accumulated document diagnostics.
         super().__init__()
+
+        # Initialize accumulated inspection results and element context.
         self.errors: list[str] = []
         self.ids: list[str] = []
         self.h1: int = 0
@@ -135,21 +180,31 @@ class DependencyCheck(HTMLParser):
         self.in_script: bool = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        # Track document IDs, heading count, and embedded language context.
         a = cast("Mapping[str, str]", dict(attrs))
         if "id" in a:
             self.ids.append(a["id"])
+
         if tag == "h1":
             self.h1 += 1
+
         if tag == "style":
             self.in_style = True
+
         if tag == "script":
             self.in_script = a.get("type", "") not in ("application/json", "text/plain")
+
+        # Inspect inline CSS and SVG presentation attributes.
         if "style" in a:
             self.check_css(a["style"])
+
         for key in ("fill", "stroke", "filter", "mask", "clip-path"):
             if key in a:
                 self.check_css(a[key])
+
+        # Inspect embedded SVG images and external resource attributes.
         self._check_embedded_svg(tag, a)
+
         for key in ("src", "poster", "srcset", "data"):
             if (
                 key in a
@@ -157,20 +212,25 @@ class DependencyCheck(HTMLParser):
                 and not a[key].startswith(("data:", "#"))
             ):
                 self.errors.append(f"External resource: {tag} {key}={a[key]}")
+
         if tag == "link" and a.get("href", "") and not a["href"].startswith("data:"):
             self.errors.append("External link resource: " + a["href"])
+
         if tag in ("use", "image"):
             for k in ("href", "xlink:href"):
                 if k in a and not a[k].startswith(("#", "data:")):
                     self.errors.append("External SVG resource: " + a[k])
+
         if tag == "iframe":
             self.errors.append(
                 "iframes are not portable; use embedded HTML/SVG instead"
             )
 
     def _check_embedded_svg(self, tag: str, a: Mapping[str, str]) -> None:
+        # Inspect SVG image payloads without fetching external content.
         if tag == "img" and a.get("src", "").startswith("data:image/svg+xml"):
             try:
+                # Decode the data URI and inspect its embedded resource attributes.
                 header, payload = a["src"].split(",", 1)
                 raw = (
                     base64.b64decode(payload)
@@ -186,19 +246,25 @@ class DependencyCheck(HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         if tag == "style":
             self.in_style = False
+
         if tag == "script":
             self.in_script = False
 
     def check_css(self, data: str) -> None:
+        # Reject stylesheet imports and external URL references.
         if re.search(r"@import\b", data, re.IGNORECASE):
             self.errors.append("CSS @import is not offline")
+
         for m in re.finditer(r"url\(\s*[\'\"]?([^\'\"\)\s]+)", data):
             if not m[1].startswith(("data:", "#")):
                 self.errors.append("External CSS resource: " + m[1])
 
     def handle_data(self, data: str) -> None:
+        # Inspect CSS text only while inside a style element.
         if self.in_style:
             self.check_css(data)
+
+        # Detect runtime network and module dependencies in executable scripts.
         if self.in_script and re.search(
             r"\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\bimport\s*\(|^\s*import\s",
             data,
@@ -209,11 +275,15 @@ class DependencyCheck(HTMLParser):
             )
 
     def finish(self) -> list[str]:
+        # Report repeated IDs before validating the top-level heading count.
         duplicate = sorted({i for i in self.ids if self.ids.count(i) > 1})
         if duplicate:
             self.errors.append("Duplicate IDs: " + ", ".join(duplicate))
+
+        # Require exactly one top-level document heading.
         if self.h1 != 1:
             self.errors.append(f"Expected one H1; found {self.h1}")
+
         return self.errors
 
 
@@ -226,8 +296,12 @@ def check_html(text: str) -> list[str]:
     Returns:
         Dependency, duplicate-ID, and H1-count errors in inspection order.
     """
+
+    # Feed the complete document through the dependency inspector.
     c = DependencyCheck()
     c.feed(text)
+
+    # Finalize structural checks and return all diagnostics.
     return c.finish()
 
 
@@ -249,22 +323,43 @@ class Renderer:
             trusted_custom: Operator opt-in for verbatim HTML, CSS, and JavaScript.
                 These inputs must be reviewed as code; they are not sanitized.
         """
+
+        # Retain the configuration and resolve its asset-read boundary.
         self.doc: spec.Document = cast("spec.Document", doc)
         self.base: Path = Path(base).resolve()
         self.trusted_custom: bool = trusted_custom
+
+        # Initialize generated-ID tracking and lazy asset state.
         self.counter: int = 0
         self.ids: set[str] = set()
         self.used_charts: bool = False
         self._metrics: FontMetrics | None = None
 
     def uid(self, requested: str | None = None) -> str:
+        """Reserve an identifier in this renderer's encounter order.
+
+        Args:
+            requested: Explicit ID, or a falsy value to generate a ve-prefixed ID.
+
+        Returns:
+            The reserved ID; the counter advances even when an explicit ID is used.
+
+        Raises:
+            ValueError: The ID is malformed, already reserved, or owned by the shell.
+        """
+
+        # Allocate the next identifier while retaining explicit-ID counter behavior.
         self.counter += 1
         ident = requested or f"ve-{self.counter}"
+
+        # Validate identifier syntax before checking reservations.
         if not re.fullmatch("[A-Za-z][A-Za-z0-9_-]*", ident):
             raise ValueError(
                 "IDs must start with a letter and contain letters, digits, _ or -: "
                 + ident
             )
+
+        # Reject collisions with previously generated IDs and shell controls.
         if ident in self.ids or ident in (
             "main",
             "contents",
@@ -273,18 +368,47 @@ class Renderer:
             "theme-menu",
         ):
             raise ValueError("Duplicate/reserved ID: " + ident)
+
+        # Reserve the identifier only after validation succeeds.
         self.ids.add(ident)
         return ident
 
     def heading(self, text: object) -> str:
+        """Render inline heading text using the document language.
+
+        Args:
+            text: Heading value; English document languages apply title capitalization.
+
+        Returns:
+            Escaped inline heading HTML.
+
+        Raises:
+            ValueError: Inline content contains an unsupported link scheme.
+        """
         return inline(
             title_case(text) if self.doc.get("lang", "en").startswith("en") else text
         )
 
     def icon(self, name: object) -> str:
+        """Read a bundled SVG icon and adapt it for decorative inline use.
+
+        Args:
+            name: Lowercase icon name containing letters, digits, and hyphens.
+
+        Returns:
+            SVG markup with the icon class, hidden from assistive technology.
+
+        Raises:
+            ValueError: The icon name is invalid or the bundled file is absent.
+            OSError: The icon cannot be read.
+        """
+
+        # Resolve and validate the bundled icon name.
         file = ASSETS / "icons" / (str(name) + ".svg")
         if not re.fullmatch("[a-z0-9-]+", str(name)) or not file.exists():
             raise ValueError("Unknown icon: " + str(name) + "; see references/icons.md")
+
+        # Read the icon and adapt its markup for decorative inline use.
         text = file.read_text(encoding="utf-8")
         text = re.sub(r"<svg\b", '<svg class="icon" aria-hidden="true"', text, count=1)
         return re.sub(r"<title>.*?</title>", "", text, flags=re.DOTALL)
@@ -302,11 +426,15 @@ class Renderer:
             ValueError: The path is absolute, escapes the directory, or is not a file.
             OSError: The asset cannot be resolved or inspected.
         """
+
+        # Reject absolute paths before resolving the document-relative asset.
         path = Path(value)
         if path.is_absolute():
             raise ValueError(
                 "Asset paths must be relative to the document directory: " + str(value)
             )
+
+        # Resolve symlinks and require containment within the document directory.
         path = (self.base / path).resolve(strict=True)
         try:
             _ = path.relative_to(self.base)
@@ -314,18 +442,55 @@ class Renderer:
             raise ValueError(
                 "Asset path escapes the document directory: " + str(value)
             ) from None
+
+        # Require a regular file before returning the resolved asset.
         if not path.is_file():
             raise ValueError("Asset path must be a regular file: " + str(value))
+
         return path
 
     def data_uri(self, path: str) -> str:
+        """Read a confined document asset into a base64 data URI.
+
+        Args:
+            path: Document-relative file path accepted by file().
+
+        Returns:
+            Embedded file bytes with a guessed MIME type or application/octet-stream.
+
+        Raises:
+            ValueError: The path is absolute, escapes the document directory, or is not a file.
+            OSError: The asset cannot be resolved, inspected, or read.
+        """
+
+        # Resolve the asset through the confined filesystem boundary.
         p = self.file(path)
+
+        # Read the asset and encode a MIME-labeled data URI.
         mime = mimetypes.guess_type(p.name)[0] or "application/octet-stream"
         return "data:" + mime + ";base64," + base64.b64encode(p.read_bytes()).decode()
 
     def blocks(self, blocks: object) -> str:
+        """Render a list of blocks in encounter order.
+
+        Args:
+            blocks: List of paragraph strings or supported block mappings.
+
+        Returns:
+            Concatenated block HTML, reserving IDs as each block is rendered.
+
+        Raises:
+            ValueError: The input is not a list or a block fails validation.
+            KeyError: A required block field is absent.
+            TypeError: A block field cannot support its expected operation.
+            OSError: A referenced asset cannot be resolved or read.
+        """
+
+        # Require a block list before rendering its items in encounter order.
         if not isinstance(blocks, list):
             raise ValueError("blocks must be a list")
+
+        # Render each block in encounter order.
         return "".join(self.block(b) for b in cast("list[object]", blocks))
 
     def block(self, b: object) -> str:
@@ -344,14 +509,18 @@ class Renderer:
             TypeError: A field cannot support its expected operation.
             OSError: An asset cannot be read or resolved.
         """
+
+        # Accept literal paragraphs and validate the block variant.
         block = b
         if isinstance(block, str):
             return "<p>" + inline(block) + "</p>"
+
         fields = cast("Mapping[str, object]", block)
         if not isinstance(block, dict) or fields.get("type") not in BLOCKS:
             kind = fields.get("type") if isinstance(block, dict) else block
             raise ValueError("Unknown block type: " + str(kind))
 
+        # Dispatch to the variant renderer without changing ID allocation order.
         handlers: dict[str, Callable[[Mapping[str, object]], str]] = {
             "text": self._text_block,
             "heading": self._heading_block,
@@ -381,9 +550,13 @@ class Renderer:
 
     def _heading_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.HeadingBlock", values)
+
+        # Validate the nested heading level before allocating its ID.
         level = block.get("level", 3)
         if level not in (3, 4):
             raise ValueError("Nested heading level must be 3 or 4; sections provide H2")
+
+        # Render the nested heading with language-aware capitalization.
         return (
             f'<h{level} id="{self.uid()}">'
             + self.heading(block["text"])
@@ -405,16 +578,22 @@ class Renderer:
 
     def _alert_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.AlertBlock", values)
+
+        # Validate the alert presentation kind.
         kind = block.get("kind", "note")
         if kind not in ("note", "tip", "important", "warning", "caution"):
             raise ValueError(
                 "Alert kind must be note, tip, important, warning, caution"
             )
+
+        # Render nested alert blocks or its inline text.
         body = (
             self.blocks(block["blocks"])
             if "blocks" in block
             else "<p>" + inline(cast("spec.TextBlock", values)["text"]) + "</p>"
         )
+
+        # Assemble the alert heading and its rendered body.
         return (
             f'<div class="alert" data-alert="{kind}"><div class="alert-title">'
             + self.icon(kind)
@@ -426,8 +605,12 @@ class Renderer:
 
     def _code_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.CodeBlock", values)
+
+        # Reserve the code block ID and choose its display language.
         ident = self.uid(block.get("id"))
         label = block.get("language", "Code")
+
+        # Render escaped code with its copy control.
         return (
             '<div class="codebox"><div class="codebar"><span>'
             + esc(label)
@@ -442,10 +625,14 @@ class Renderer:
 
     def _table_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.TableBlock", values)
+
+        # Require table rows to match the nonempty header shape.
         headers = block["headers"]
         rows = block["rows"]
         if not headers or any(len(r) != len(headers) for r in rows):
             raise ValueError("Table rows must match the number of headers")
+
+        # Render the optional table caption.
         caption = (
             '<caption class="table-caption">'
             + inline(block.get("caption"))
@@ -453,6 +640,8 @@ class Renderer:
             if block.get("caption")
             else ""
         )
+
+        # Render the caption, column headings, and row cells.
         return (
             '<div class="table-wrap"><table>'
             + caption
@@ -468,13 +657,19 @@ class Renderer:
 
     def _image_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.ImageBlock", values)
+
+        # Require descriptive alternative text before reading an image.
         if not block.get("alt"):
             raise ValueError("image requires descriptive alt text")
+
+        # Resolve local image data and reject non-image sources.
         src = block.get("src") or self.data_uri(cast("spec.FileAsset", values)["file"])
         if not src.startswith("data:image/"):
             raise ValueError(
                 "Images need a local file or data:image/ source; download remote images first"
             )
+
+        # Render the embedded image with its alternative text and optional caption.
         return (
             '<figure><img class="screenshot" loading="lazy" src="'
             + esc(src)
@@ -503,9 +698,13 @@ class Renderer:
 
     def _columns_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.ColumnsBlock", values)
+
+        # Validate the supported number of columns.
         cols = block["columns"]
         if not 1 <= len(cols) <= 3:
             raise ValueError("columns accepts one to three lists of blocks")
+
+        # Render each column as its own nested content stack.
         return (
             f'<div class="columns-container"><div class="columns" style="--columns:{len(cols)}">'
             + "".join(
@@ -556,13 +755,19 @@ class Renderer:
 
     def _tabs_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.TabsBlock", values)
+
+        # Reserve the group ID and require at least one tab.
         ident = self.uid(block.get("id"))
         tabs = block["tabs"]
         if not tabs:
             raise ValueError("tabs requires at least one tab")
+
+        # Render paired tab buttons and panels in encounter order.
         nav: list[str] = []
         panels: list[str] = []
+
         for i, tab in enumerate(tabs):
+            # Reserve each tab and panel ID before rendering its button.
             tid = self.uid(ident + "-tab-" + str(i))
             pid = self.uid(ident + "-panel-" + str(i))
             nav.append(
@@ -570,6 +775,8 @@ class Renderer:
                 + self.heading(tab["title"])
                 + "</button>"
             )
+
+            # Render the associated panel with only the first panel visible.
             panels.append(
                 f'<div role="tabpanel" class="tab-panel content-stack" id="{pid}" aria-labelledby="{tid}" tabindex="0"'
                 + (" hidden" if i else "")
@@ -577,6 +784,8 @@ class Renderer:
                 + self.blocks(tab["blocks"])
                 + "</div>"
             )
+
+        # Assemble the accessible tab group.
         return (
             '<div class="tabs"><div class="tab-list" role="tablist" aria-label="'
             + esc(block.get("label", "Examples"))
@@ -610,13 +819,19 @@ class Renderer:
 
     def _equation_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.EquationBlock", values)
+
+        # Require exactly one equation source.
         if ("text" in block) == ("mathml" in block):
             raise ValueError("Equations need exactly one of text or mathml")
+
+        # Render validated MathML or escaped inline equation text.
         if "mathml" in block:
             source = values["mathml"]
             label = block.get("label")
             if not isinstance(source, str) or not isinstance(label, str):
                 raise ValueError("MathML equations need string mathml and label fields")
+
+            # Validate and serialize the labeled formula.
             content = render_mathml(source, label)
         else:
             text = block.get("text")
@@ -627,6 +842,8 @@ class Renderer:
                 + inline(text)
                 + "</div>"
             )
+
+        # Wrap the equation and its optional caption in a figure.
         return (
             '<figure class="equation">'
             + content
@@ -640,15 +857,21 @@ class Renderer:
 
     def _control_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.ControlBlock", values)
+
+        # Reserve the control ID and render its visible label.
         t = block["type"]
         ident = self.uid(block.get("id"))
         label = '<label for="' + ident + '">' + inline(block["label"]) + "</label>"
+
+        # Render the selected control variant.
         if t == "range":
             lo, hi, value = (
                 block.get("min", 0),
                 block.get("max", 100),
                 block.get("value", block.get("min", 0)),
             )
+
+            # Reject nonnumeric, nonfinite, or inconsistent range settings.
             numbers: tuple[object, ...] = (lo, hi, value, block.get("step", 1))
             if any(
                 isinstance(v, bool)
@@ -657,8 +880,11 @@ class Renderer:
                 for v in numbers
             ):
                 raise ValueError("Range values must be finite numbers")
+
             if not lo <= value <= hi or block.get("step", 1) <= 0:
                 raise ValueError("Range requires min <= value <= max and step > 0")
+
+            # Render the validated range and its live value output.
             control = f'<input type="range" id="{ident}" min="{lo}" max="{hi}" step="{block.get("step", 1)}" value="{value}"><output for="{ident}" id="{ident}-value">{value}</output>'
         else:
             control = (
@@ -677,14 +903,20 @@ class Renderer:
                 )
                 + "</select>"
             )
+
+        # Pair the control with its visible label.
         return '<div class="control-group">' + label + control + "</div>"
 
     def _html_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.HtmlBlock", values)
+
+        # Require operator authorization before reading custom markup.
         if not self.trusted_custom:
             raise ValueError(
                 "Custom HTML requires --trusted-custom; review all custom content as code first"
             )
+
+        # Read the custom fragment through the confined asset boundary.
         markup = (
             self.file(block["file"]).read_text(encoding="utf-8")
             if "file" in block
@@ -693,13 +925,18 @@ class Renderer:
 
         # Inline local <img> resources in custom fragments too.
         def embed(m: re.Match[str]) -> str:
+            # Preserve embedded resources and reject remote image URLs.
             url = m[2]
             if url.startswith(("data:", "#")):
                 return m[0]
+
             if re.match(r"\w+://", url):
                 raise ValueError("Download remote custom image before building: " + url)
+
+            # Embed the document-relative image in the custom fragment.
             return m[1] + self.data_uri(url) + m[3]
 
+        # Replace local image references with embedded data URIs.
         return re.sub(
             r"(<img\b[^>]*\bsrc=[\'\"])([^\'\"]+)([\'\"])",
             embed,
@@ -708,20 +945,42 @@ class Renderer:
         )
 
     def diagram(self, b: Mapping[str, object]) -> str:
+        """Render a flow, sequence, or directed graph with its surrounding figure.
+
+        Args:
+            b: Diagram variant fields, including an optional title and caption.
+
+        Returns:
+            Figure HTML containing the chosen diagram and optional caption.
+
+        Raises:
+            ValueError: The kind, graph, sequence, icon, or inline content is invalid.
+            KeyError: A required variant field is absent.
+            TypeError: A field cannot support its expected operation.
+            OSError: A required bundled font or icon cannot be read.
+        """
+
+        # Select the diagram kind and its surrounding presentation.
         values = b
         diagram = cast("spec.Diagram", values)
         kind = diagram.get("kind", "flow")
         title = diagram.get("title", "")
         cap = diagram.get("caption", "")
+
+        # Render the selected diagram variant.
         if kind == "flow":
             diagram = cast("spec.FlowDiagram", values)
             pieces: list[str] = []
             has_icons = any(node.get("icon") for node in diagram["nodes"])
+
             for node in diagram["nodes"]:
+                # Separate flow nodes with a decorative connector.
                 if pieces:
                     pieces.append(
                         '<span class="flow-connector" aria-hidden="true"><svg class="flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18m-6-6 6 6-6 6"/></svg></span>'
                     )
+
+                # Render the flow node with aligned optional icon space.
                 pieces.append(
                     '<div class="node">'
                     + (
@@ -743,6 +1002,8 @@ class Renderer:
                     )
                     + "</div>"
                 )
+
+            # Wrap the ordered flow nodes in their accessible group.
             body = (
                 '<div class="flow" data-count="'
                 + str(len(diagram["nodes"]))
@@ -758,6 +1019,8 @@ class Renderer:
             body = self.graph_diagram(values)
         else:
             raise ValueError("Diagram kind must be flow, sequence, graph")
+
+        # Wrap the selected diagram with its title and caption.
         return (
             '<figure class="visual">'
             + (
@@ -780,8 +1043,22 @@ class Renderer:
         )
 
     def diagram_metrics(self) -> FontMetrics:
+        """Load and cache font metrics for diagram measurements.
+
+        Returns:
+            Metrics from the bundled Manrope font, reused for this renderer.
+
+        Raises:
+            OSError: The font cannot be read.
+            KeyError: A required font table is absent.
+            ValueError: The font has no supported character map.
+            struct.error: A font table is truncated or malformed.
+        """
+
+        # Load the bundled font only on the first geometry request.
         if self._metrics is None:
             self._metrics = FontMetrics(ASSETS / "fonts/Manrope.ttf")
+
         return self._metrics
 
     def svg_text(
@@ -793,15 +1070,57 @@ class Renderer:
         cls: str = "",
         anchor: str = "middle",
     ) -> str:
+        """Render escaped label lines inside one SVG text element.
+
+        Args:
+            lines: Text lines in display order, spaced 18 diagram units apart.
+            x: Shared horizontal position in diagram units.
+            y: First baseline position in diagram units.
+            size: Font size in diagram units.
+            cls: Trusted CSS class text inserted verbatim into the text element.
+            anchor: Trusted SVG text-anchor value inserted verbatim.
+
+        Returns:
+            SVG text markup with a tspan for each escaped line.
+        """
+
+        # Open the SVG text container with its shared positioning attributes.
         text = f'<text class="{cls}" x="{x:.2f}" y="{y:.2f}" text-anchor="{anchor}" font-size="{size}" fill="var(--ink)">'
+
+        # Render each label line on its own baseline.
         for i, line in enumerate(lines):
             text += f'<tspan x="{x:.2f}" dy="{18 if i else 0}">{esc(line)}</tspan>'
+
         return text + "</text>"
 
     def diagram_marker(self, ident: str) -> str:
+        """Render a reusable SVG arrowhead definition.
+
+        Args:
+            ident: Trusted SVG identifier, normally reserved through uid().
+
+        Returns:
+            A defs element containing an accent-colored marker.
+        """
         return f'<defs><marker id="{ident}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10Z" fill="var(--accent)"/></marker></defs>'
 
     def graph_diagram(self, b: Mapping[str, object]) -> str:
+        """Measure and render a directed acyclic graph as accessible SVG.
+
+        Args:
+            b: Nonempty graph nodes with unique IDs and optional directed edges and title.
+
+        Returns:
+            SVG markup with routed edges, node labels, and a connection description.
+
+        Raises:
+            ValueError: Graph topology, node labels, or generated marker IDs are invalid.
+            KeyError: A required graph field is absent.
+            TypeError: A field cannot support its expected operation.
+            OSError: The bundled font cannot be read.
+        """
+
+        # Measure graph geometry before reserving its marker ID.
         values = b
         diagram = cast("spec.GraphDiagram", values)
         layout = layout_graph(
@@ -809,6 +1128,8 @@ class Renderer:
         )
         diagram_width, diagram_height = layout["width"], layout["height"]
         marker = self.uid()
+
+        # Describe directed connections for assistive technology.
         description = "; ".join(
             next(n["label"] for n in diagram["nodes"] if n["id"] == e["from"])
             + " → "
@@ -816,15 +1137,23 @@ class Renderer:
             + (": " + label if (label := e.get("label")) else "")
             for e in diagram.get("edges", [])
         )
+
+        # Open the accessible SVG with its description and arrowhead definition.
         body = (
             f'<svg class="graph-svg" style="--diagram-min-width:{max(550, diagram_width * 0.82):.0f}px" viewBox="0 0 {diagram_width:.2f} {diagram_height:.2f}" role="img" aria-label="{esc(diagram.get("title", "Directed Graph"))}"><desc>{esc(description)}</desc>'
             + self.diagram_marker(marker)
         )
+
+        # Paint edge routes beneath the graph nodes.
         for route in layout["edges"]:
             body += f'<path class="graph-edge" d="{rounded_path(route["points"])}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" marker-end="url(#{marker})"/>'
+
+        # Paint each node background and its centered label.
         for node in layout["nodes"]:
             x, y, w, h = node["x"], node["y"], node["width"], node["height"]
             body += f'<g class="graph-node" data-node="{esc(node["id"])}"><rect x="{x:.2f}" y="{y:.2f}" width="{w}" height="{h}" rx="8" fill="var(--wash)" stroke="var(--line)"/>'
+
+            # Place the wrapped node label inside its bounds.
             body += (
                 self.svg_text(
                     node["lines"],
@@ -834,6 +1163,7 @@ class Renderer:
                 )
                 + "</g>"
             )
+
         # Labels have their own measured lanes and are painted last.
         for route in layout["edges"]:
             label = route.get("label")
@@ -844,9 +1174,26 @@ class Renderer:
                     self.svg_text(label["lines"], x + w / 2, y + 18, label["size"])
                     + "</g>"
                 )
+
         return body + "</svg>"
 
     def sequence_diagram(self, b: Mapping[str, object]) -> str:
+        """Measure and render an actor message sequence as accessible SVG.
+
+        Args:
+            b: Two to six actors, ordered messages with actor indices, and optional title.
+
+        Returns:
+            SVG markup with actor headers, lifelines, and labeled message routes.
+
+        Raises:
+            ValueError: Actor count, message endpoints, or generated marker IDs are invalid.
+            KeyError: A required sequence field is absent.
+            TypeError: A field cannot support its expected operation.
+            OSError: The bundled font cannot be read.
+        """
+
+        # Load font metrics and validate the actor count.
         values = b
         diagram = cast("spec.SequenceDiagram", values)
         actors = diagram["actors"]
@@ -854,14 +1201,20 @@ class Renderer:
         metrics = self.diagram_metrics()
         if not 2 <= n <= 6:
             raise ValueError("Sequence diagrams support 2\u20136 actors")
+
+        # Measure actor columns and reserve space beneath their labels.
         spacing = 232
         centers = [104 + i * spacing for i in range(n)]
         diagram_width = centers[-1] + 104
         actor_lines = [metrics.wrap(a, 14, 146) for a in actors]
         actor_h = max(48, max(len(lines) for lines in actor_lines) * 18 + 20)
         y = 20 + actor_h + 28
+
+        # Measure each message and reserve its vertical row.
         rows: list[spec.SequenceRow] = []
+
         for message in diagram["messages"]:
+            # Require message endpoints to refer to known actors.
             a = cast("object", message["from"])
             c = cast("object", message["to"])
             if (
@@ -870,6 +1223,8 @@ class Renderer:
                 or not 0 <= min(a, c) <= max(a, c) < n
             ):
                 raise ValueError("Sequence from/to must be actor indices")
+
+            # Route self-messages around their actor and other messages across columns.
             if a == c:
                 label = label_geometry(message["label"], metrics, spacing - 52)
                 direction = -1 if a == n - 1 else 1
@@ -894,9 +1249,13 @@ class Renderer:
                 arrow_y = y + label["height"] + 10
                 points = [(centers[a], arrow_y), (centers[c], arrow_y)]
                 height = label["height"] + 36
+
+            # Store the measured row before advancing to the next message.
             positioned: PositionedLabel = {**label, "x": label_x, "y": y}
             rows.append({"label": positioned, "points": points})
             y += height
+
+        # Open the SVG and describe the message sequence.
         diagram_height = y + 12
         marker = self.uid()
         body = (
@@ -913,10 +1272,16 @@ class Renderer:
             )
             + "</desc>"
         )
+
+        # Paint actor lifelines beneath the messages.
         for x in centers:
             body += f'<path d="M{x} {20 + actor_h}V{diagram_height - 8}" stroke="var(--line)" stroke-width="1.5"/>'
+
+        # Paint each message arrow and its readable label background.
         for row in rows:
             body += f'<path class="sequence-arrow" d="{rounded_path(row["points"])}" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#{marker})"/>'
+
+            # Place the message label above its arrow.
             label = row["label"]
             x, y, w, h = label["x"], label["y"], label["width"], label["height"]
             body += (
@@ -924,23 +1289,46 @@ class Renderer:
                 + self.svg_text(label["lines"], x + w / 2, y + 17)
                 + "</g>"
             )
+
+        # Paint actor headers above their lifelines.
         for x, lines in zip(centers, actor_lines):
             body += f'<rect x="{x - 80}" y="20" width="160" height="{actor_h}" rx="8" fill="var(--wash)"/>'
             body += self.svg_text(
                 lines, x, 20 + actor_h / 2 - (len(lines) - 1) * 9 + 5, 14
             )
+
         return body + "</svg>"
 
     def chart(self, b: Mapping[str, object]) -> str:
+        """Validate chart data and emit a browser-rendered chart container.
+
+        Args:
+            b: Chart kind, title, data, and optional ID and display settings.
+
+        Returns:
+            Figure HTML with embedded JSON, inspection controls, and a data-table host.
+
+        Raises:
+            ValueError: The kind, data, ID, inline content, or JSON numbers are invalid.
+            KeyError: A required chart field is absent.
+            TypeError: A field cannot support its expected operation or JSON serialization.
+        """
+
+        # Read the chart fields and reserve its document ID.
         values = b
         chart = cast("spec.Chart", values)
         self.used_charts = True
         kind = chart["kind"]
         data = chart["data"]
         ident = self.uid(chart.get("id"))
+
+        # Validate the chart kind and its numeric data before serialization.
         if kind not in CHARTS:
             raise ValueError("Chart kind must be " + ", ".join(CHARTS))
+
         validate_chart(kind, data)
+
+        # Collect the supported display options for the browser controller.
         options = {
             k: values[k]
             for k in (
@@ -957,6 +1345,8 @@ class Renderer:
             )
             if k in chart
         }
+
+        # Build the browser configuration with default axis labels and units.
         c: dict[str, object] = {
             "id": ident,
             "kind": kind,
@@ -967,6 +1357,8 @@ class Renderer:
             "unit": "",
         }
         c.update(options)
+
+        # Serialize the configuration into the interactive chart container.
         return (
             '<figure class="chart visual" id="'
             + ident
@@ -996,6 +1388,8 @@ class Renderer:
             TypeError: A field cannot support its expected operation.
             OSError: A required asset cannot be read or resolved.
         """
+
+        # Require a supported theme and operator authorization for custom assets.
         document = self.doc
         theme = document.get("theme", "plain")
         if not self.trusted_custom and (
@@ -1004,8 +1398,11 @@ class Renderer:
             raise ValueError(
                 "Custom styles and scripts require --trusted-custom; review all custom content as code first"
             )
+
         if theme not in THEMES:
             raise ValueError("theme must be " + ", ".join(THEMES))
+
+        # Render the hero and sections in document order.
         sections = document.get("sections", [])
         body = (
             '<section class="hero"><h1>'
@@ -1019,6 +1416,8 @@ class Renderer:
             + self.blocks(document.get("intro", []))
             + "</section>"
         )
+
+        # Render section headings and their nested blocks in encounter order.
         for section in sections:
             ident = self.uid(section.get("id"))
             body += (
@@ -1030,6 +1429,8 @@ class Renderer:
                 + self.blocks(section["blocks"])
                 + "</div></section>"
             )
+
+        # Build the appearance choices for the document shell.
         menu = "".join(
             '<button type="button" role="menuitemradio" data-appearance-value="'
             + appearance
@@ -1044,45 +1445,61 @@ class Renderer:
             + "</span></button>"
             for appearance in APPEARANCES
         )
+
+        # Embed bundled fonts, licenses, and selected styles.
         css = ""
         licenses: list[str] = []
+
         for family, file, weight in [
             ("Explainer Sans", "Manrope.ttf", "200 800"),
             ("Explainer Mono", "JetBrainsMono.ttf", "100 800"),
         ]:
+            # Encode each font and append its face declaration.
             uri = (
                 "data:font/ttf;base64,"
                 + base64.b64encode((ASSETS / "fonts" / file).read_bytes()).decode()
             )
             css += f'@font-face{{font-family:"{family}";src:url("{uri}") format("truetype");font-weight:{weight};font-style:normal;font-display:swap}}'
+
+        # Read the bundled font licenses for the generated document.
         licenses = [
             file.name + "\n" + file.read_text(encoding="utf-8")
             for file in sorted((ASSETS / "fonts").glob("*-OFL.txt"))
         ]
+
+        # Append the bundled base stylesheet and selected theme.
         css += (ASSETS / "base.css").read_text(encoding="utf-8")
         css += "\n" + THEMES[theme].read_text(encoding="utf-8")
+
+        # Append reviewed custom styles after the bundled theme.
         for file in document.get("styles", []):
             css += "\n" + self.file(file).read_text(encoding="utf-8")
+
+        # Embed the generated minified scripts needed by the rendered content.
         js = (
             (
-                (ASSETS / "charts.js").read_text(encoding="utf-8") + "\n"
+                (ASSETS / "charts.min.js").read_text(encoding="utf-8") + "\n"
                 if self.used_charts
                 else ""
             )
-            + (ASSETS / "navigation.js").read_text(encoding="utf-8")
+            + (ASSETS / "navigation.min.js").read_text(encoding="utf-8")
             + "\n"
-            + (ASSETS / "core.js").read_text(encoding="utf-8")
+            + (ASSETS / "core.min.js").read_text(encoding="utf-8")
         )
-        js += '\ndocument.querySelectorAll(\'input[type="range"]\').forEach(r=>r.addEventListener("input",()=>{const o=document.getElementById(r.id+"-value");if(o)o.value=r.value}));\n'
+
+        # Append reviewed custom scripts inside their existing isolated scopes.
         for file in document.get("scripts", []):
             js += (
                 "\n;(()=>{\n"
                 + self.file(file).read_text(encoding="utf-8")
                 + "\n})();\n"
             )
+
+        # Protect embedded script and style boundaries.
         js = re.sub("</script", r"<\/script", js, flags=re.IGNORECASE)
         if re.search("</style", css, re.IGNORECASE):
             raise ValueError("Custom CSS may not contain </style")
+
         # Only the bundled script may execute by default. Trusted custom mode
         # permits inline code, but neither mode needs runtime network resources.
         script_policy = (
@@ -1097,6 +1514,8 @@ class Renderer:
             + script_policy
             + "; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"
         )
+
+        # Assemble the standalone document and its accessible shell.
         result = (
             '<!doctype html><html lang="'
             + esc(document.get("lang", "en"))
@@ -1128,6 +1547,8 @@ class Renderer:
             + esc("\n\n".join(licenses))
             + "</pre></template></body></html>"
         )
+
+        # Attach the content security policy to the document head.
         result = result.replace(
             "<head>",
             '<head><meta http-equiv="Content-Security-Policy" content="'
@@ -1135,15 +1556,20 @@ class Renderer:
             + '">',
             1,
         )
+
+        # Reject the finished document if dependency or structure checks fail.
         problems = check_html(result)
         if problems:
             raise ValueError("\n".join(problems))
+
         return result
 
 
 def _chart_numbers(values: Sequence[object], positive: bool = False) -> None:
+    # Reject empty numeric data before checking individual values.
     if not values:
         raise ValueError("Chart data cannot be empty")
+
     if any(
         isinstance(v, bool)
         or not isinstance(v, (float, int))
@@ -1157,41 +1583,55 @@ def _chart_numbers(values: Sequence[object], positive: bool = False) -> None:
 
 
 def _validate_series(data: Mapping[str, object]) -> None:
+    # Require categories and at least one series.
     series = cast("spec.SeriesData", data)
     n = len(series["categories"])
     if not n or not series["series"]:
         raise ValueError("Line/area needs categories and series")
+
+    # Require each numeric series to match the category count.
     for s in series["series"]:
         if len(s["values"]) != n:
             raise ValueError("Every series must match categories length")
+
         _chart_numbers(s["values"])
 
 
 def _validate_categories(data: Mapping[str, object], kind: str) -> None:
+    # Require a corresponding value for each category.
     categories = cast("spec.CategoryData", data)
     if len(categories["categories"]) != len(categories["values"]):
         raise ValueError("categories and values must match")
+
+    # Validate numeric values and require a positive total for donut charts.
     _chart_numbers(categories["values"], kind == "donut")
     if kind == "donut" and sum(categories["values"]) <= 0:
         raise ValueError("Donut needs a positive total")
 
 
 def _validate_scatter(data: Mapping[str, object]) -> None:
+    # Require scatter observations before validating their coordinate pairs.
     scatter = cast("spec.ScatterData", data)
     _chart_numbers([p["x"] for p in scatter["points"]])
     _chart_numbers([p["y"] for p in scatter["points"]])
 
 
 def _validate_histogram(data: Mapping[str, object]) -> None:
+    # Require histogram bins before checking their ranges and counts.
     histogram = cast("spec.HistogramData", data)
     _chart_numbers([b["count"] for b in histogram["bins"]], True)
+
+    # Check each bin against its predecessor and the first bin width.
     for i, b in enumerate(histogram["bins"]):
+        # Require increasing intervals with contiguous boundaries.
         if b["high"] <= b["low"] or (
             i and b["low"] != histogram["bins"][i - 1]["high"]
         ):
             raise ValueError(
                 "Histogram bins must be increasing, contiguous, equal width"
             )
+
+        # Require the same width as the first interval.
         if (
             b["high"] - b["low"]
             != histogram["bins"][0]["high"] - histogram["bins"][0]["low"]
@@ -1200,22 +1640,31 @@ def _validate_histogram(data: Mapping[str, object]) -> None:
 
 
 def _validate_heatmap(data: Mapping[str, object]) -> None:
+    # Require the heatmap matrix dimensions to match its labels.
     heatmap = cast("spec.HeatmapData", data)
     if len(heatmap["rows"]) != len(heatmap["values"]) or not heatmap["columns"]:
         raise ValueError("Heatmap requires row and column labels matching values")
+
+    # Validate each row width and its nonnegative numeric values.
     for row in heatmap["values"]:
         if len(row) != len(heatmap["columns"]):
             raise ValueError("Heatmap matrix must match labels")
+
         _chart_numbers(row, True)
 
 
 def _validate_box(data: Mapping[str, object]) -> None:
+    # Require box groups before validating their five-number summaries.
     box = cast("spec.BoxData", data)
     if not box["groups"]:
         raise ValueError("Box needs groups")
+
+    # Validate each five-number summary before checking its ordering.
     for g in box["groups"]:
         v = [g[k] for k in ("min", "q1", "median", "q3", "max")]
         _chart_numbers(v)
+
+        # Require an ascending minimum, quartiles, median, and maximum.
         if v != sorted(v):
             raise ValueError("Box values must satisfy min <= q1 <= median <= q3 <= max")
 
@@ -1257,6 +1706,7 @@ class _Arguments(argparse.Namespace):
 
 
 def main() -> None:
+    # Parse command-line paths and explicit build options.
     parser = argparse.ArgumentParser(description=__doc__)
     _ = parser.add_argument(
         "input",
@@ -1276,22 +1726,29 @@ def main() -> None:
     )
     args = parser.parse_args(namespace=_Arguments())
     try:
+        # Inspect an existing HTML document when check mode is selected.
         if args.check:
             problems = check_html(args.input.read_text(encoding="utf-8"))
             if problems:
                 raise ValueError("\n".join(problems))
+
             print(
                 "PASS: one H1, unique IDs, no external asset dependencies. Inspect appearance and interactions in a browser too."
             )
             return
+
+        # Require an output path before reading and rendering the JSON document.
         if not args.output:
             parser.error("Building requires -o output.html")
+
         doc = cast(
             "Mapping[str, object]", json.loads(args.input.read_text(encoding="utf-8"))
         )
         result = Renderer(
             doc, args.input.resolve().parent, trusted_custom=args.trusted_custom
         ).render()
+
+        # Write the complete validated document and report its size.
         args.output.parent.mkdir(parents=True, exist_ok=True)
         _ = args.output.write_text(result, encoding="utf-8")
         print(

@@ -16,8 +16,10 @@ NS = "{http://www.w3.org/1998/Math/MathML}"
 
 class EquationTests(unittest.TestCase):
     def test_plain_text_equations_preserve_inline_formatting_and_escaping(self) -> None:
+        # Configure a renderer for a literal equation.
         renderer = Renderer({"title": "Text"}, ROOT)
 
+        # Render inline emphasis and a caption without custom HTML.
         output = renderer.block(
             {
                 "type": "equation",
@@ -26,10 +28,12 @@ class EquationTests(unittest.TestCase):
             }
         )
 
+        # Verify escaped text and preserved inline formatting.
         self.assertIn("<strong>T</strong> = n \u00d7 t &lt; 10", output)
         self.assertIn("<figcaption>Total time</figcaption>", output)
 
     def test_typeset_formulas_work_in_nested_blocks_without_custom_opt_in(self) -> None:
+        # Compose a formula using the supported presentation vocabulary.
         formula = (
             '<math xmlns="http://www.w3.org/1998/Math/MathML" display="block">'
             "<mfrac><msqrt><mi>x</mi></msqrt><mn>2</mn></mfrac>"
@@ -38,6 +42,8 @@ class EquationTests(unittest.TestCase):
             '<mtable columnalign="right"><mtr><mtd><mn>1</mn></mtd>'
             "<mtd><mn>2</mn></mtd></mtr></mtable></math>"
         )
+
+        # Nest the formula inside an ordinary card block.
         document = {
             "title": "Formulas",
             "intro": [
@@ -55,14 +61,19 @@ class EquationTests(unittest.TestCase):
             ],
         }
 
+        # Build the complete document without custom-content authorization.
         output = Renderer(document, ROOT).render()
+
+        # Extract the emitted MathML subtree.
         start = output.index("<math ")
         end = output.index("</math>", start) + len("</math>")
+
         # Parse trusted output from the builder to verify the serialized math tree.
         parser = ET.XMLParser()  # noqa: S314
         parser.feed(output[start:end])
         math = parser.close()
 
+        # Verify offline output, accessible labeling, and the formula structure.
         self.assertEqual([], check_html(output))
         self.assertEqual(NS + "math", math.tag)
         self.assertEqual("block", math.attrib["display"])
@@ -76,7 +87,10 @@ class EquationTests(unittest.TestCase):
         self.assertIn("A <strong>matrix</strong> too.", output)
 
     def test_equations_require_one_source_and_mathml_requires_a_label(self) -> None:
+        # Configure the ordinary equation renderer.
         renderer = Renderer({"title": "Invalid Fields"}, ROOT)
+
+        # Reject missing, conflicting, or wrongly typed formula fields.
         for fields in [
             {},
             {"text": "x", "mathml": "<math/>"},
@@ -91,7 +105,10 @@ class EquationTests(unittest.TestCase):
     def test_unsupported_or_malformed_mathml_cannot_bypass_custom_html_boundary(
         self,
     ) -> None:
+        # Configure the renderer without custom-content authorization.
         renderer = Renderer({"title": "Restricted Markup"}, ROOT)
+
+        # Reject malformed, executable, unsupported, and excessively nested markup.
         for formula in [
             "<math><mi>x</math>",
             "<math/><math/>",
@@ -115,8 +132,10 @@ class EquationTests(unittest.TestCase):
                 )
 
     def test_encoded_token_text_and_attribute_values_remain_literal(self) -> None:
+        # Configure the ordinary equation renderer.
         renderer = Renderer({"title": "Literal Text"}, ROOT)
 
+        # Render encoded markup in token text and a presentation attribute.
         output = renderer.block(
             {
                 "type": "equation",
@@ -125,6 +144,7 @@ class EquationTests(unittest.TestCase):
             }
         )
 
+        # Verify that encoded content remains literal and cannot introduce a script.
         self.assertIn("&lt;script&gt;&amp;", output)
         self.assertIn('form="&quot; onclick=&quot;alert(1)"', output)
         self.assertNotIn("<script>", output)

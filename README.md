@@ -59,9 +59,11 @@ just check
 ```
 
 `just check` verifies Python formatting, Ruff lints, strict basedpyright types,
-Python behavior tests, and JavaScript navigation tests. Use `just format` to
+minified JavaScript freshness, Python behavior tests, and JavaScript build and
+navigation tests. Use `just format` to
 format Python files, or run `just lint`, `just typecheck`, and `just test`
 separately. `just --list` shows all recipes.
 
 The Python scripts remain standard-library-only and support Python 3.8+.
-Development tools are managed by uv and pinned in `uv.lock`.
+Python development tools are managed by uv and pinned in `uv.lock`.
+JavaScript development tools are managed by npm and pinned in `package-lock.json`.

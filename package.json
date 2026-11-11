@@ -1,0 +1,8 @@
+{
+  "name": "agent-skills-tools",
+  "private": true,
+  "devDependencies": {
+    "acorn": "8.19.0",
+    "terser": "5.51.2"
+  }
+}
