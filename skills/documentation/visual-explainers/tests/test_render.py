@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from render import THEMES, Renderer, check_html, validate_chart
+from render import ASSETS, THEMES, Renderer, check_html, validate_chart
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -19,9 +19,43 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
 class RenderTests(unittest.TestCase):
+    def test_generated_scripts_are_embedded_with_charts_only_when_needed(self) -> None:
+        # Read the generated assets that ship with the standalone skill.
+        navigation = (ASSETS / "navigation.min.js").read_text(encoding="utf-8")
+        core = (ASSETS / "core.min.js").read_text(encoding="utf-8")
+        charts = (ASSETS / "charts.min.js").read_text(encoding="utf-8")
+
+        # Build ordinary content without the optional chart runtime.
+        ordinary = Renderer({"title": "Compact Assets"}, FIXTURES).render()
+
+        # Verify that the generated navigation and controls are embedded directly.
+        self.assertIn(navigation, ordinary)
+        self.assertIn(core, ordinary)
+        self.assertNotIn(charts, ordinary)
+        self.assertNotIn("// Bind each range control", ordinary)
+
+        # Build chart content through the same document entry point.
+        chart: dict[str, object] = {
+            "type": "chart",
+            "kind": "bar",
+            "title": "Values",
+            "data": {"categories": ["One"], "values": [1]},
+        }
+        with_chart = Renderer(
+            {"title": "Compact Charts", "intro": [chart]}, FIXTURES
+        ).render()
+
+        # Verify that chart documents also include the generated chart runtime.
+        self.assertIn(charts, with_chart)
+        self.assertIn(navigation, with_chart)
+        self.assertIn(core, with_chart)
+        self.assertEqual([], check_html(with_chart))
+
     def test_plain_theme_defaults_to_system_with_only_appearance_choices(self) -> None:
+        # Build a document using the default theme settings.
         output = Renderer({"title": "Appearance"}, FIXTURES).render()
 
+        # Verify the system appearance and the three supported menu choices.
         self.assertIn('<body data-theme="plain" data-appearance="system">', output)
         self.assertEqual(
             ["system"],
@@ -33,16 +67,21 @@ class RenderTests(unittest.TestCase):
         )
 
     def test_explicit_theme_matches_the_default_output(self) -> None:
+        # Render default and explicitly selected plain themes.
         default = Renderer({"title": "Appearance"}, FIXTURES).render()
         explicit = Renderer(
             {"title": "Appearance", "theme": "plain"}, FIXTURES
         ).render()
 
+        # Verify that explicit theme selection leaves output unchanged.
         self.assertEqual(default, explicit)
 
     def test_output_embeds_only_the_selected_theme_set(self) -> None:
+        # Load the bundled theme and define a distinguishable alternate.
         plain_css = THEMES["plain"].read_text(encoding="utf-8")
         warm_css = "body{--bg:light-dark(#fff0ed,#211b18)}"
+
+        # Register a disposable theme and render both selections.
         with tempfile.TemporaryDirectory() as directory:
             warm = Path(directory) / "warm.css"
             _ = warm.write_text(warm_css, encoding="utf-8")
@@ -52,6 +91,7 @@ class RenderTests(unittest.TestCase):
                     {"title": "Appearance", "theme": "warm"}, FIXTURES
                 ).render()
 
+        # Verify that each document embeds only its selected theme.
         self.assertIn(plain_css, plain)
         self.assertNotIn(warm_css, plain)
         self.assertIn(warm_css, alternate)
@@ -76,13 +116,16 @@ class RenderTests(unittest.TestCase):
                 _ = Renderer({"title": "Appearance", "theme": theme}, FIXTURES).render()
 
     def test_all_block_and_chart_variants_build_one_offline_document(self) -> None:
+        # Read the fixture covering every block and chart variant.
         document = cast(
             "Mapping[str, object]",
             json.loads((FIXTURES / "all_blocks.json").read_text(encoding="utf-8")),
         )
 
+        # Render the fixture through the document entry point.
         output = Renderer(document, FIXTURES).render()
 
+        # Verify offline structure and representative generated components.
         self.assertEqual([], check_html(output))
         self.assertEqual(8, output.count('class="chart visual"'))
         self.assertEqual(3, output.count('<figure class="visual">'))
@@ -94,22 +137,29 @@ class RenderTests(unittest.TestCase):
         self.assertIn('<select id="', output)
 
     def test_block_ids_keep_order_and_reject_collisions(self) -> None:
+        # Create one renderer to retain ID state across blocks.
         renderer = Renderer({"title": "IDs"}, FIXTURES)
 
+        # Render code and tabs in encounter order.
         code = renderer.block({"type": "code", "text": "first"})
         tabs = renderer.block(
             {"type": "tabs", "tabs": [{"title": "One", "blocks": ["Body"]}]}
         )
 
+        # Verify generated IDs and paired tab-panel reservations.
         self.assertIn('id="ve-1"', code)
         self.assertIn('id="ve-2-tab-0"', tabs)
         self.assertIn('id="ve-2-panel-0"', tabs)
+
+        # Reject reuse of an earlier block ID.
         with self.assertRaisesRegex(ValueError, "Duplicate/reserved ID: ve-1"):
             _ = renderer.block({"type": "code", "id": "ve-1", "text": "second"})
 
     def test_existing_public_keyword_parameters_remain_supported(self) -> None:
+        # Configure the renderer with the supported string base path.
         renderer = Renderer({"title": "Keywords"}, str(FIXTURES))
 
+        # Exercise the existing block and diagram keyword parameters.
         self.assertEqual("<p>hello</p>", renderer.block(b="hello"))
         self.assertIn(
             'class="flow"', renderer.diagram(b={"nodes": [{"label": "Start"}]})
@@ -122,6 +172,8 @@ class RenderTests(unittest.TestCase):
             'class="sequence-svg"',
             renderer.sequence_diagram(b={"actors": ["A", "B"], "messages": []}),
         )
+
+        # Exercise chart rendering and validation with their existing keywords.
         data = {"categories": ["A"], "values": [1]}
         self.assertIn(
             'class="chart visual"',
@@ -130,7 +182,10 @@ class RenderTests(unittest.TestCase):
         validate_chart(kind="bar", d=data)
 
     def test_unknown_blocks_keep_their_error(self) -> None:
+        # Configure an ordinary document renderer.
         renderer = Renderer({"title": "Invalid"}, FIXTURES)
+
+        # Reject non-block values and unknown block variants.
         for block in [None, 7, {}, {"type": "missing"}]:
             with (
                 self.subTest(block=block),
@@ -139,6 +194,7 @@ class RenderTests(unittest.TestCase):
                 _ = renderer.block(block)
 
     def test_invalid_chart_data_reaches_each_shape_boundary(self) -> None:
+        # Pair invalid chart shapes and numbers with their expected diagnostics.
         cases: list[tuple[str, Mapping[str, object], str]] = [
             ("line", {"categories": [], "series": []}, "needs categories and series"),
             (
@@ -185,6 +241,8 @@ class RenderTests(unittest.TestCase):
                 "min <= q1 <= median <= q3 <= max",
             ),
         ]
+
+        # Verify that each chart variant reaches its intended validation boundary.
         for kind, data, message in cases:
             with (
                 self.subTest(kind=kind, data=data),

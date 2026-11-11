@@ -71,13 +71,17 @@ def render_mathml(source: str, label: str) -> str:
         ValueError: Markup is malformed, contains declarations, exceeds 64 nested
             levels, uses unsupported elements or attributes, or has no label.
     """
+
+    # Require an accessible description before processing the formula.
     if not label.strip():
         raise ValueError("MathML equations need a nonempty label")
+
     # Reject declarations before parsing so DTD entities cannot be expanded.
     if re.search(r"<[!?]", source):
         raise ValueError(
             "MathML declarations, comments, and instructions are unsupported"
         )
+
     # DTDs are rejected above; only allowlisted, re-escaped markup leaves this module.
     parser = ET.XMLParser()  # noqa: S314
     try:
@@ -85,6 +89,8 @@ def render_mathml(source: str, label: str) -> str:
         root = parser.close()
     except ET.ParseError as error:
         raise ValueError("Invalid MathML: " + str(error)) from error
+
+    # Validate the tree and wrap it in an accessible display root.
     content = _element(root, root=True)
     return (
         '<math xmlns="'
@@ -98,25 +104,36 @@ def render_mathml(source: str, label: str) -> str:
 
 
 def _element(element: ET.Element, *, root: bool = False, depth: int = 0) -> str:
+    # Reject excessive nesting and unsupported element names.
     if depth > 64:
         raise ValueError("MathML exceeds 64 nested levels")
+
     prefix = "{" + NAMESPACE + "}"
     tag = element.tag.removeprefix(prefix)
     if (root and tag != "math") or (not root and tag not in ELEMENTS):
         raise ValueError("Unsupported MathML element: " + tag)
 
+    # Validate and escape presentation attributes.
     attributes: list[str] = []
+
     for name, value in element.attrib.items():
         if root and name == "display" and value == "block":
             continue
+
         if name not in ATTRIBUTES:
             raise ValueError("Unsupported MathML attribute: " + name)
+
         attributes.append(" " + name + '="' + html.escape(value, quote=True) + '"')
+
+    # Serialize text and child elements without introducing markup.
     content = html.escape(element.text or "", quote=True)
+
     for child in element:
         content += _element(child, depth=depth + 1)
         content += html.escape(child.tail or "", quote=True)
+
+    # Preserve root presentation attributes inside the generated wrapper.
     if root:
-        # Preserve presentation attributes on the authored root inside our wrapper.
         return "<mrow" + "".join(attributes) + ">" + content + "</mrow>"
+
     return "<" + tag + "".join(attributes) + ">" + content + "</" + tag + ">"

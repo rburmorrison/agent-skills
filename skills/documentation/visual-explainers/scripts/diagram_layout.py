@@ -87,18 +87,26 @@ class FontMetrics:
             ValueError: No supported Unicode character map is present.
             struct.error: Font tables are truncated or malformed.
         """
+
+        # Read the font and index its table offsets.
         self.data: bytes = path.read_bytes()
         tables: dict[bytes, int] = {}
+
         for i in range(self.u16(4)):
             pos = 12 + i * 16
             tables[self.data[pos : pos + 4]] = self.u32(pos + 8)
+
+        # Load the units per em and horizontal glyph advances.
         self.units: int = self.u16(tables[b"head"] + 18)
         count = self.u16(tables[b"hhea"] + 34)
         self.advances: list[int] = [
             self.u16(tables[b"hmtx"] + i * 4) for i in range(count)
         ]
+
+        # Select the preferred supported Unicode character map.
         cmap = tables[b"cmap"]
         candidates: list[tuple[bool, bool, int, int]] = []
+
         for i in range(self.u16(cmap + 2)):
             pos = cmap + 4 + i * 8
             platform, encoding = self.u16(pos), self.u16(pos + 2)
@@ -106,8 +114,11 @@ class FontMetrics:
             fmt = self.u16(sub)
             if platform in (0, 3) and fmt in (4, 12):
                 candidates.append((fmt == 12, platform == 3, encoding, sub))
+
         if not candidates:
             raise ValueError("Bundled font has no supported Unicode character map")
+
+        # Decode the selected map into searchable character ranges.
         self.cmap: int = max(candidates)[-1]
         self.format: int = self.u16(self.cmap)
         if self.format == 12:
@@ -127,26 +138,68 @@ class FontMetrics:
             ]
 
     def u16(self, offset: int) -> int:
+        """Read one unsigned big-endian 16-bit value from the loaded font.
+
+        Args:
+            offset: Byte offset within the font data.
+
+        Returns:
+            The decoded unsigned value.
+
+        Raises:
+            struct.error: The offset does not contain a complete value.
+        """
         return struct.unpack_from(">H", self.data, offset)[0]
 
     def u32(self, offset: int) -> int:
+        """Read one unsigned big-endian 32-bit value from the loaded font.
+
+        Args:
+            offset: Byte offset within the font data.
+
+        Returns:
+            The decoded unsigned value.
+
+        Raises:
+            struct.error: The offset does not contain a complete value.
+        """
         return struct.unpack_from(">I", self.data, offset)[0]
 
     def glyph(self, character: str) -> int:
+        """Look up a character in the loaded Unicode map.
+
+        Args:
+            character: Exactly one Unicode character.
+
+        Returns:
+            The font glyph index, or zero when no mapping exists.
+
+        Raises:
+            TypeError: The argument is not a single character.
+            struct.error: The selected font range is truncated.
+        """
+
+        # Locate the first character range that could contain the code point.
         code = ord(character)
         i = bisect.bisect_left(self.ends, code)
         if i == len(self.ends):
             return 0
+
+        # Resolve a format 12 range directly to its glyph index.
         if self.format == 12:
             start, end, glyph = self.groups[i]
             return glyph + code - start if start <= code <= end else 0
+
+        # Resolve a format 4 segment through its delta or glyph table.
         start = self.u16(self.start_offset + i * 2)
         if code < start:
             return 0
+
         delta = self.u16(self.delta_offset + i * 2)
         offset = self.u16(self.range_offset + i * 2)
         if not offset:
             return (code + delta) & 0xFFFF
+
         glyph = self.u16(self.range_offset + i * 2 + offset + (code - start) * 2)
         return (glyph + delta) & 0xFFFF if glyph else 0
 
@@ -184,22 +237,35 @@ class FontMetrics:
         """
         lines: list[str] = []
         line = ""
+
+        # Fit whitespace-separated words onto measured lines.
         for token in str(text).split():
+            # Flush the current line when the next word would overflow.
             word = token
             candidate = (line + " " + word).strip()
             if line and self.width(candidate, size) > width:
                 lines.append(line)
                 line = ""
-            # Long identifiers must fit their reserved label lane too.
+
+            # Split long identifiers to fit their reserved label lane too.
             while self.width(word, size) > width and len(word) > 1:
+                # Find the longest prefix that fits the measured width.
                 cut = 1
+
                 while cut < len(word) and self.width(word[: cut + 1], size) <= width:
                     cut += 1
+
+                # Emit the fitted prefix and retain the unconsumed suffix.
                 lines.append(word[:cut])
                 word = word[cut:]
+
+            # Keep the remaining word on the current line.
             line = (line + " " + word).strip()
+
+        # Retain the final line and represent empty text with one empty line.
         if line:
             lines.append(line)
+
         return lines or [""]
 
 
@@ -217,7 +283,11 @@ def label_geometry(
     Returns:
         Lines, dimensions including padding, and the font size used.
     """
+
+    # Wrap the label to its reserved text width.
     lines = metrics.wrap(text, size, max_width)
+
+    # Add padding around the measured text bounds.
     return {
         "lines": lines,
         "width": max(metrics.width(s, size) for s in lines) + 16,
@@ -229,19 +299,28 @@ def label_geometry(
 def _graph_layers(
     nodes: list[GraphNode], edges: list[GraphEdge]
 ) -> tuple[dict[str, int], dict[str, list[int]], dict[str, list[int]]]:
+    # Require a nonempty graph with unique node identifiers.
     ids = [node["id"] for node in nodes]
     if not nodes or len(set(ids)) != len(ids):
         raise ValueError("Graph requires unique node IDs")
+
+    # Index incoming and outgoing edges after checking their endpoints.
     incoming: dict[str, list[int]] = {ident: [] for ident in ids}
     outgoing: dict[str, list[int]] = {ident: [] for ident in ids}
     layers: dict[str, int] = {}
+
     for i, edge in enumerate(edges):
         if edge["from"] not in incoming or edge["to"] not in incoming:
             raise ValueError("Graph edge refers to unknown node")
+
         incoming[edge["to"]].append(i)
         outgoing[edge["from"]].append(i)
+
+    # Assign layers in input order once all predecessors are placed.
     pending = set(ids)
+
     while pending:
+        # Find the next acyclic frontier or reject a cycle.
         ready = [
             ident
             for ident in ids
@@ -252,11 +331,14 @@ def _graph_layers(
             raise ValueError(
                 "Graph must be acyclic; use sequence or custom HTML/SVG for cycles"
             )
+
+        # Place each ready node one layer beyond its deepest predecessor.
         for ident in ready:
             layers[ident] = max(
                 [layers[edges[i]["from"]] + 1 for i in incoming[ident]] or [0]
             )
             pending.remove(ident)
+
     return layers, incoming, outgoing
 
 
@@ -277,7 +359,11 @@ def layout_graph(
         ValueError: IDs are duplicated, endpoints are unknown, the graph is
             empty or cyclic, or a node label needs more than three lines.
     """
+
+    # Validate graph connectivity and assign its layers.
     layers, incoming, outgoing = _graph_layers(nodes, edges)
+
+    # Measure labels using wider lanes for edges that skip layers.
     depth = max(layers.values()) + 1
     labels: list[LabelGeometry | None] = [
         label_geometry(
@@ -290,14 +376,19 @@ def layout_graph(
         else None
         for e in edges
     ]
+
+    # Separate adjacent edges from edges that need overhead routes.
     adjacent: dict[int, list[int]] = {i: [] for i in range(depth - 1)}
     skipped: list[int] = []
+
     for i, edge in enumerate(edges):
         a, b = layers[edge["from"]], layers[edge["to"]]
         if b == a + 1:
             adjacent[a].append(i)
         else:
             skipped.append(i)
+
+    # Reserve horizontal gutters wide enough for labels and routes.
     side_band = 14 + len(edges) * 3
     gaps = [
         max(
@@ -310,27 +401,40 @@ def layout_graph(
         )
         for layer in range(depth - 1)
     ]
+
+    # Measure the shared node size and horizontal layer positions.
     node_w = max(132, min(176, max(metrics.width(n["label"], 14) + 28 for n in nodes)))
     node_h, margin = 76, 24
     xs: list[float] = [margin]
+
     for gap in gaps:
         xs.append(xs[-1] + node_w + gap)
+
+    # Reserve overhead tracks for edges that skip layers.
     top_tracks: dict[int, float] = {}
     top: float = 20
+
     for i in skipped:
         label = labels[i]
         height = label["height"] if label else 0
         top_tracks[i] = top + height + 8
         top += height + 26
+
     top += 20
+
+    # Size the graph body for node rows and adjacent-edge lanes.
     lane_pitch = max([lab["height"] + 24 for lab in labels if lab] or [52])
     body_h = max(
         max(list(layers.values()).count(layer) for layer in range(depth)) * 110,
         max([len(v) for v in adjacent.values()] or [0]) * lane_pitch + 44,
     )
+
+    # Place nodes in evenly spaced rows within each layer.
     placed: dict[str, PlacedNode] = {}
     rows: dict[int, int] = {}
+
     for node in nodes:
+        # Measure the node label and reject labels taller than three lines.
         ident = node["id"]
         layer = layers[ident]
         row = rows.get(layer, 0)
@@ -341,6 +445,8 @@ def layout_graph(
             raise ValueError(
                 "Graph labels must fit three short lines; move detail into surrounding prose"
             )
+
+        # Record the node bounds in input order.
         placed[ident] = {
             "id": ident,
             "x": xs[layer],
@@ -351,23 +457,32 @@ def layout_graph(
         }
 
     def port(node: PlacedNode, index: int, group: list[int], right: bool) -> Point:
+        # Locate the edge among all ports and adjacent-layer ports.
         rank = group.index(index)
         adjacent_ports = [
             i for i in group if layers[edges[i]["to"]] == layers[edges[i]["from"]] + 1
         ]
+
+        # Align lone adjacent edges while spreading competing ports.
         if len(adjacent_ports) == 1 and index in adjacent_ports:
             y = node["y"] + node_h / 2
         elif len(group) == 2 and len(adjacent_ports) == 1:
             y = node["y"] + node_h * 0.75
         else:
             y = node["y"] + 18 + (rank + 1) * (node_h - 36) / (len(group) + 1)
+
+        # Place the port on the requested side of the node.
         return (node["x"] + (node_w if right else 0), y)
 
+    # Route edges through their reserved gutters and lanes.
     routes: list[EdgeRoute] = []
+
     for i, edge in enumerate(edges):
+        # Connect the source and target ports.
         source, target = placed[edge["from"]], placed[edge["to"]]
         start = port(source, i, outgoing[edge["from"]], True)
         end = port(target, i, incoming[edge["to"]], False)
+
         # All vertical segments live in gutters, never in a node column.
         exit_x = start[0] + 10 + i * 3
         entry_x = end[0] - 10 - i * 3
@@ -380,6 +495,7 @@ def layout_graph(
                 if len(group) == 1
                 else top + 32 + group.index(i) * lane_pitch + lane_pitch / 2
             )
+
         points = [
             start,
             (exit_x, start[1]),
@@ -388,6 +504,8 @@ def layout_graph(
             (entry_x, end[1]),
             end,
         ]
+
+        # Position the optional label above the horizontal route.
         measured_label = labels[i]
         positioned_label: PositionedLabel | None = None
         if measured_label:
@@ -396,7 +514,10 @@ def layout_graph(
                 "x": (exit_x + entry_x) / 2 - measured_label["width"] / 2,
                 "y": lane_y - measured_label["height"] - 7,
             }
+
         routes.append({"points": points, "label": positioned_label, "edge": edge})
+
+    # Return node placements, edge routes, and the outer diagram bounds.
     return {
         "nodes": list(placed.values()),
         "edges": routes,
@@ -421,15 +542,22 @@ def rounded_path(points: list[Point], radius: float = 7) -> str:
 
     # Remove coincident segments before rounding corners.
     clean = [points[0]]
+
     for p in points[1:]:
         if p != clean[-1]:
             clean.append(p)
+
+    # Round each remaining corner within the adjacent segment lengths.
     result = "M" + point(clean[0])
+
     for i in range(1, len(clean) - 1):
+        # Limit the corner radius to half of each neighboring segment.
         a, b, c = clean[i - 1 : i + 2]
         ab = abs(a[0] - b[0]) + abs(a[1] - b[1])
         bc = abs(b[0] - c[0]) + abs(b[1] - c[1])
         distance = min(radius, ab / 2, bc / 2)
+
+        # Replace the sharp corner with a quadratic curve.
         before = (
             b[0] + (a[0] - b[0]) * distance / ab,
             b[1] + (a[1] - b[1]) * distance / ab,
@@ -439,4 +567,6 @@ def rounded_path(points: list[Point], radius: float = 7) -> str:
             b[1] + (c[1] - b[1]) * distance / bc,
         )
         result += "L" + point(before) + "Q" + point(b) + " " + point(after)
+
+    # Finish the route at its final point.
     return result + "L" + point(clean[-1])
