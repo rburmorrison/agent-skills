@@ -8,7 +8,7 @@ import { parse } from 'acorn';
 import { compileJavaScript, generateJavaScript } from '../scripts/build-javascript.mjs';
 
 const ASSETS = new URL('../skills/documentation/visual-explainers/assets/', import.meta.url);
-const SOURCE_NAMES = ['charts.js', 'navigation.js', 'core.js'];
+const SOURCE_NAMES = ['charts.js', 'navigation.js', 'core.js', 'diagrams.js'];
 
 function programShape(source) {
   return JSON.stringify(parse(source, { ecmaVersion: 'latest' }), function (key, value) {

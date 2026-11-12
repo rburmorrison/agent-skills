@@ -337,6 +337,7 @@ class Renderer:
         self.counter: int = 0
         self.ids: set[str] = set()
         self.used_charts: bool = False
+        self.used_diagrams: bool = False
         self.code_categories: set[str] = set()
         self._metrics: FontMetrics | None = None
 
@@ -1134,24 +1135,63 @@ class Renderer:
         else:
             raise ValueError("Diagram kind must be flow, sequence, graph")
 
-        # Wrap the selected diagram with its title and caption.
+        # Add persistent title-bar controls only for the SVG diagram variants.
+        toolbar = ""
+        viewport_attributes = ""
+        if kind in {"graph", "sequence"}:
+            self.used_diagrams = True
+            help_id = self.uid()
+            viewport_attributes = (
+                f' data-diagram-viewport data-diagram-help="{help_id}"'
+            )
+            toolbar = "".join(
+                [
+                    '<div class="diagram-tools" hidden>',
+                    f'<span class="sr-only" id="{help_id}">',
+                    "Drag to pan. On touchscreens, one finger pans and two fingers pinch to zoom. ",
+                    "Use Ctrl/⌘ + wheel to zoom with a mouse. ",
+                    "Keyboard: arrows to pan, +/- to zoom, Home to fit.</span>",
+                    '<div class="diagram-zoom" role="group" aria-label="Diagram Zoom">',
+                    '<button type="button" data-diagram-action="out" aria-label="Zoom Out">',
+                    self.icon("zoom-out"),
+                    '</button><output aria-label="Zoom Level">100%</output>',
+                    '<button type="button" data-diagram-action="in" aria-label="Zoom In">',
+                    self.icon("zoom-in"),
+                    '</button><button type="button" data-diagram-action="fit" ',
+                    'aria-label="Fit to View" title="Fit to View">',
+                    self.icon("expand"),
+                    "</button>",
+                    "</div></div>",
+                ]
+            )
+
+        # Place controls beside the title, keeping the diagram viewport unobstructed.
+        header = ""
+        if title or toolbar:
+            header_class = "visual-label diagram-header" if toolbar else "visual-label"
+            if not title:
+                header_class += " diagram-header-untitled"
+            hidden_header = " hidden" if toolbar and not title else ""
+            header = (
+                f'<div class="{header_class}"{hidden_header}>'
+                + ("<strong>" + self.heading(title) + "</strong>" if title else "")
+                + toolbar
+                + "</div>"
+            )
+
+        # Wrap the selected diagram with its header and optional caption.
         return (
             '<figure class="visual">'
-            + (
-                '<div class="visual-label"><strong>'
-                + self.heading(title)
-                + "</strong></div>"
-                if title
-                else ""
-            )
-            + '<div class="diagram-scroll">'
+            + header
+            + f'<div class="diagram-scroll"{viewport_attributes}>'
             + body
+            + "</div>"
             + (
-                '</div><figcaption style="padding:0 20px 16px">'
+                '<figcaption style="padding:0 20px 16px">'
                 + inline(cap)
                 + "</figcaption>"
                 if cap
-                else "</div>"
+                else ""
             )
             + "</figure>"
         )
@@ -1606,6 +1646,11 @@ class Renderer:
             + (ASSETS / "navigation.min.js").read_text(encoding="utf-8")
             + "\n"
             + (ASSETS / "core.min.js").read_text(encoding="utf-8")
+            + (
+                "\n" + (ASSETS / "diagrams.min.js").read_text(encoding="utf-8")
+                if self.used_diagrams
+                else ""
+            )
         )
 
         # Append reviewed custom scripts inside their existing isolated scopes.

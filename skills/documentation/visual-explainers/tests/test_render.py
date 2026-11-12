@@ -51,6 +51,52 @@ class RenderTests(unittest.TestCase):
         self.assertIn(core, with_chart)
         self.assertEqual([], check_html(with_chart))
 
+    def test_svg_diagrams_offer_controls_with_a_scrollable_fallback(self) -> None:
+        # Render each diagram kind through the document entry point.
+        variants: list[dict[str, object]] = [
+            {"type": "diagram", "kind": "flow", "nodes": [{"label": "Start"}]},
+            {
+                "type": "diagram",
+                "kind": "graph",
+                "nodes": [{"id": "start", "label": "Start"}],
+            },
+            {
+                "type": "diagram",
+                "kind": "sequence",
+                "actors": ["Caller", "Service"],
+                "messages": [],
+            },
+        ]
+        controller = (ASSETS / "diagrams.min.js").read_text(encoding="utf-8")
+
+        for diagram in variants:
+            with self.subTest(kind=diagram["kind"]):
+                output = Renderer(
+                    {"title": "Diagram Controls", "intro": [diagram]}, FIXTURES
+                ).render()
+
+                # Keep each figure offline and its ordinary scrollable container intact.
+                self.assertEqual([], check_html(output))
+                self.assertIn('class="diagram-scroll"', output)
+                self.assertNotIn('class="diagram-scroll diagram-panzoom"', output)
+
+                # Offer hidden controls and the enhancement runtime only for SVG diagrams.
+                if diagram["kind"] == "flow":
+                    self.assertNotIn(controller, output)
+                    self.assertNotIn("data-diagram-viewport data-diagram-help=", output)
+                    continue
+
+                self.assertIn(controller, output)
+                self.assertIn('class="diagram-tools" hidden', output)
+                self.assertIn("data-diagram-viewport data-diagram-help=", output)
+                self.assertNotIn('class="diagram-controls-toggle"', output)
+                self.assertIn('class="diagram-zoom" role="group"', output)
+                self.assertIn("one finger pans and two fingers pinch", output)
+                self.assertIn('aria-label="Zoom Out"', output)
+                self.assertIn('aria-label="Zoom In"', output)
+                self.assertIn('aria-label="Fit to View" title="Fit to View"', output)
+                self.assertIn("icon-expand", output)
+
     def test_plain_theme_defaults_to_system_with_only_appearance_choices(self) -> None:
         # Build a document using the default theme settings.
         output = Renderer({"title": "Appearance"}, FIXTURES).render()

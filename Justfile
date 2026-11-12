@@ -36,6 +36,7 @@ test:
     uv run --locked python -m unittest discover -s skills/documentation/visual-explainers/tests -p 'test_*.py'
     node tests/test-javascript-build.mjs
     node skills/documentation/visual-explainers/tests/test_navigation.js
+    node skills/documentation/visual-explainers/tests/test_diagram_view.js
 
 # Run all verification without changing source files.
 check: format-check lint typecheck check-js test
