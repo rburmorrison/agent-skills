@@ -322,13 +322,15 @@ contentsToggle.addEventListener(
         const active = nav.querySelector('[aria-current]') || $('.contents-close');
         active.focus({ preventScroll: true });
 
-        // Scroll the focused entry into the drawer viewport.
-        const item = active.getBoundingClientRect();
-        const panel = contents.getBoundingClientRect();
-        if (item.bottom > panel.bottom - 16)
-          contents.scrollTop += item.bottom - panel.bottom + 16;
-        else if (item.top < panel.top + 16)
-          contents.scrollTop -= panel.top + 16 - item.top;
+        // Reveal the focused link without scrolling the drawer heading or close button.
+        if (nav.contains(active)) {
+          const item = active.getBoundingClientRect();
+          const panel = nav.getBoundingClientRect();
+          if (item.bottom > panel.bottom - 16)
+            nav.scrollTop += item.bottom - panel.bottom + 16;
+          else if (item.top < panel.top + 16)
+            nav.scrollTop -= panel.top + 16 - item.top;
+        }
       }
     }
     else {
