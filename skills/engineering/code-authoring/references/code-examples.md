@@ -63,6 +63,45 @@ println!(
 
 Choose the equivalent record, dataclass, named tuple, struct, or explicit variant in the target language. Local iteration pairs can remain immediately unpacked tuples. Runtime validation is a separate concern from naming fields.
 
+## Declarative Domain Rules
+
+A membership program has two benefit tiers. Separate branches for eligibility, discount, and shipping credit make the reader reconstruct what each tier means, even if every helper is pure. Put the related rules together:
+
+```rust
+struct BenefitTier {
+    name: &'static str,
+    minimum_points: u32,
+    discount_percent: u8,
+    shipping_credit_cents: u32,
+}
+
+const BENEFIT_TIERS: &[BenefitTier] = &[
+    BenefitTier {
+        name: "standard",
+        minimum_points: 0,
+        discount_percent: 0,
+        shipping_credit_cents: 0,
+    },
+    BenefitTier {
+        name: "plus",
+        minimum_points: 1_000,
+        discount_percent: 5,
+        shipping_credit_cents: 500,
+    },
+];
+
+fn benefit_tier(points: u32) -> Option<&'static BenefitTier> {
+    BENEFIT_TIERS
+        .iter()
+        .filter(|tier| points >= tier.minimum_points)
+        .max_by_key(|tier| tier.minimum_points)
+}
+```
+
+The shared selection rule is highest eligible threshold; the declarations state each tier's eligibility and benefits. Consumers read the selected tier's fields rather than matching its name to recover the policy. A third tier primarily adds a declaration. This can improve readability with one consumer and two tiers; it does not depend on duplicated strings or a large case count. The example assumes distinct thresholds, and the zero-point tier covers every `u32` input.
+
+Keep a standalone decision such as `if invoice.overdue() { send_reminder(invoice)?; }` direct when there is no coherent family of rules to clarify. Likewise, an exhaustive match that is already the clearest complete statement of a policy needs no descriptor layer. Prefer a dependency's supported declarations when they already express the required rules.
+
 ## Cohesive Branches
 
 For several variants of one event, a compact match exposes both the variant and its data:

@@ -37,6 +37,14 @@ Manage dependencies through the project's package manager. Use actual package in
 
 Read [the code examples](references/code-examples.md) for non-trivial implementation or when resolving a style tradeoff. Their languages illustrate shared principles rather than restricting the skill's scope.
 
+### Prefer Declarative Domain Rules
+
+Prefer expressing a coherent family of domain rules as meaningful declarations interpreted by a small shared mechanism when that makes the rules easier to read than procedural branching. Put related selectors, metadata, and policy together so a reader can understand what defines each case in one place. Consider this with only two cases; readability is sufficient reason, without waiting for extensive duplication.
+
+Keep the mechanism general across those declarations instead of teaching selection, execution, and related state separate versions of each case. Prefer supported declarative dependency APIs where available. Pure functions, encapsulated mutation, or renamed helpers alone do not satisfy this preference if the domain policy remains scattered through branches.
+
+Keep ordinary one-off conditionals, exhaustive mappings, local mutation, and ordered I/O direct when clearer. Use the smallest representation with a concrete readability benefit; do not build a generic framework or configuration language. See [the domain-rule example](references/code-examples.md#declarative-domain-rules) for the distinction.
+
 ### Explain Steps and Decisions
 
 For every function with more than one logical step, introduce each meaningful stage with a short, imperative implementation comment and separate stages with blank lines. Sketch these stage comments before filling in the implementation, and revise them when the flow changes. Apply this to short functions too, and to distinct stages within loops or branches. A logical step is a coherent purpose, not an individual statement: collecting values and then organizing them are separate stages; sorting and deduplicating those values can form one stage. Routine buffer initialization and a final return do not automatically need their own comments.
