@@ -16,7 +16,7 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 
 **Documentation**:
 
-- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone HTML explainers with reusable content components, math formulas, diagrams, eight interactive chart types, and 72 SVG icons. Includes paired light/dark appearance with system matching by default, full-width text, and responsive contents navigation with section tracking. A Python 3.11+ builder with a bundled syntax highlighter embeds fonts, images, and other assets for offline use; the user chooses the content and structure.
+- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone HTML explainers with reusable content components, math formulas, diagrams, eight interactive chart types, and 72 SVG icons. Includes paired light/dark appearance with system matching by default, a centered reading column, and responsive contents navigation with section tracking. A Python 3.11+ builder with a bundled syntax highlighter embeds fonts, images, and other assets for offline use; the user chooses the content and structure.
 
 ## Usage
 

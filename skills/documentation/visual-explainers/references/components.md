@@ -110,4 +110,4 @@ Use [diagrams.md](diagrams.md) for `diagram`, [charts.md](charts.md) for `chart`
 
 IDs are optional except when custom code refers to a component. Supply an ID starting with a letter and containing only letters, digits, hyphens, and underscores. IDs must be unique. The builder reserves shell IDs and generates the rest.
 
-Paragraphs and headings fill their containing column. The page expands to the available viewport width with the shell’s normal side padding; hiding the contents expands the main column.
+Paragraphs and headings fill their containing column. The main column is centered in the available space and capped at 1,040 px, with the shell’s normal side padding. Hiding the contents recenters the column within the viewport while retaining that cap.
