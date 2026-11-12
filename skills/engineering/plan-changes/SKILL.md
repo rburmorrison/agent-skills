@@ -27,6 +27,21 @@ Establish the outcome and exclusions. Include necessary supporting changes and e
 
 For new projects, use `setup-project` if available to select tooling and supported versions during planning; initialization and configuration writes belong to implementation. Resolve any material tooling conflict before editing.
 
+### Present Decision Context
+
+Lead each decision with a brief, one-sentence question that frames the actual choice in behavior or responsibilities. Follow it with enough context to answer without asking what the code does today, what would replace it, or what the alternatives mean. Do not repeat the question at the bottom.
+
+Use short, visually separated blocks with descriptive bold labels, such as **Current behavior**, **Concrete example**, **Options**, **Proposed change** or **Proposed addition**, **Side effects**, and **Recommendation**. Scale the detail to the decision; omit unnecessary blocks and avoid a rigid template for simple questions.
+
+- Ground current behavior in inspected code. Identify the relevant file and symbol, show a focused excerpt, and explain what it does in plain language. Keep code beside its explanation; a file link alone is not sufficient context. Label proposed code, simplified excerpts, and pseudocode so they cannot be mistaken for the current implementation. State uncertainty when evidence is unavailable.
+- Explain why the requested work introduces this decision. Compare concrete outcomes using the same input or usage scenario across options. Use a table when it makes the options, results, and tradeoffs easier to scan; avoid abstract labels without explaining their practical meaning.
+- For changes to existing behavior, show the before and after with focused code or a worked example. Explain what the proposal replaces, which behavior changes, and any relevant behavior preserved. Include meaningful failure and edge cases when they distinguish the choices.
+- For new additions, establish the surrounding workflow and what does not exist yet. Explain where the feature fits, what triggers it, and what the user and system would do under each option. Show proposed code, interfaces, or data shapes when they clarify the choice. If there is no relevant existing code, use a concrete scenario rather than inventing an implementation to replace.
+- Make material consequences explicit: user-visible effects, compatibility, persistence, error handling, dependencies, new responsibilities, and implementation or maintenance costs. Put side effects beside the relevant option, or in a separate block when they need explanation. An addition can introduce these consequences even when it preserves existing behavior.
+- End the explanation with a recommendation tied to the requirements and inspected evidence, including its material downside. Phrase the choice around the consequential behavior the user is deciding, rather than hiding it behind an implementation label such as "use the library" or "add caching."
+
+Provide this context with the question before requesting an answer, including when using a question tool with short option labels. The user should not need to reconstruct the investigation or read a completed plan to understand the decision.
+
 ## Produce an Implementation-Ready Plan
 
 Make the following explicit when relevant, without imposing empty sections on small tasks:
