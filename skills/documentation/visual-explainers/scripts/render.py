@@ -14,9 +14,11 @@ import re
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from string import Template
+from typing import TYPE_CHECKING, ClassVar, cast
 from urllib.parse import unquote_to_bytes
 
+import document_types as spec
 from code_blocks import RANGE_PALETTE_SIZE, CodeAnnotation, prepare_code_block
 from code_highlighting import highlight_code, highlight_styles
 from diagram_layout import (
@@ -25,39 +27,19 @@ from diagram_layout import (
     layout_graph,
     rounded_path,
 )
+from document_types import check_fields
 from mathml import render_mathml
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
-    import document_types as spec
     from diagram_layout import Point, PositionedLabel
 
 SKILL = Path(__file__).resolve().parents[1]
 ASSETS = SKILL / "assets"
 THEMES = {"plain": ASSETS / "themes" / "plain.css"}
+SHELL = ASSETS / "shell.html"
 APPEARANCES = ("system", "light", "dark")
-BLOCKS = (
-    "text",
-    "heading",
-    "list",
-    "alert",
-    "code",
-    "table",
-    "image",
-    "disclosure",
-    "columns",
-    "card",
-    "metrics",
-    "tabs",
-    "timeline",
-    "diagram",
-    "chart",
-    "equation",
-    "range",
-    "choice",
-    "html",
-)
 CHARTS = ("line", "area", "bar", "scatter", "histogram", "donut", "heatmap", "box")
 MINOR = {
     "a",
@@ -522,33 +504,14 @@ class Renderer:
             return "<p>" + inline(block) + "</p>"
 
         fields = cast("Mapping[str, object]", block)
-        if not isinstance(block, dict) or fields.get("type") not in BLOCKS:
-            kind = fields.get("type") if isinstance(block, dict) else block
+        kind = fields.get("type") if isinstance(block, dict) else block
+        if not isinstance(kind, str) or kind not in self.BLOCK_TYPES:
             raise ValueError("Unknown block type: " + str(kind))
 
-        # Dispatch to the variant renderer without changing ID allocation order.
-        handlers: dict[str, Callable[[Mapping[str, object]], str]] = {
-            "text": self._text_block,
-            "heading": self._heading_block,
-            "list": self._list_block,
-            "alert": self._alert_block,
-            "code": self._code_block,
-            "table": self._table_block,
-            "image": self._image_block,
-            "disclosure": self._disclosure_block,
-            "columns": self._columns_block,
-            "card": self._card_block,
-            "metrics": self._metrics_block,
-            "tabs": self._tabs_block,
-            "timeline": self._timeline_block,
-            "equation": self._equation_block,
-            "range": self._control_block,
-            "choice": self._control_block,
-            "html": self._html_block,
-            "diagram": self.diagram,
-            "chart": self.chart,
-        }
-        return handlers[cast("str", fields["type"])](fields)
+        # Check the declared fields, then dispatch without changing ID allocation order.
+        declaration, handler = self.BLOCK_TYPES[kind]
+        check_fields(fields, declaration, kind + " block")
+        return handler(self, fields)
 
     def _text_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.TextBlock", values)
@@ -972,6 +935,7 @@ class Renderer:
 
     def _control_block(self, values: Mapping[str, object]) -> str:
         block = cast("spec.ControlBlock", values)
+        settings = cast("spec.RangeBlock", values)
 
         # Reserve the control ID and render its visible label.
         t = block["type"]
@@ -981,13 +945,13 @@ class Renderer:
         # Render the selected control variant.
         if t == "range":
             lo, hi, value = (
-                block.get("min", 0),
-                block.get("max", 100),
-                block.get("value", block.get("min", 0)),
+                settings.get("min", 0),
+                settings.get("max", 100),
+                settings.get("value", settings.get("min", 0)),
             )
 
             # Reject nonnumeric, nonfinite, or inconsistent range settings.
-            numbers: tuple[object, ...] = (lo, hi, value, block.get("step", 1))
+            numbers: tuple[object, ...] = (lo, hi, value, settings.get("step", 1))
             if any(
                 isinstance(v, bool)
                 or not isinstance(v, (int, float))
@@ -996,11 +960,11 @@ class Renderer:
             ):
                 raise ValueError("Range values must be finite numbers")
 
-            if not lo <= value <= hi or block.get("step", 1) <= 0:
+            if not lo <= value <= hi or settings.get("step", 1) <= 0:
                 raise ValueError("Range requires min <= value <= max and step > 0")
 
             # Render the validated range and its live value output.
-            control = f'<input type="range" id="{ident}" min="{lo}" max="{hi}" step="{block.get("step", 1)}" value="{value}"><output for="{ident}" id="{ident}-value">{value}</output>'
+            control = f'<input type="range" id="{ident}" min="{lo}" max="{hi}" step="{settings.get("step", 1)}" value="{value}"><output for="{ident}" id="{ident}-value">{value}</output>'
         else:
             control = (
                 '<select id="'
@@ -1010,7 +974,11 @@ class Renderer:
                     '<option value="'
                     + esc(o["value"])
                     + '"'
-                    + (" selected" if o["value"] == block.get("value") else "")
+                    + (
+                        " selected"
+                        if o["value"] == cast("spec.ChoiceBlock", values).get("value")
+                        else ""
+                    )
                     + ">"
                     + esc(o["label"])
                     + "</option>"
@@ -1081,59 +1049,13 @@ class Renderer:
         kind = diagram.get("kind", "flow")
         title = diagram.get("title", "")
         cap = diagram.get("caption", "")
+        if kind not in self.DIAGRAM_TYPES:
+            raise ValueError("Diagram kind must be " + ", ".join(self.DIAGRAM_TYPES))
 
-        # Render the selected diagram variant.
-        if kind == "flow":
-            diagram = cast("spec.FlowDiagram", values)
-            pieces: list[str] = []
-            has_icons = any(node.get("icon") for node in diagram["nodes"])
-
-            for node in diagram["nodes"]:
-                # Separate flow nodes with a decorative connector.
-                if pieces:
-                    pieces.append(
-                        '<span class="flow-connector" aria-hidden="true"><svg class="flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18m-6-6 6 6-6 6"/></svg></span>'
-                    )
-
-                # Render the flow node with aligned optional icon space.
-                pieces.append(
-                    '<div class="node">'
-                    + (
-                        (
-                            '<span class="flow-icon" aria-hidden="true">'
-                            + (self.icon(node.get("icon")) if node.get("icon") else "")
-                            + "</span>"
-                        )
-                        if has_icons
-                        else ""
-                    )
-                    + "<strong>"
-                    + inline(node["label"])
-                    + "</strong>"
-                    + (
-                        "<p>" + inline(node.get("text")) + "</p>"
-                        if node.get("text")
-                        else ""
-                    )
-                    + "</div>"
-                )
-
-            # Wrap the ordered flow nodes in their accessible group.
-            body = (
-                '<div class="flow" data-count="'
-                + str(len(diagram["nodes"]))
-                + '" role="group" aria-label="'
-                + esc(title or "Process")
-                + '">'
-                + "".join(pieces)
-                + "</div>"
-            )
-        elif kind == "sequence":
-            body = self.sequence_diagram(values)
-        elif kind == "graph":
-            body = self.graph_diagram(values)
-        else:
-            raise ValueError("Diagram kind must be flow, sequence, graph")
+        # Check the selected kind's fields and render its body.
+        declaration, draw = self.DIAGRAM_TYPES[kind]
+        check_fields(values, declaration, kind + " diagram")
+        body = draw(self, values)
 
         # Add persistent title-bar controls only for the SVG diagram variants.
         toolbar = ""
@@ -1187,13 +1109,72 @@ class Renderer:
             + body
             + "</div>"
             + (
-                '<figcaption style="padding:0 20px 16px">'
-                + inline(cap)
-                + "</figcaption>"
+                '<figcaption class="diagram-caption">' + inline(cap) + "</figcaption>"
                 if cap
                 else ""
             )
             + "</figure>"
+        )
+
+    def flow_diagram(self, b: Mapping[str, object]) -> str:
+        """Render an ordered process as connected nodes.
+
+        Args:
+            b: Flow nodes with labels, optional text and icons, and an optional title.
+
+        Returns:
+            Flow markup grouped under the diagram title, or "Process" without one.
+
+        Raises:
+            ValueError: A node icon or inline content is invalid.
+            KeyError: A node label is absent.
+            OSError: A bundled icon cannot be read.
+        """
+        values = b
+        title = cast("spec.Diagram", values).get("title", "")
+        diagram = cast("spec.FlowDiagram", values)
+        pieces: list[str] = []
+        has_icons = any(node.get("icon") for node in diagram["nodes"])
+
+        for node in diagram["nodes"]:
+            # Separate flow nodes with a decorative connector.
+            if pieces:
+                pieces.append(
+                    '<span class="flow-connector" aria-hidden="true"><svg class="flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18m-6-6 6 6-6 6"/></svg></span>'
+                )
+
+            # Render the flow node with aligned optional icon space.
+            pieces.append(
+                '<div class="node">'
+                + (
+                    (
+                        '<span class="flow-icon" aria-hidden="true">'
+                        + (self.icon(node.get("icon")) if node.get("icon") else "")
+                        + "</span>"
+                    )
+                    if has_icons
+                    else ""
+                )
+                + "<strong>"
+                + inline(node["label"])
+                + "</strong>"
+                + (
+                    "<p>" + inline(node.get("text")) + "</p>"
+                    if node.get("text")
+                    else ""
+                )
+                + "</div>"
+            )
+
+        # Wrap the ordered flow nodes in their accessible group.
+        return (
+            '<div class="flow" data-count="'
+            + str(len(diagram["nodes"]))
+            + '" role="group" aria-label="'
+            + esc(title or "Process")
+            + '">'
+            + "".join(pieces)
+            + "</div>"
         )
 
     def diagram_metrics(self) -> FontMetrics:
@@ -1239,7 +1220,7 @@ class Renderer:
         """
 
         # Open the SVG text container with its shared positioning attributes.
-        text = f'<text class="{cls}" x="{x:.2f}" y="{y:.2f}" text-anchor="{anchor}" font-size="{size}" fill="var(--ink)">'
+        text = f'<text class="{cls}" x="{x:.2f}" y="{y:.2f}" text-anchor="{anchor}" font-size="{size}">'
 
         # Render each label line on its own baseline.
         for i, line in enumerate(lines):
@@ -1256,7 +1237,7 @@ class Renderer:
         Returns:
             A defs element containing an accent-colored marker.
         """
-        return f'<defs><marker id="{ident}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10Z" fill="var(--accent)"/></marker></defs>'
+        return f'<defs><marker id="{ident}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="diagram-marker" d="M0 0 10 5 0 10Z"/></marker></defs>'
 
     def graph_diagram(self, b: Mapping[str, object]) -> str:
         """Measure and render a directed acyclic graph as accessible SVG.
@@ -1300,12 +1281,12 @@ class Renderer:
 
         # Paint edge routes beneath the graph nodes.
         for route in layout["edges"]:
-            body += f'<path class="graph-edge" d="{rounded_path(route["points"])}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" marker-end="url(#{marker})"/>'
+            body += f'<path class="graph-edge" d="{rounded_path(route["points"])}" marker-end="url(#{marker})"/>'
 
         # Paint each node background and its centered label.
         for node in layout["nodes"]:
             x, y, w, h = node["x"], node["y"], node["width"], node["height"]
-            body += f'<g class="graph-node" data-node="{esc(node["id"])}"><rect x="{x:.2f}" y="{y:.2f}" width="{w}" height="{h}" rx="8" fill="var(--wash)" stroke="var(--line)"/>'
+            body += f'<g class="graph-node" data-node="{esc(node["id"])}"><rect x="{x:.2f}" y="{y:.2f}" width="{w}" height="{h}" rx="8"/>'
 
             # Place the wrapped node label inside its bounds.
             body += (
@@ -1323,7 +1304,7 @@ class Renderer:
             label = route.get("label")
             if label:
                 x, y, w, h = label["x"], label["y"], label["width"], label["height"]
-                body += f'<g class="graph-edge-label"><rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" rx="5" fill="var(--paper)"/>'
+                body += f'<g class="graph-edge-label"><rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" rx="5"/>'
                 body += (
                     self.svg_text(label["lines"], x + w / 2, y + 18, label["size"])
                     + "</g>"
@@ -1429,24 +1410,24 @@ class Renderer:
 
         # Paint actor lifelines beneath the messages.
         for x in centers:
-            body += f'<path d="M{x} {20 + actor_h}V{diagram_height - 8}" stroke="var(--line)" stroke-width="1.5"/>'
+            body += f'<path class="sequence-lifeline" d="M{x} {20 + actor_h}V{diagram_height - 8}"/>'
 
         # Paint each message arrow and its readable label background.
         for row in rows:
-            body += f'<path class="sequence-arrow" d="{rounded_path(row["points"])}" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#{marker})"/>'
+            body += f'<path class="sequence-arrow" d="{rounded_path(row["points"])}" marker-end="url(#{marker})"/>'
 
             # Place the message label above its arrow.
             label = row["label"]
             x, y, w, h = label["x"], label["y"], label["width"], label["height"]
             body += (
-                f'<g class="sequence-label"><rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" rx="4" fill="var(--paper)"/>'
+                f'<g class="sequence-label"><rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" rx="4"/>'
                 + self.svg_text(label["lines"], x + w / 2, y + 17)
                 + "</g>"
             )
 
         # Paint actor headers above their lifelines.
         for x, lines in zip(centers, actor_lines, strict=False):
-            body += f'<rect x="{x - 80}" y="20" width="160" height="{actor_h}" rx="8" fill="var(--wash)"/>'
+            body += f'<rect class="sequence-actor" x="{x - 80}" y="20" width="160" height="{actor_h}" rx="8"/>'
             body += self.svg_text(
                 lines, x, 20 + actor_h / 2 - (len(lines) - 1) * 9 + 5, 14
             )
@@ -1481,6 +1462,7 @@ class Renderer:
             raise ValueError("Chart kind must be " + ", ".join(CHARTS))
 
         validate_chart(kind, data)
+        validate_bounds(kind, values)
 
         # Collect the supported display options for the browser controller.
         options = {
@@ -1491,6 +1473,8 @@ class Renderer:
                 "unit",
                 "xUnit",
                 "binUnit",
+                "xMax",
+                "xMin",
                 "yMax",
                 "yMin",
                 "pointPrefix",
@@ -1543,8 +1527,9 @@ class Renderer:
             OSError: A required asset cannot be read or resolved.
         """
 
-        # Require a supported theme and operator authorization for custom assets.
+        # Require the document's declared fields, a supported theme, and operator authorization for custom assets.
         document = self.doc
+        check_fields(document, spec.Document, "document")
         theme = document.get("theme", "plain")
         if not self.trusted_custom and (
             document.get("styles") or document.get("scripts")
@@ -1573,6 +1558,7 @@ class Renderer:
 
         # Render section headings and their nested blocks in encounter order.
         for section in sections:
+            check_fields(section, spec.Section, "section")
             ident = self.uid(section.get("id"))
             body += (
                 '<section><h2 id="'
@@ -1602,18 +1588,17 @@ class Renderer:
 
         # Embed bundled fonts, licenses, and selected styles.
         css = ""
-        licenses: list[str] = []
 
         for family, file, weight in [
-            ("Explainer Sans", "Manrope.ttf", "200 800"),
-            ("Explainer Mono", "JetBrainsMono.ttf", "100 800"),
+            ("Explainer Sans", "Manrope.woff2", "200 800"),
+            ("Explainer Mono", "JetBrainsMono.woff2", "100 800"),
         ]:
             # Encode each font and append its face declaration.
             uri = (
-                "data:font/ttf;base64,"
+                "data:font/woff2;base64,"
                 + base64.b64encode((ASSETS / "fonts" / file).read_bytes()).decode()
             )
-            css += f'@font-face{{font-family:"{family}";src:url("{uri}") format("truetype");font-weight:{weight};font-style:normal;font-display:swap}}'
+            css += f'@font-face{{font-family:"{family}";src:url("{uri}") format("woff2");font-weight:{weight};font-style:normal;font-display:swap}}'
 
         # Read the bundled font licenses for the generated document.
         licenses = [
@@ -1681,46 +1666,23 @@ class Renderer:
             + "; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"
         )
 
-        # Assemble the standalone document and its accessible shell.
-        result = (
-            '<!doctype html><html lang="'
-            + esc(document.get("lang", "en"))
-            + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="'
-            + esc(document.get("description", document.get("lead", "")))
-            + '"><title>'
-            + esc(document["title"])
-            + "</title><style>"
-            + css
-            + '</style></head><body data-theme="'
-            + theme
-            + '" data-appearance="system"><a class="skip" href="#main">Skip to Content</a><div class="progress" aria-hidden="true"></div><header><div class="header-start"><button id="toc-toggle" class="sidebar-toggle" type="button" aria-label="Hide Contents" title="Hide Contents" aria-controls="contents" aria-expanded="true">'
-            + self.icon("contents")
-            + '</button><span class="brand">'
-            + esc(document.get("brand", document["title"]))
-            + '</span></div><div class="tools"><div class="theme-control"><button id="theme-toggle" class="header-icon-button" type="button" aria-label="Change Appearance" title="Change Appearance" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu">'
-            + self.icon("theme")
-            + '</button><div id="theme-menu" class="theme-menu" role="menu" aria-label="Appearance" hidden>'
-            + menu
-            + '</div></div><button class="header-icon-button" data-print type="button" aria-label="Print" title="Print">'
-            + self.icon("print")
-            + '</button></div></header><div class="contents-backdrop" aria-hidden="true"></div><div class="layout"><div class="contents-slot"><aside id="contents" aria-labelledby="contents-title"><div class="contents-heading"><p id="contents-title">On This Page</p><button class="contents-close" type="button" aria-label="Close Contents">'
-            + self.icon("close")
-            + '</button></div><nav aria-label="Table of Contents"></nav></aside></div><main id="main">'
-            + body
-            + "</main></div><script>"
-            + js
-            + '</script><template id="font-licenses"><pre>'
-            + esc("\n\n".join(licenses))
-            + "</pre></template></body></html>"
-        )
-
-        # Attach the content security policy to the document head.
-        result = result.replace(
-            "<head>",
-            '<head><meta http-equiv="Content-Security-Policy" content="'
-            + esc(policy)
-            + '">',
-            1,
+        # Fill the standalone document shell; substituted values are never re-parsed as placeholders.
+        result = Template(SHELL.read_text(encoding="utf-8")).substitute(
+            lang=esc(document.get("lang", "en")),
+            policy=esc(policy),
+            description=esc(document.get("description", document.get("lead", ""))),
+            title=esc(document["title"]),
+            css=css,
+            theme=theme,
+            contents_icon=self.icon("contents"),
+            brand=esc(document.get("brand", document["title"])),
+            theme_icon=self.icon("theme"),
+            menu=menu,
+            print_icon=self.icon("print"),
+            close_icon=self.icon("close"),
+            body=body,
+            js=js,
+            licenses=esc("\n\n".join(licenses)),
         )
 
         # Reject the finished document if dependency or structure checks fail.
@@ -1729,6 +1691,43 @@ class Renderer:
             raise ValueError("\n".join(problems))
 
         return result
+
+    # Block types with the field declarations checked before their handler runs.
+    BLOCK_TYPES: ClassVar[
+        dict[
+            str,
+            tuple[type, Callable[[Renderer, Mapping[str, object]], str]],
+        ]
+    ] = {
+        "text": (spec.TextBlock, _text_block),
+        "heading": (spec.HeadingBlock, _heading_block),
+        "list": (spec.ListBlock, _list_block),
+        "alert": (spec.AlertBlock, _alert_block),
+        "code": (spec.CodeBlock, _code_block),
+        "table": (spec.TableBlock, _table_block),
+        "image": (spec.ImageBlock, _image_block),
+        "disclosure": (spec.DisclosureBlock, _disclosure_block),
+        "columns": (spec.ColumnsBlock, _columns_block),
+        "card": (spec.CardBlock, _card_block),
+        "metrics": (spec.MetricsBlock, _metrics_block),
+        "tabs": (spec.TabsBlock, _tabs_block),
+        "timeline": (spec.TimelineBlock, _timeline_block),
+        "equation": (spec.EquationBlock, _equation_block),
+        "range": (spec.RangeBlock, _control_block),
+        "choice": (spec.ChoiceBlock, _control_block),
+        "html": (spec.HtmlBlock, _html_block),
+        "diagram": (spec.Diagram, diagram),
+        "chart": (spec.Chart, chart),
+    }
+
+    # Diagram kinds with the field declarations checked before their renderer runs.
+    DIAGRAM_TYPES: ClassVar[
+        dict[str, tuple[type, Callable[[Renderer, Mapping[str, object]], str]]]
+    ] = {
+        "flow": (spec.FlowDiagram, flow_diagram),
+        "sequence": (spec.SequenceDiagram, sequence_diagram),
+        "graph": (spec.GraphDiagram, graph_diagram),
+    }
 
 
 def _chart_numbers(values: Sequence[object], positive: bool = False) -> None:
@@ -1860,6 +1859,39 @@ def validate_chart(kind: str, d: Mapping[str, object]) -> None:
         _validate_heatmap(data)
     elif kind == "box":
         _validate_box(data)
+
+
+def validate_bounds(kind: str, options: Mapping[str, object]) -> None:
+    """Check explicit axis bounds for a chart.
+
+    Args:
+        kind: Chart name from CHARTS.
+        options: Chart fields that may contain xMin, xMax, yMin, or yMax.
+
+    Raises:
+        ValueError: A bound is not a finite number, an x bound is set on a
+            non-scatter chart, or a lower bound is not below its upper bound.
+    """
+
+    # Restrict x bounds to the only chart kind with a numeric x-axis.
+    if kind != "scatter" and ("xMin" in options or "xMax" in options):
+        raise ValueError("xMin and xMax apply only to scatter charts")
+
+    # Require finite numbers and an increasing range for each supplied pair.
+    for low_name, high_name in (("xMin", "xMax"), ("yMin", "yMax")):
+        bounds = {k: options[k] for k in (low_name, high_name) if k in options}
+        if bounds:
+            try:
+                _chart_numbers(list(bounds.values()))
+            except ValueError:
+                raise ValueError(
+                    f"{low_name} and {high_name} must be finite numbers"
+                ) from None
+
+        if len(bounds) == 2 and not (
+            cast("float", bounds[low_name]) < cast("float", bounds[high_name])
+        ):
+            raise ValueError(f"{low_name} must be less than {high_name}")
 
 
 class _Arguments(argparse.Namespace):

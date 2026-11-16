@@ -1,121 +1,41 @@
-// Render offline SVG charts with shared exact-value inspection.
-(() => {
-  const svgNamespace = 'http://www.w3.org/2000/svg';
-  const instances = new Map();
-  const palette = [
+// Plot offline SVG charts with shared exact-value inspection.
+
+// Keep chart scales, tables, drawing rules, and navigation free of the DOM so they can be verified directly.
+const ExplainerChartModel = (() => {
+  const PALETTE = [
     'var(--accent)',
     'var(--chart-secondary)',
     'var(--chart-third)',
     'var(--chart-fourth)',
     'var(--chart-fifth)'
   ];
-  const formatValue = n => typeof n === 'number' && Number.isInteger(n) ? new Intl.NumberFormat('en-US').format(n) : String(n);
-  const formatAxisValue = n => formatValue(Number(n.toPrecision(8)));
-  const color = i => palette[i % palette.length];
+  const DEFAULT_FRAME = { height: 320, left: 54 };
+  const color = i => PALETTE[i % PALETTE.length];
 
-  function svgNode(tag, attrs = {}, text) {
-    // Create an SVG element and apply its attributes.
-    const element = document.createElementNS(svgNamespace, tag);
-    Object.entries(attrs).forEach(([k, v]) => element.setAttribute(k, String(v)));
-
-    // Populate optional literal text without interpreting markup.
-    if (text !== undefined)
-      element.textContent = text;
-    return element;
+  /**
+   * Build the number formatters used by every chart in one document.
+   * @param {string} locale BCP 47 language tag accepted by Intl.
+   * @returns {{value: Function, axis: Function, range: Function, share: Function, unit: Function}}
+   *   Exact values, tick labels, intervals, one-decimal percentages, and values with an optional unit.
+   */
+  function formats(locale) {
+    const number = new Intl.NumberFormat(locale, { maximumSignificantDigits: 17 });
+    const percent = new Intl.NumberFormat(locale, { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const value = n => typeof n === 'number' ? number.format(n) : String(n);
+    return {
+      value,
+      axis: n => value(Number(n.toPrecision(8))),
+      range: (low, high) => value(low) + '–' + value(high),
+      share: fraction => percent.format(fraction),
+      unit: (n, unit) => value(n) + (unit ? ' ' + unit : '')
+    };
   }
 
-  function htmlNode(tag, cls, text) {
-    // Create an HTML element and apply its presentation class.
-    const element = document.createElement(tag);
-    if (cls)
-      element.className = cls;
-
-    // Populate optional literal text without interpreting markup.
-    if (text !== undefined)
-      element.textContent = text;
-    return element;
-  }
-
-  function numberUnit(n, unit) {
-    return formatValue(n) + (unit ? ' ' + unit : '');
-  }
-
-  function dataRows(config) {
-    const data = config.data;
-    if (config.kind === 'line' || config.kind === 'area')
-      return { headers: [config.xLabel || 'Category', ...data.series.map(s => s.name)], rows: data.categories.map((n, i) => [n, ...data.series.map(s => s.values[i])]) };
-    if (config.kind === 'bar' || config.kind === 'donut')
-      return { headers: ['Category', config.yLabel || config.unit || 'Value'], rows: data.categories.map((n, i) => [n, data.values[i]]) };
-    if (config.kind === 'scatter')
-      return { headers: ['Observation', config.xLabel, config.yLabel], rows: data.points.map(p => [p.label, p.x, p.y]) };
-    if (config.kind === 'histogram')
-      return { headers: ['Interval (' + (config.binUnit || 'units') + ')', config.yLabel || 'Count'], rows: data.bins.map(b => [b.low + '–' + b.high, b.count]) };
-    if (config.kind === 'heatmap')
-      return { headers: [config.yLabel || 'Row', ...data.columns], rows: data.rows.map((r, i) => [r, ...data.values[i]]) };
-    if (config.kind === 'box')
-      return {
-        headers: [
-          'Group',
-          'Min',
-          'Q1',
-          'Median',
-          'Q3',
-          'Max'
-        ], rows: data.groups.map(g => [
-          g.name,
-          g.min,
-          g.q1,
-          g.median,
-          g.q3,
-          g.max
-        ])
-      };
-  }
-
-  function table(state) {
-    // Build the accessible data-table structure.
-    const t = dataRows(state.config);
-    const el = htmlNode('table');
-    const head = htmlNode('thead');
-    const tr = htmlNode('tr');
-    const body = htmlNode('tbody');
-
-    // Render column headings before the data rows.
-    t.headers.forEach(h => {
-      const th = htmlNode('th', '', h);
-      th.scope = 'col';
-      tr.append(th);
-    });
-    head.append(tr);
-
-    // Render values in their original row order.
-    t.rows.forEach(row => {
-      const r = htmlNode('tr');
-      row.forEach(v => r.append(htmlNode('td', '', formatValue(v))));
-      body.append(r);
-    });
-
-    // Replace the chart data view with the completed table.
-    el.append(head, body);
-    state.root.querySelector('.chart-data .table-wrap').replaceChildren(el);
-  }
-
-  function legend(state, entries) {
-    // Clear the previous legend before rebuilding its entries.
-    const l = state.root.querySelector('.chart-legend');
-    l.replaceChildren();
-
-    // Pair each series label with its corresponding visual swatch.
-    entries.forEach((name, i) => {
-      const span = htmlNode('span');
-      const swatch = htmlNode('i', state.config.kind === 'line' && i === 1 ? 'dashed' : '');
-      swatch.style.setProperty('--legend-color', color(i));
-      swatch.setAttribute('aria-hidden', 'true');
-      span.append(swatch, document.createTextNode(name));
-      l.append(span);
-    });
-  }
-
+  /**
+   * Round an interval up to a readable 1, 2, 5, or 10 multiple of its magnitude.
+   * @param {number} value Positive interval.
+   * @returns {number} Readable interval no smaller than value.
+   */
   function niceStep(value) {
     // Normalize the requested interval to its decimal magnitude.
     const power = 10 ** Math.floor(Math.log10(Math.max(value, 1e-9)));
@@ -125,96 +45,108 @@
     return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * power;
   }
 
-  function domain(values, config = {}) {
-    // Include zero and avoid an empty numeric domain.
-    let lo = Math.min(0, ...values);
-    let hi = Math.max(0, ...values);
-    if (lo === hi)
-      hi = lo + 1;
+  /**
+   * Choose a padded, rounded axis range for plotted values.
+   * @param {number[]} values Finite plotted values; at least one.
+   * @param {{min?: number, max?: number, zero?: boolean}} [options] Explicit bounds, and
+   *   whether the range must include zero because marks encode magnitude from a baseline.
+   * @returns {[number, number]} Lower and upper axis bounds, lower first. A single explicit
+   *   bound on the far side of the data keeps the fitted span instead of inverting the axis.
+   */
+  function domain(values, { min, max, zero = true } = {}) {
+    // Fit the values, including zero when marks encode magnitude from a baseline.
+    let lo = Math.min(...values);
+    let hi = Math.max(...values);
+    if (zero) {
+      lo = Math.min(0, lo);
+      hi = Math.max(0, hi);
+    }
 
-    // Pad the domain while retaining zero as a natural boundary.
+    // Treat a span lost in floating-point precision as a single value, and widen it so it stays visible.
+    if (hi - lo <= Math.max(Math.abs(lo), Math.abs(hi)) * Number.EPSILON * 64) {
+      const center = (lo + hi) / 2;
+      const half = zero ? 0 : Math.abs(center) * .1 || .5;
+      lo = zero ? lo : center - half;
+      hi = zero ? hi + 1 : center + half;
+    }
+
+    // Pad the domain, keeping zero as a natural boundary when it is included.
     const pad = (hi - lo) * .06;
-    lo = lo < 0 ? lo - pad : lo;
-    hi = hi > 0 ? hi + pad : hi;
+    if (!zero || lo < 0)
+      lo -= pad;
+    if (!zero || hi > 0)
+      hi += pad;
 
     // Round domain bounds unless the configuration supplies explicit limits.
     const step = niceStep((hi - lo) / 4);
-    return [config.yMin ?? Math.floor(lo / step) * step, config.yMax ?? Math.ceil(hi / step) * step];
+    const span = Math.ceil(hi / step) * step - Math.floor(lo / step) * step;
+    let low = min ?? Math.floor(lo / step) * step;
+    let high = max ?? Math.ceil(hi / step) * step;
+
+    // Keep an explicit bound beyond the data from inverting the axis.
+    if (!(high > low)) {
+      if (max === undefined)
+        high = low + span;
+      else
+        low = high - span;
+    }
+    return [low, high];
   }
 
-  function ticks(min, max) {
-    // Choose a readable tick interval.
-    const step = niceStep((max - min) / 5);
-    const out = [];
+  /**
+   * Anchor filled marks at zero, or at the nearest plotted edge when zero is outside the domain.
+   * @param {number} min Lower axis bound.
+   * @param {number} max Upper axis bound.
+   * @returns {number} Baseline value within the domain.
+   */
+  function baseline(min, max) {
+    return Math.min(max, Math.max(min, 0));
+  }
 
-    // Enumerate ticks and normalize near-zero floating-point residue.
-    for (let v = Math.ceil(min / step) * step;v <= max + step * .001;v += step)
+  /**
+   * List readable tick values across an axis.
+   * @param {number} min Lower axis bound.
+   * @param {number} max Upper axis bound, greater than min.
+   * @returns {number[]} Ascending ticks within the bounds, at most 51, with floating-point residue
+   *   near zero removed; empty when max is not greater than min.
+   */
+  function ticks(min, max) {
+    // Choose a readable tick interval, and draw none for an empty or invalid range.
+    const step = niceStep((max - min) / 5);
+    if (!(max > min) || !(step > 0) || !Number.isFinite(step))
+      return [];
+
+    // Enumerate by index, so precision loss at large magnitudes cannot stall the loop,
+    // and normalize near-zero floating-point residue.
+    const first = Math.ceil(min / step) * step;
+    const out = [];
+    for (let i = 0; i <= 50; i++) {
+      const v = first + i * step;
+      if (v > max + step * .001)
+        break;
       out.push(Math.abs(v) < step * .001 ? 0 : v);
+    }
     return out;
   }
 
-  function yAxis(svg, config, W, H, m, max, min = 0) {
-    // Draw horizontal grid lines with their numeric labels.
-    for (const value of ticks(min, max)) {
-      const y = H - m.b - (H - m.b - m.t) * (value - min) / (max - min);
-      svg.append(
-        svgNode('path', { d: `M${m.l} ${y}H${W - m.r}`, class: 'chart-grid' }),
-        svgNode(
-          'text',
-          {
-            x: m.l - 10,
-            y: y + 4,
-            'text-anchor': 'end',
-            class: 'chart-axis'
-          },
-          formatAxisValue(value)
-        )
-      );
-    }
-
-    // Place the configured axis titles outside the plot.
-    if (config.yLabel)
-      svg.append(svgNode('text', {
-        x: m.l,
-        y: 16,
-        class: 'chart-axis-title'
-      }, config.yLabel));
-    if (config.xLabel)
-      svg.append(svgNode(
-        'text',
-        {
-          x: (m.l + W - m.r) / 2,
-          y: H - 5,
-          'text-anchor': 'middle',
-          class: 'chart-axis-title'
-        },
-        config.xLabel
-      ));
-  }
-
-  function labelX(svg, label, x, y) {
-    svg.append(svgNode('text', {
-      x,
-      y,
-      'text-anchor': 'middle',
-      class: 'chart-axis'
-    }, label));
-  }
-
-  function barLabel(svg, label, x, y, width) {
+  /**
+   * Fit a category label beneath a mark using approximate character widths.
+   * @param {*} label Category label.
+   * @param {number} width Available width in SVG units.
+   * @returns {string[]} The whole label as one line when it fits; otherwise at most two
+   *   wrapped lines, with an ellipsis on any line that still overflows.
+   */
+  function wrapLabel(label, width) {
     // Use a single line when the category label fits.
     const text = String(label);
     const size = Math.max(3, Math.floor((width - 8) / 6.6));
-    if (text.length <= size) {
-      labelX(svg, text, x, y);
-      return;
-    }
+    if (text.length <= size)
+      return [text];
 
-    // Wrap longer labels into approximate character-width lines.
-    const words = text.split(/\s+/);
+    // Wrap longer labels at word boundaries.
     const lines = [];
     let line = '';
-    for (const word of words) {
+    for (const word of text.split(/\s+/)) {
       if ((line + ' ' + word).trim().length > size && line) {
         lines.push(line);
         line = word;
@@ -225,745 +157,732 @@
     if (line)
       lines.push(line);
 
-    // Split an overlong unbroken label before drawing two lines.
-    if (lines.length === 1 && text.length > size) {
-      lines[0] = text.slice(0, size);
-      lines[1] = text.slice(size);
+    // Split an overlong unbroken label across two lines.
+    if (lines.length === 1) {
+      const [word] = lines;
+      lines.splice(0, 1, word.slice(0, size), word.slice(size));
     }
 
-    // Draw at most two lines while retaining the full label in its title.
-    const el = svgNode('text', {
-      x,
-      y,
-      'text-anchor': 'middle',
-      class: 'chart-axis'
-    });
-    el.append(svgNode('title', {}, text));
-    lines.slice(0, 2).forEach((l, i) => el.append(svgNode('tspan', { x, dy: i ? 14 : 0 }, l.length > size ? l.slice(0, Math.max(1, size - 1)) + '…' : l)));
-    svg.append(el);
+    // Keep two lines and mark any remaining overflow.
+    return lines.slice(0, 2).map(l => l.length > size ? l.slice(0, Math.max(1, size - 1)) + '…' : l);
   }
 
-  function mark(state, element, record) {
-    // Assign the mark its record index and accessible interaction attributes.
-    const i = state.records.length;
-    element.setAttribute('data-mark', i);
-    element.setAttribute('tabindex', i === 0 ? '0' : '-1');
-    element.setAttribute('role', 'button');
-    element.setAttribute('aria-label', record.title + '. ' + record.rows.map(([k, v]) => k + ': ' + v).join('; '));
-
-    // Retain the mark with its inspection values and coordinates.
-    state.records.push({ ...record, element });
-    return element;
+  /**
+   * Choose the mark a navigation key moves to.
+   * @param {string} key KeyboardEvent key value.
+   * @param {number} index Current mark index.
+   * @param {number} count Number of marks, greater than zero.
+   * @param {number} [stride] Marks per grid row; vertical arrows move by rows when supplied.
+   * @returns {?number} Next mark index, wrapping at the ends, or null for non-navigation keys.
+   */
+  function nextIndex(key, index, count, stride) {
+    if (stride && (key === 'ArrowDown' || key === 'ArrowUp'))
+      return (index + (key === 'ArrowDown' ? stride : count - stride)) % count;
+    if (key === 'ArrowRight' || key === 'ArrowDown')
+      return (index + 1) % count;
+    if (key === 'ArrowLeft' || key === 'ArrowUp')
+      return (index + count - 1) % count;
+    if (key === 'Home')
+      return 0;
+    if (key === 'End')
+      return count - 1;
+    return null;
   }
 
-  function render(state) {
-    // Measure the canvas and create the chart SVG.
-    const config = state.config;
-    const data = config.data;
-    const host = state.canvas;
-    const W = Math.max(280, Math.round(host.clientWidth));
-    const H = config.kind === 'heatmap' ? 310 : 320;
-    const m = {
-      l: config.kind === 'heatmap' ? 92 : 54,
-      r: 18,
-      t: 32,
-      b: 54
-    };
-    const svg = svgNode('svg', {
-      viewBox: `0 0 ${W} ${H}`,
-      role: 'group',
-      'aria-label': config.title
+  /**
+   * Find the mark closest to a plot position.
+   * @param {{x: number, y: number}[]} records Mark positions in SVG units.
+   * @param {{x: number, y: number}} point Position in SVG units.
+   * @param {'x'|'xy'} mode Compare horizontal distance only, or Euclidean distance.
+   * @returns {number} Index of the first nearest record, or -1 when there are none.
+   */
+  function nearestIndex(records, point, mode) {
+    let best = -1;
+    let distance = Infinity;
+    records.forEach((r, i) => {
+      const d = mode === 'xy' ? Math.hypot(point.x - r.x, point.y - r.y) : Math.abs(point.x - r.x);
+      if (d < distance) {
+        distance = d;
+        best = i;
+      }
     });
-    svg.append(svgNode('title', {}, config.title));
+    return best;
+  }
 
-    // Reset interaction state before rebuilding chart marks.
-    state.records = [];
-    state.svg = svg;
-    state.dim = {
-      W,
-      H,
-      m
-    };
-    state.crosshair = null;
-    state.selection = null;
-    state.active = -1;
-    state.tip.hidden = true;
+  // Drawing helpers shared by chart kinds. Each receives the plot toolkit described on `kinds`.
+  function valueAxis(plot, min, max) {
+    // Draw horizontal grid lines with their numeric labels.
+    const { config, W, H, m, plotH } = plot;
+    for (const value of ticks(min, max)) {
+      const y = H - m.b - plotH * (value - min) / (max - min);
+      plot.add('path', { d: `M${m.l} ${y}H${W - m.r}`, class: 'chart-grid' });
+      plot.add('text', { x: m.l - 10, y: y + 4, 'text-anchor': 'end', class: 'chart-axis' }, plot.format.axis(value));
+    }
 
-    // Calculate the usable plot area and select the chart variant.
-    const plotW = W - m.l - m.r;
-    const plotH = H - m.t - m.b;
-    const series = config.kind === 'line' || config.kind === 'area';
-    if (series) {
-      // Map series categories and values into plot coordinates.
-      const n = data.categories.length;
-      const [min, max] = domain(data.series.flatMap(s => s.values), config);
-      const x = i => m.l + (n === 1 ? plotW / 2 : plotW * i / (n - 1));
-      const y = v => H - m.b - plotH * (v - min) / (max - min);
-      yAxis(svg, config, W, H, m, max, min);
-      legend(state, data.series.length > 1 ? data.series.map(s => s.name) : []);
+    // Place the configured axis titles outside the plot.
+    if (config.yLabel)
+      plot.add('text', { x: m.l, y: 16, class: 'chart-axis-title' }, config.yLabel);
+    xTitle(plot);
+  }
 
-      // Thin category labels to the available horizontal space.
-      const slots = Math.max(2, Math.min(n, Math.floor(plotW / (Math.max(...data.categories.map(v => String(v).length)) * 6.8 + 18))));
-      const shown = new Set(Array.from({ length: slots }, (_, i) => Math.round(i * (n - 1) / (slots - 1))));
-      data.categories.forEach((v, i) => {
-        if (shown.has(i))
-          labelX(svg, v, x(i), H - m.b + 22);
-      });
+  function xTitle(plot) {
+    const { config, W, H, m } = plot;
+    if (config.xLabel)
+      plot.add('text', { x: (m.l + W - m.r) / 2, y: H - 5, 'text-anchor': 'middle', class: 'chart-axis-title' }, config.xLabel);
+  }
 
-      // Reserve a transparent hit target for nearest-point inspection.
-      const hit = svgNode(
-        'rect',
-        {
-          x: m.l,
-          y: m.t,
-          width: plotW,
-          height: plotH,
-          fill: 'transparent',
-          'data-plot-hit': 'true'
-        }
-      );
-      svg.append(hit);
+  function axisLabel(plot, label, x, y = plot.H - plot.m.b + 22) {
+    plot.add('text', { x, y, 'text-anchor': 'middle', class: 'chart-axis' }, label);
+  }
 
-      // Draw series paths and optional area fills beneath the marks.
-      data.series.forEach((s, j) => {
-        const points = s.values.map((v, i) => [x(i), y(v)]);
-        const path = points.map((p, i) => (i ? 'L' : 'M') + p.join(' ')).join(' ');
-        if (config.kind === 'area')
-          svg.append(svgNode(
-            'path',
-            {
-              d: path + `L${x(n - 1)} ${y(0)}L${x(0)} ${y(0)}Z`,
-              fill: color(j),
-              opacity: .16,
-              'pointer-events': 'none'
-            }
-          ));
-        svg.append(svgNode(
-          'path',
-          {
-            d: path,
-            class: 'chart-line',
-            stroke: color(j),
-            'stroke-dasharray': j === 1 ? '6 4' : 'none',
-            'pointer-events': 'none'
-          }
-        ));
-      });
+  function categoryLabel(plot, label, x, width) {
+    // Draw a fitting label directly.
+    const lines = wrapLabel(label, width);
+    const y = plot.H - plot.m.b + 20;
+    if (lines.length === 1) {
+      axisLabel(plot, lines[0], x, y);
+      return;
+    }
 
-      // Register one inspection mark per category with all series values.
-      data.categories.forEach((label, i) => {
-        const el = svgNode(
-          'circle',
-          {
-            cx: x(i),
-            cy: y(data.series[0].values[i]),
-            r: 4,
-            fill: color(0),
-            stroke: 'var(--paper)',
-            'stroke-width': 1.5
-          }
-        );
-        svg.append(mark(
-          state,
-          el,
-          {
+    // Draw wrapped lines while retaining the full label as the element title.
+    const text = plot.add('text', { x, y, 'text-anchor': 'middle', class: 'chart-axis' });
+    text.append(plot.node('title', {}, String(label)));
+    lines.forEach((line, i) => text.append(plot.node('tspan', { x, dy: i ? 14 : 0 }, line)));
+  }
+
+  function plotHit(plot) {
+    // Reserve a transparent target so the whole plot area reports pointer positions.
+    const { m, plotW, plotH } = plot;
+    plot.add('rect', { x: m.l, y: m.t, width: plotW, height: plotH, class: 'chart-hit', 'data-plot-hit': 'true' });
+  }
+
+  function seriesKind(filled) {
+    return {
+      nearest: 'x',
+      table: config => ({
+        headers: [config.xLabel || 'Category', ...config.data.series.map(s => s.name)],
+        rows: config.data.categories.map((c, i) => [c, ...config.data.series.map(s => s.values[i])])
+      }),
+      legend: config => ({
+        entries: config.data.series.length > 1 ? config.data.series.map((s, i) => ({ name: s.name, color: color(i), dashed: i === 1 })) : []
+      }),
+      draw(plot) {
+        // Map series categories and values into plot coordinates.
+        const { config, data, H, m, plotW, plotH, format } = plot;
+        const n = data.categories.length;
+        const [min, max] = domain(data.series.flatMap(s => s.values), { min: config.yMin, max: config.yMax });
+        const x = i => m.l + (n === 1 ? plotW / 2 : plotW * i / (n - 1));
+        const y = v => H - m.b - plotH * (v - min) / (max - min);
+        valueAxis(plot, min, max);
+
+        // Thin category labels to the available horizontal space.
+        const widest = Math.max(...data.categories.map(v => String(v).length));
+        const slots = Math.max(2, Math.min(n, Math.floor(plotW / (widest * 6.8 + 18))));
+        const shown = new Set(Array.from({ length: slots }, (_, i) => Math.round(i * (n - 1) / (slots - 1))));
+        data.categories.forEach((v, i) => {
+          if (shown.has(i))
+            axisLabel(plot, v, x(i));
+        });
+        plotHit(plot);
+
+        // Draw series paths, and area fills down to the baseline beneath them.
+        const base = y(baseline(min, max));
+        data.series.forEach((s, j) => {
+          const path = s.values.map((v, i) => (i ? 'L' : 'M') + x(i) + ' ' + y(v)).join(' ');
+          if (filled)
+            plot.add('path', { d: path + `L${x(n - 1)} ${base}L${x(0)} ${base}Z`, class: 'chart-area', fill: color(j) });
+          plot.add('path', { d: path, class: j === 1 ? 'chart-line dashed' : 'chart-line', stroke: color(j) });
+        });
+
+        // Register one inspection mark per category with all series values.
+        data.categories.forEach((label, i) => {
+          const position = { x: x(i), y: y(data.series[0].values[i]) };
+          plot.mark(plot.node('circle', { cx: position.x, cy: position.y, r: 4, class: 'chart-point' }), {
             title: (config.pointPrefix || '') + label,
-            rows: data.series.map(s => [s.name, numberUnit(s.values[i], config.unit)]),
-            x: x(i),
-            y: y(data.series[0].values[i])
-          }
-        ));
-      });
+            rows: data.series.map(s => [s.name, format.unit(s.values[i], config.unit)]),
+            ...position
+          });
+        });
 
-      // Create the crosshair and selection overlays above the series.
-      state.crosshair = svgNode('path', { class: 'chart-crosshair', visibility: 'hidden' });
-      state.selection = svgNode('circle', {
-        r: 6,
-        class: 'chart-selection',
-        visibility: 'hidden'
-      });
-      svg.append(state.crosshair, state.selection);
-    }
-    else if (config.kind === 'bar' || config.kind === 'histogram') {
-      // Map bar values or histogram counts onto a shared numeric axis.
-      const hist = config.kind === 'histogram';
-      const values = hist ? data.bins.map(b => b.count) : data.values;
-      const n = values.length;
-      const [min, max] = domain(values, config);
-      const step = plotW / n;
-      const yAt = v => H - m.b - plotH * (v - min) / (max - min);
-      const zero = yAt(0);
-      yAxis(svg, config, W, H, m, max, min);
-      legend(state, []);
+        // Add the crosshair and selection overlays above the series.
+        plot.overlay();
+      }
+    };
+  }
 
-      // Draw each value as an inspectable bar or bin.
-      values.forEach((v, i) => {
-        const x = m.l + i * step + (hist ? 1 : step * .17);
-        const width = hist ? step - 2 : step * .66;
-        const y = Math.min(zero, yAt(v));
-        const label = hist ? `${data.bins[i].low}–${data.bins[i].high} ${config.binUnit || ''}` : data.categories[i];
-        const el = svgNode(
-          'rect',
-          {
-            x,
-            y,
-            width: Math.max(1, width),
-            height: Math.abs(yAt(v) - zero),
-            rx: hist ? 1 : 4,
-            fill: 'var(--accent)',
-            opacity: .86
-          }
-        );
-        svg.append(mark(
-          state,
-          el,
-          {
+  function barKind(histogram) {
+    const values = data => histogram ? data.bins.map(b => b.count) : data.values;
+    return {
+      table: (config, format) => histogram
+        ? {
+          headers: ['Interval (' + (config.binUnit || 'units') + ')', config.yLabel || 'Count'],
+          rows: config.data.bins.map(b => [format.range(b.low, b.high), b.count])
+        }
+        : {
+          headers: ['Category', config.yLabel || config.unit || 'Value'],
+          rows: config.data.categories.map((c, i) => [c, config.data.values[i]])
+        },
+      legend: () => ({ entries: [] }),
+      draw(plot) {
+        // Map bar values or histogram counts onto a shared numeric axis.
+        const { config, data, H, m, plotW, plotH, format } = plot;
+        const heights = values(data);
+        const n = heights.length;
+        const [min, max] = domain(heights, { min: config.yMin, max: config.yMax });
+        const step = plotW / n;
+        const yAt = v => H - m.b - plotH * (v - min) / (max - min);
+        const zero = yAt(baseline(min, max));
+        valueAxis(plot, min, max);
+
+        heights.forEach((v, i) => {
+          // Draw each value as an inspectable bar or bin.
+          const x = m.l + i * step + (histogram ? 1 : step * .17);
+          const width = histogram ? step - 2 : step * .66;
+          const y = Math.min(zero, yAt(v));
+          const label = histogram
+            ? format.range(data.bins[i].low, data.bins[i].high) + (config.binUnit ? ' ' + config.binUnit : '')
+            : data.categories[i];
+          plot.mark(plot.node('rect', { x, y, width: Math.max(1, width), height: Math.abs(yAt(v) - zero), rx: histogram ? 1 : 4, class: 'chart-bar' }), {
             title: label,
-            rows: [[config.yLabel || 'Value', numberUnit(v, config.unit)]],
+            rows: [[config.yLabel || 'Value', format.unit(v, config.unit)]],
             x: x + width / 2,
             y
+          });
+
+          // Label bin boundaries, thinning alternate edges on narrow charts, or wrap the category text.
+          if (!histogram)
+            categoryLabel(plot, label, x + width / 2, step);
+          else {
+            if (i === 0)
+              axisLabel(plot, format.axis(data.bins[i].low), m.l);
+            if (plot.W > 450 || i % 2 === 1 || i === n - 1)
+              axisLabel(plot, format.axis(data.bins[i].high), m.l + (i + 1) * step);
           }
-        ));
-
-        // Label bin boundaries or wrap the category text below the mark.
-        if (hist) {
-          if (i === 0)
-            labelX(svg, data.bins[i].low, m.l, H - m.b + 22);
-          if (W > 450 || i % 2 === 1 || i === n - 1)
-            labelX(svg, data.bins[i].high, m.l + (i + 1) * step, H - m.b + 22);
-        }
-        else {
-          barLabel(svg, label, x + width / 2, H - m.b + 20, step);
-        }
-      });
-    }
-    else if (config.kind === 'scatter') {
-      // Map both scatter coordinates onto numeric axes.
-      const [xmin, xmax] = domain(data.points.map(p => p.x));
-      const [ymin, ymax] = domain(data.points.map(p => p.y), config);
-      yAxis(svg, config, W, H, m, ymax, ymin);
-      legend(state, []);
-      for (const v of ticks(xmin, xmax))
-        labelX(svg, formatAxisValue(v), m.l + plotW * (v - xmin) / (xmax - xmin), H - m.b + 22);
-      svg.append(svgNode(
-        'rect',
-        {
-          x: m.l,
-          y: m.t,
-          width: plotW,
-          height: plotH,
-          fill: 'transparent',
-          'data-plot-hit': 'true'
-        }
-      ));
-
-      // Draw an inspectable mark for each scatter observation.
-      data.points.forEach(p => {
-        const x = m.l + plotW * (p.x - xmin) / (xmax - xmin);
-        const y = H - m.b - plotH * (p.y - ymin) / (ymax - ymin);
-        const el = svgNode('circle', {
-          cx: x,
-          cy: y,
-          r: 5,
-          fill: 'var(--accent)',
-          opacity: .85
         });
-        svg.append(mark(
-          state,
-          el,
-          {
+      }
+    };
+  }
+
+  /**
+   * Chart kinds keyed by the renderer's `kind` value. Each declaration owns:
+   * - `table(config, format)`: headers and raw rows for the accessible data table;
+   * - `legend(config, format)`: swatch entries and an optional intensity `scale` maximum;
+   * - `draw(plot)`: marks drawn through the plot toolkit, which supplies `config`, `data`,
+   *   `format`, `W`, `H`, margins `m`, `plotW`, `plotH`, `node(tag, attrs, text)` to create,
+   *   `add(tag, attrs, text)` to create and append, `mark(element, record)` to append an
+   *   inspectable mark, and `overlay()` for series crosshairs;
+   * - optional `frame` height and left margin, `nearest` pointer mode, and grid `stride(config)`.
+   */
+  const kinds = {
+    line: seriesKind(false),
+    area: seriesKind(true),
+    bar: barKind(false),
+    histogram: barKind(true),
+    scatter: {
+      nearest: 'xy',
+      table: config => ({
+        headers: ['Observation', config.xLabel, config.yLabel],
+        rows: config.data.points.map(p => [p.label, p.x, p.y])
+      }),
+      legend: () => ({ entries: [] }),
+      draw(plot) {
+        // Fit both axes to the observations, since scatter marks encode position rather than magnitude.
+        const { config, data, H, m, plotW, plotH, format } = plot;
+        const [xmin, xmax] = domain(data.points.map(p => p.x), { min: config.xMin, max: config.xMax, zero: false });
+        const [ymin, ymax] = domain(data.points.map(p => p.y), { min: config.yMin, max: config.yMax, zero: false });
+        const x = v => m.l + plotW * (v - xmin) / (xmax - xmin);
+        const y = v => H - m.b - plotH * (v - ymin) / (ymax - ymin);
+        valueAxis(plot, ymin, ymax);
+        for (const v of ticks(xmin, xmax))
+          axisLabel(plot, format.axis(v), x(v));
+        plotHit(plot);
+
+        // Draw an inspectable mark for each observation.
+        data.points.forEach(p => {
+          const position = { x: x(p.x), y: y(p.y) };
+          plot.mark(plot.node('circle', { cx: position.x, cy: position.y, r: 5, class: 'chart-dot' }), {
             title: p.label,
-            rows: [[config.xLabel, numberUnit(p.x, config.xUnit)], [config.yLabel, numberUnit(p.y, config.unit)]],
+            rows: [[config.xLabel, format.unit(p.x, config.xUnit)], [config.yLabel, format.unit(p.y, config.unit)]],
+            ...position
+          });
+        });
+      }
+    },
+    donut: {
+      table: config => ({
+        headers: ['Category', config.yLabel || config.unit || 'Value'],
+        rows: config.data.categories.map((c, i) => [c, config.data.values[i]])
+      }),
+      legend: config => ({ entries: config.data.categories.map((name, i) => ({ name, color: color(i) })) }),
+      draw(plot) {
+        // Measure the total and establish the ring geometry.
+        const { config, data, W, H, format } = plot;
+        const total = data.values.reduce((a, b) => a + b, 0);
+        const cx = W / 2;
+        const cy = H / 2 - 8;
+        const outer = 101;
+        const inner = 62;
+        const at = (radius, a) => [cx + Math.cos(a) * radius, cy + Math.sin(a) * radius];
+        let angle = -Math.PI / 2;
+
+        // Draw inspectable ring segments in category order.
+        data.values.forEach((v, i) => {
+          const end = angle + Math.min(v / total * Math.PI * 2, Math.PI * 2 - 0.00001);
+          const large = end - angle > Math.PI ? 1 : 0;
+          const d = `M${at(outer, angle)}A${outer} ${outer} 0 ${large} 1 ${at(outer, end)}L${at(inner, end)}A${inner} ${inner} 0 ${large} 0 ${at(inner, angle)}Z`;
+          const [x, y] = at((outer + inner) / 2, (angle + end) / 2);
+          plot.mark(plot.node('path', { d, class: 'chart-slice', fill: color(i) }), {
+            title: data.categories[i],
+            rows: [[config.valueLabel || config.yLabel || 'Value', format.unit(v, config.unit)], ['Share', format.share(v / total)]],
             x,
             y
-          }
-        ));
-      });
-    }
-    else if (config.kind === 'donut') {
-      // Measure the donut total and establish its ring coordinates.
-      const total = data.values.reduce((a, b) => a + b, 0);
-      const cx = W / 2;
-      const cy = H / 2 - 8;
-      const r = 101;
-      const inner = 62;
-      let angle = -Math.PI / 2;
-      legend(state, data.categories);
-      const at = (radius, a) => [cx + Math.cos(a) * radius, cy + Math.sin(a) * radius];
-
-      // Draw inspectable ring segments in category order.
-      data.values.forEach((v, i) => {
-        const end = angle + Math.min(v / total * Math.PI * 2, Math.PI * 2 - 0.00001);
-        const large = end - angle > Math.PI ? 1 : 0;
-        const p1 = at(r, angle);
-        const p2 = at(r, end);
-        const p3 = at(inner, end);
-        const p4 = at(inner, angle);
-        const path = `M${p1}A${r} ${r} 0 ${large} 1 ${p2}L${p3}A${inner} ${inner} 0 ${large} 0 ${p4}Z`;
-        const mid = (angle + end) / 2;
-        const pos = at((r + inner) / 2, mid);
-        const el = svgNode(
-          'path',
-          {
-            d: path,
-            fill: color(i),
-            stroke: 'var(--paper)',
-            'stroke-width': 3
-          }
-        );
-        svg.append(mark(
-          state,
-          el,
-          {
-            title: data.categories[i],
-            rows: [[config.valueLabel || config.yLabel || 'Value', numberUnit(v, config.unit)], ['Share', (v / total * 100).toFixed(1) + '%']],
-            x: pos[0],
-            y: pos[1]
-          }
-        ));
-        angle = end;
-      });
-
-      // Label the center of the donut with its total and unit.
-      svg.append(
-        svgNode(
-          'text',
-          {
-            x: cx,
-            y: cy - 2,
-            'text-anchor': 'middle',
-            fill: 'var(--ink)',
-            'font-size': 26,
-            'font-weight': 700
-          },
-          formatValue(total)
-        ),
-        svgNode(
-          'text',
-          {
-            x: cx,
-            y: cy + 22,
-            'text-anchor': 'middle',
-            class: 'chart-axis'
-          },
-          config.unit + ' Total'
-        )
-      );
-    }
-    else if (config.kind === 'heatmap') {
-      // Measure the heatmap cell grid and its value range.
-      const rows = data.rows.length;
-      const cols = data.columns.length;
-      const max = Math.max(1, ...data.values.flat());
-      const cw = plotW / cols;
-      const ch = plotH / rows;
-      legend(state, []);
-
-      // Draw a value-intensity legend for the heatmap.
-      const scale = htmlNode('span', 'heatmap-scale');
-      scale.append(
-        htmlNode('span', '', '0'),
-        htmlNode('i', ''),
-        htmlNode('span', '', numberUnit(Math.max(...data.values.flat()), config.unit))
-      );
-      state.root.querySelector('.chart-legend').append(scale);
-
-      // Draw each heatmap row label before its inspectable cells.
-      data.rows.forEach((row, ri) => {
-        svg.append(svgNode(
-          'text',
-          {
-            x: m.l - 9,
-            y: m.t + (ri + .5) * ch + 4,
-            'text-anchor': 'end',
-            class: 'chart-axis'
-          },
-          W < 450 ? row.slice(0, 3) : row
-        ));
-
-        // Draw cell intensity and register its exact-value inspection.
-        data.columns.forEach((col, ci) => {
-          const v = data.values[ri][ci];
-          const x = m.l + ci * cw + 2;
-          const y = m.t + ri * ch + 2;
-          const el = svgNode(
-            'rect',
-            {
-              x,
-              y,
-              width: Math.max(1, cw - 4),
-              height: ch - 4,
-              rx: 3,
-              fill: 'var(--accent)',
-              opacity: .12 + .82 * v / max
-            }
-          );
-          svg.append(mark(
-            state,
-            el,
-            {
-              title: row + ' · ' + col,
-              rows: [[config.valueLabel || 'Value', numberUnit(v, config.unit)]],
-              x: x + cw / 2 - 2,
-              y: y + ch / 2 - 2
-            }
-          ));
-
-          // Overlay values only when the cell is wide enough.
-          if (cw > 48)
-            svg.append(svgNode(
-              'text',
-              {
-                x: x + cw / 2 - 2,
-                y: y + ch / 2 + 2,
-                'text-anchor': 'middle',
-                fill: 'var(--ink)',
-                'font-size': 11,
-                'pointer-events': 'none'
-              },
-              v
-            ));
+          });
+          angle = end;
         });
-      });
 
-      // Thin column labels and add the heatmap axis title.
-      data.columns.forEach((col, i) => {
-        if (W >= 450 || i % 2 === 0)
-          labelX(svg, col, m.l + (i + .5) * cw, H - m.b + 22);
-      });
-      svg.append(svgNode(
-        'text',
-        {
-          x: (m.l + W - m.r) / 2,
-          y: H - 5,
-          'text-anchor': 'middle',
-          class: 'chart-axis-title'
-        },
-        config.xLabel
-      ));
-    }
-    else if (config.kind === 'box') {
-      // Map five-number summaries onto a shared numeric axis.
-      const [min, max] = domain(data.groups.flatMap(g => [g.min, g.max]), config);
-      const y = v => H - m.b - plotH * (v - min) / (max - min);
-      const step = plotW / data.groups.length;
-      legend(state, []);
-      yAxis(svg, config, W, H, m, max, min);
+        // Label the center of the ring with its total and unit.
+        plot.add('text', { x: cx, y: cy - 2, 'text-anchor': 'middle', class: 'chart-total' }, format.value(total));
+        plot.add('text', { x: cx, y: cy + 22, 'text-anchor': 'middle', class: 'chart-axis' }, config.unit ? config.unit + ' Total' : 'Total');
+      }
+    },
+    heatmap: {
+      frame: { height: 310, left: 92 },
+      stride: config => config.data.columns.length,
+      table: config => ({
+        headers: [config.yLabel || 'Row', ...config.data.columns],
+        rows: config.data.rows.map((r, i) => [r, ...config.data.values[i]])
+      }),
+      legend: config => ({ entries: [], scale: Math.max(...config.data.values.flat()) }),
+      draw(plot) {
+        // Measure the cell grid and scale intensity to the largest value.
+        const { config, data, W, m, plotW, plotH, format } = plot;
+        const max = Math.max(...data.values.flat());
+        const intensity = v => max > 0 ? v / max : 0;
+        const cw = plotW / data.columns.length;
+        const ch = plotH / data.rows.length;
 
-      // Draw each inspectable box, whiskers, and median.
-      data.groups.forEach((g, i) => {
-        const x = m.l + (i + .5) * step;
-        const bw = Math.min(64, step * .58);
-        const el = svgNode('g');
-        el.append(
-          svgNode(
-            'rect',
-            {
-              x: x - bw / 2 - 6,
-              y: y(g.max) - 5,
-              width: bw + 12,
-              height: y(g.min) - y(g.max) + 10,
-              fill: 'transparent'
-            }
-          ),
-          svgNode(
-            'path',
-            {
-              d: `M${x} ${y(g.max)}V${y(g.min)}M${x - bw * .3} ${y(g.max)}H${x + bw * .3}M${x - bw * .3} ${y(g.min)}H${x + bw * .3}`,
-              stroke: 'var(--accent)',
-              'stroke-width': 2,
-              fill: 'none'
-            }
-          ),
-          svgNode(
-            'rect',
-            {
-              x: x - bw / 2,
-              y: y(g.q3),
-              width: bw,
-              height: y(g.q1) - y(g.q3),
-              fill: 'var(--wash)',
-              stroke: 'var(--accent)',
-              'stroke-width': 2,
-              rx: 3
-            }
-          ),
-          svgNode('path', {
-            d: `M${x - bw / 2} ${y(g.median)}H${x + bw / 2}`,
-            stroke: 'var(--accent)',
-            'stroke-width': 3
-          })
-        );
-        svg.append(mark(
-          state,
-          el,
-          {
+        data.rows.forEach((row, ri) => {
+          // Label the row, abbreviating on narrow charts.
+          plot.add('text', { x: m.l - 9, y: m.t + (ri + .5) * ch + 4, 'text-anchor': 'end', class: 'chart-axis' }, W < 450 ? row.slice(0, 3) : row);
+
+          data.columns.forEach((col, ci) => {
+            // Draw cell intensity and register its exact-value inspection.
+            const v = data.values[ri][ci];
+            const x = m.l + ci * cw + 2;
+            const y = m.t + ri * ch + 2;
+            const center = { x: x + cw / 2 - 2, y: y + ch / 2 - 2 };
+            plot.mark(plot.node('rect', { x, y, width: Math.max(1, cw - 4), height: ch - 4, rx: 3, class: 'chart-cell', opacity: .12 + .82 * intensity(v) }), {
+              title: row + ' · ' + col,
+              rows: [[config.valueLabel || 'Value', format.unit(v, config.unit)]],
+              ...center
+            });
+
+            // Overlay values only when the cell is wide enough, inverting text on intense cells.
+            if (cw > 48)
+              plot.add('text', { x: center.x, y: center.y + 4, 'text-anchor': 'middle', class: intensity(v) > .5 ? 'chart-cell-value intense' : 'chart-cell-value' }, format.value(v));
+          });
+        });
+
+        // Label columns, thinning alternate labels on narrow charts.
+        data.columns.forEach((col, i) => {
+          if (W >= 450 || i % 2 === 0)
+            axisLabel(plot, col, m.l + (i + .5) * cw);
+        });
+        xTitle(plot);
+      }
+    },
+    box: {
+      table: config => ({
+        headers: ['Group', 'Min', 'Q1', 'Median', 'Q3', 'Max'],
+        rows: config.data.groups.map(g => [g.name, g.min, g.q1, g.median, g.q3, g.max])
+      }),
+      legend: () => ({ entries: [] }),
+      draw(plot) {
+        // Map five-number summaries onto a shared numeric axis.
+        const { config, data, H, m, plotW, plotH, format } = plot;
+        const [min, max] = domain(data.groups.flatMap(g => [g.min, g.max]), { min: config.yMin, max: config.yMax });
+        const y = v => H - m.b - plotH * (v - min) / (max - min);
+        const step = plotW / data.groups.length;
+        valueAxis(plot, min, max);
+
+        data.groups.forEach((g, i) => {
+          // Draw each inspectable box with its whiskers and median.
+          const x = m.l + (i + .5) * step;
+          const bw = Math.min(64, step * .58);
+          const group = plot.node('g');
+          group.append(
+            plot.node('rect', { x: x - bw / 2 - 6, y: y(g.max) - 5, width: bw + 12, height: y(g.min) - y(g.max) + 10, class: 'chart-hit' }),
+            plot.node('path', { d: `M${x} ${y(g.max)}V${y(g.min)}M${x - bw * .3} ${y(g.max)}H${x + bw * .3}M${x - bw * .3} ${y(g.min)}H${x + bw * .3}`, class: 'chart-whisker' }),
+            plot.node('rect', { x: x - bw / 2, y: y(g.q3), width: bw, height: y(g.q1) - y(g.q3), rx: 3, class: 'chart-box' }),
+            plot.node('path', { d: `M${x - bw / 2} ${y(g.median)}H${x + bw / 2}`, class: 'chart-median' })
+          );
+          plot.mark(group, {
             title: g.name,
             rows: [
-              ['Minimum', numberUnit(g.min, config.unit)],
-              ['Q1', numberUnit(g.q1, config.unit)],
-              ['Median', numberUnit(g.median, config.unit)],
-              ['Q3', numberUnit(g.q3, config.unit)],
-              ['Maximum', numberUnit(g.max, config.unit)]
+              ['Minimum', format.unit(g.min, config.unit)],
+              ['Q1', format.unit(g.q1, config.unit)],
+              ['Median', format.unit(g.median, config.unit)],
+              ['Q3', format.unit(g.q3, config.unit)],
+              ['Maximum', format.unit(g.max, config.unit)]
             ],
             x,
             y: y(g.median)
-          }
-        ));
+          });
 
-        // Label the group beneath its box.
-        labelX(svg, g.name, x, H - m.b + 22);
+          // Label the group beneath its box.
+          axisLabel(plot, g.name, x);
+        });
+      }
+    }
+  };
+
+  /**
+   * Resolve a chart's frame size from its kind.
+   * @param {string} kind Key of `kinds`.
+   * @returns {{height: number, left: number}} SVG height and left margin in SVG units.
+   */
+  function frame(kind) {
+    return { ...DEFAULT_FRAME, ...kinds[kind].frame };
+  }
+
+  return { formats, niceStep, domain, baseline, ticks, wrapLabel, nextIndex, nearestIndex, kinds, frame };
+})();
+
+// Expose the model to tests, and bind charts when running in a document.
+if (typeof module !== 'undefined' && module.exports)
+  module.exports = ExplainerChartModel;
+if (typeof document !== 'undefined')
+  (() => {
+    const { formats, kinds, frame, nextIndex, nearestIndex } = ExplainerChartModel;
+    const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+    const format = formats(documentLocale());
+    const instances = new Map();
+
+    function documentLocale() {
+      // Format numbers for the document language, falling back when the tag is invalid.
+      try {
+        return Intl.getCanonicalLocales(document.documentElement.lang || 'en')[0];
+      }
+      catch {
+        return 'en';
+      }
+    }
+
+    function svgNode(tag, attrs = {}, text) {
+      // Create an SVG element and apply its attributes.
+      const element = document.createElementNS(SVG_NAMESPACE, tag);
+      Object.entries(attrs).forEach(([k, v]) => element.setAttribute(k, String(v)));
+
+      // Populate optional literal text without interpreting markup.
+      if (text !== undefined)
+        element.textContent = text;
+      return element;
+    }
+
+    function htmlNode(tag, cls, text) {
+      // Create an HTML element and apply its presentation class.
+      const element = document.createElement(tag);
+      if (cls)
+        element.className = cls;
+
+      // Populate optional literal text without interpreting markup.
+      if (text !== undefined)
+        element.textContent = text;
+      return element;
+    }
+
+    function summary(record) {
+      return record.title + ' — ' + record.rows.map(([k, v]) => k + ': ' + v).join('; ');
+    }
+
+    function renderData(state) {
+      // Rebuild the legend swatches and any intensity scale for the current data.
+      const kind = kinds[state.config.kind];
+      const legend = kind.legend(state.config, format);
+      const swatches = legend.entries.map(entry => {
+        const swatch = htmlNode('i', entry.dashed ? 'dashed' : '');
+        swatch.style.setProperty('--legend-color', entry.color);
+        swatch.setAttribute('aria-hidden', 'true');
+        const span = htmlNode('span');
+        span.append(swatch, document.createTextNode(entry.name));
+        return span;
       });
-    }
-
-    // Publish the completed SVG and accessible data table.
-    host.replaceChildren(svg);
-    table(state);
-
-    // Restore the initial summary and any configured selection.
-    const initial = state.records[Math.min(config.selectedIndex ?? 0, state.records.length - 1)];
-    if (initial)
-      state.status.textContent = summary(initial);
-    if (config.selectedIndex !== undefined && state.records[config.selectedIndex])
-      highlight(state, config.selectedIndex);
-  }
-
-  function summary(record) {
-    return record.title + ' — ' + record.rows.map(([k, v]) => k + ': ' + v).join('; ');
-  }
-
-  function highlight(state, index) {
-    // Highlight only the selected mark.
-    state.records.forEach((record, i) => record.element.classList.toggle('is-active', i === index));
-    const record = state.records[index];
-    if (!record)
-      return;
-
-    // Align series overlays with the selected record.
-    if (state.crosshair) {
-      const { H, m } = state.dim;
-      state.crosshair.setAttribute('d', `M${record.x} ${m.t}V${H - m.b}`);
-      state.crosshair.setAttribute('visibility', 'visible');
-      state.selection.setAttribute('cx', record.x);
-      state.selection.setAttribute('cy', record.y);
-      state.selection.setAttribute('visibility', 'visible');
-    }
-  }
-
-  function show(state, index, event) {
-    // Ignore missing records before changing inspection state.
-    const record = state.records[index];
-    if (!record)
-      return;
-
-    // Publish the active record and its accessible summary.
-    highlight(state, index);
-    state.active = index;
-    state.status.textContent = summary(record);
-
-    // Populate the tooltip with the record title and exact values.
-    const title = htmlNode('strong', '', record.title);
-    const dl = htmlNode('dl');
-    record.rows.forEach(([k, v]) => dl.append(htmlNode('dt', '', k), htmlNode('dd', '', v)));
-    state.tip.replaceChildren(title, dl);
-    state.tip.hidden = false;
-
-    // Position the tooltip near the pointer or focused mark.
-    const root = state.root.getBoundingClientRect();
-    const box = state.svg.getBoundingClientRect();
-    let x;
-    let y;
-    if (event) {
-      x = event.clientX - root.left + 14;
-      y = event.clientY - root.top + 14;
-    }
-    else {
-      x = box.left - root.left + record.x / state.dim.W * box.width + 14;
-      y = box.top - root.top + record.y / state.dim.H * box.height - state.tip.offsetHeight - 12;
-    }
-
-    // Clamp the tooltip to the chart and viewport bounds.
-    x = Math.max(8, Math.min(x, state.root.clientWidth - state.tip.offsetWidth - 8));
-    const bottom = Math.min(state.root.clientHeight - 8, innerHeight - root.top - 8);
-    if (y + state.tip.offsetHeight > bottom)
-      y = (event ? event.clientY - root.top : box.top - root.top + record.y / state.dim.H * box.height) - state.tip.offsetHeight - 12;
-    y = Math.max(8, Math.min(y, bottom - state.tip.offsetHeight));
-    state.tip.style.left = x + 'px';
-    state.tip.style.top = y + 'px';
-  }
-
-  function hide(state) {
-    // Hide transient inspection and clear active mark styles.
-    state.tip.hidden = true;
-    state.records.forEach(record => record.element.classList.remove('is-active'));
-
-    // Restore a configured selection or hide transient series overlays.
-    if (state.crosshair) {
-      if (state.config.selectedIndex !== undefined)
-        highlight(state, state.config.selectedIndex);
-      else {
-        state.crosshair.setAttribute('visibility', 'hidden');
-        state.selection.setAttribute('visibility', 'hidden');
+      if (legend.scale !== undefined) {
+        const scale = htmlNode('span', 'heatmap-scale');
+        scale.append(htmlNode('span', '', '0'), htmlNode('i', ''), htmlNode('span', '', format.unit(legend.scale, state.config.unit)));
+        swatches.push(scale);
       }
+      state.root.querySelector('.chart-legend').replaceChildren(...swatches);
+
+      // Rebuild the accessible data table in original row order.
+      const data = kind.table(state.config, format);
+      const head = htmlNode('tr');
+      data.headers.forEach(h => {
+        const th = htmlNode('th', '', h);
+        th.scope = 'col';
+        head.append(th);
+      });
+      const body = htmlNode('tbody');
+      data.rows.forEach(row => {
+        const tr = htmlNode('tr');
+        row.forEach(v => tr.append(htmlNode('td', '', format.value(v))));
+        body.append(tr);
+      });
+      const thead = htmlNode('thead');
+      thead.append(head);
+      const table = htmlNode('table');
+      table.append(thead, body);
+      state.root.querySelector('.chart-data .table-wrap').replaceChildren(table);
     }
-  }
-  document.querySelectorAll('[data-chart]').forEach(root => {
-    // Read the embedded configuration and register this chart instance.
-    const state = {
-      root,
-      config: JSON.parse(root.dataset.chart),
-      canvas: root.querySelector('.chart-canvas'),
-      tip: root.querySelector('.chart-tooltip'),
-      status: root.querySelector('.chart-status')
-    };
-    instances.set(state.config.id, state);
-    render(state);
 
-    function inspect(e) {
-      // Inspect a directly targeted mark when available.
-      const el = e.target.closest?.('[data-mark]');
-      if (el) {
-        show(state, +el.dataset.mark, e);
-        return;
-      }
+    function mark(state, element, record) {
+      // Assign the mark its record index and accessible interaction attributes.
+      const i = state.records.length;
+      element.setAttribute('data-mark', i);
+      element.setAttribute('tabindex', i === 0 ? '0' : '-1');
+      element.setAttribute('role', 'button');
+      element.setAttribute('aria-label', record.title + '. ' + record.rows.map(([k, v]) => k + ': ' + v).join('; '));
 
-      // Restrict nearest-point inspection to supported chart kinds.
-      if (!['line', 'area', 'scatter'].includes(state.config.kind))
-        return;
+      // Retain the mark with its inspection values and coordinates.
+      state.records.push({ ...record, element });
+      return element;
+    }
 
-      // Translate pointer coordinates into plot coordinates and reject outside hits.
-      const b = state.svg.getBoundingClientRect();
-      const { W, H, m } = state.dim;
-      const x = (e.clientX - b.left) / b.width * W;
-      const y = (e.clientY - b.top) / b.height * H;
-      if (x < m.l || x > W - m.r || y < m.t || y > H - m.b) {
-        hide(state);
-        return;
-      }
+    function draw(state) {
+      // Size the SVG to the canvas width and the kind's frame.
+      const config = state.config;
+      const { height, left } = frame(config.kind);
+      const W = Math.max(280, Math.round(state.canvas.clientWidth));
+      const H = height;
+      const m = { l: left, r: 18, t: 32, b: 54 };
+      const svg = svgNode('svg', { viewBox: `0 0 ${W} ${H}`, role: 'group', 'aria-label': config.title });
+      svg.append(svgNode('title', {}, config.title));
 
-      // Find the nearest record by horizontal or Euclidean distance.
-      let best = 0;
-      let dist = Infinity;
-      state.records.forEach((r, i) => {
-        const n = state.config.kind === 'scatter' ? Math.hypot(x - r.x, y - r.y) : Math.abs(x - r.x);
-        if (n < dist) {
-          dist = n;
-          best = i;
+      // Reset interaction state before rebuilding chart marks.
+      state.records = [];
+      state.svg = svg;
+      state.dim = { W, H, m };
+      state.crosshair = null;
+      state.selection = null;
+      state.tip.hidden = true;
+
+      // Draw the kind's marks through the plot toolkit.
+      kinds[config.kind].draw({
+        config,
+        data: config.data,
+        format,
+        W,
+        H,
+        m,
+        plotW: W - m.l - m.r,
+        plotH: H - m.t - m.b,
+        node: svgNode,
+        add: (tag, attrs, text) => svg.appendChild(svgNode(tag, attrs, text)),
+        mark: (element, record) => svg.appendChild(mark(state, element, record)),
+        overlay() {
+          state.crosshair = svgNode('path', { class: 'chart-crosshair', visibility: 'hidden' });
+          state.selection = svgNode('circle', { r: 6, class: 'chart-selection', visibility: 'hidden' });
+          svg.append(state.crosshair, state.selection);
         }
       });
+      state.canvas.replaceChildren(svg);
 
-      // Show the nearest record using the pointer position.
-      show(state, best, e);
+      // Restore the initial summary and any configured selection.
+      const initial = state.records[Math.min(config.selectedIndex ?? 0, state.records.length - 1)];
+      if (initial)
+        state.status.textContent = summary(initial);
+      if (config.selectedIndex !== undefined && state.records[config.selectedIndex])
+        highlight(state, config.selectedIndex);
     }
 
-    // Bind pointer and focus inspection to the canvas.
-    state.canvas.addEventListener('pointermove', inspect);
-    state.canvas.addEventListener('click', inspect);
-    state.canvas.addEventListener(
-      'pointerleave',
-      () => {
+    function highlight(state, index) {
+      // Highlight only the selected mark.
+      state.records.forEach((record, i) => record.element.classList.toggle('is-active', i === index));
+      const record = state.records[index];
+      if (!record)
+        return;
+
+      // Align series overlays with the selected record.
+      if (state.crosshair) {
+        const { H, m } = state.dim;
+        state.crosshair.setAttribute('d', `M${record.x} ${m.t}V${H - m.b}`);
+        state.crosshair.setAttribute('visibility', 'visible');
+        state.selection.setAttribute('cx', record.x);
+        state.selection.setAttribute('cy', record.y);
+        state.selection.setAttribute('visibility', 'visible');
+      }
+    }
+
+    function show(state, index, event) {
+      // Ignore missing records before changing inspection state.
+      const record = state.records[index];
+      if (!record)
+        return;
+
+      // Publish the active record and its accessible summary.
+      highlight(state, index);
+      state.status.textContent = summary(record);
+
+      // Populate the tooltip with the record title and exact values.
+      const title = htmlNode('strong', '', record.title);
+      const dl = htmlNode('dl');
+      record.rows.forEach(([k, v]) => dl.append(htmlNode('dt', '', k), htmlNode('dd', '', v)));
+      state.tip.replaceChildren(title, dl);
+      state.tip.hidden = false;
+
+      // Position the tooltip near the pointer or focused mark.
+      const root = state.root.getBoundingClientRect();
+      const box = state.svg.getBoundingClientRect();
+      const markY = box.top - root.top + record.y / state.dim.H * box.height;
+      let x = event ? event.clientX - root.left + 14 : box.left - root.left + record.x / state.dim.W * box.width + 14;
+      let y = event ? event.clientY - root.top + 14 : markY - state.tip.offsetHeight - 12;
+
+      // Clamp the tooltip to the chart and viewport bounds, flipping above when it would overflow below.
+      x = Math.max(8, Math.min(x, state.root.clientWidth - state.tip.offsetWidth - 8));
+      const bottom = Math.min(state.root.clientHeight - 8, innerHeight - root.top - 8);
+      if (y + state.tip.offsetHeight > bottom)
+        y = (event ? event.clientY - root.top : markY) - state.tip.offsetHeight - 12;
+      y = Math.max(8, Math.min(y, bottom - state.tip.offsetHeight));
+      state.tip.style.left = x + 'px';
+      state.tip.style.top = y + 'px';
+    }
+
+    function hide(state) {
+      // Hide transient inspection and clear active mark styles.
+      state.tip.hidden = true;
+      state.records.forEach(record => record.element.classList.remove('is-active'));
+
+      // Restore a configured selection or hide transient series overlays.
+      if (state.crosshair) {
+        if (state.config.selectedIndex !== undefined)
+          highlight(state, state.config.selectedIndex);
+        else {
+          state.crosshair.setAttribute('visibility', 'hidden');
+          state.selection.setAttribute('visibility', 'hidden');
+        }
+      }
+    }
+
+    function bind(root) {
+      // Read the embedded configuration and register this chart instance.
+      const state = {
+        root,
+        config: JSON.parse(root.dataset.chart),
+        canvas: root.querySelector('.chart-canvas'),
+        tip: root.querySelector('.chart-tooltip'),
+        status: root.querySelector('.chart-status')
+      };
+      instances.set(state.config.id, state);
+      renderData(state);
+      draw(state);
+
+      function inspect(e) {
+        // Inspect a directly targeted mark when available.
+        const el = e.target.closest?.('[data-mark]');
+        if (el) {
+          show(state, +el.dataset.mark, e);
+          return;
+        }
+
+        // Restrict nearest-point inspection to kinds that declare it.
+        const mode = kinds[state.config.kind].nearest;
+        if (!mode)
+          return;
+
+        // Translate pointer coordinates into plot coordinates and reject outside hits.
+        const b = state.svg.getBoundingClientRect();
+        const { W, H, m } = state.dim;
+        const point = { x: (e.clientX - b.left) / b.width * W, y: (e.clientY - b.top) / b.height * H };
+        if (point.x < m.l || point.x > W - m.r || point.y < m.t || point.y > H - m.b) {
+          hide(state);
+          return;
+        }
+
+        // Show the nearest record using the pointer position.
+        show(state, nearestIndex(state.records, point, mode), e);
+      }
+
+      // Bind pointer and focus inspection to the canvas.
+      state.canvas.addEventListener('pointermove', inspect);
+      state.canvas.addEventListener('click', inspect);
+      state.canvas.addEventListener('pointerleave', () => {
         const a = document.activeElement;
         if (state.canvas.contains(a) && a.hasAttribute('data-mark'))
           show(state, +a.dataset.mark);
         else
           hide(state);
-      }
-    );
-    state.canvas.addEventListener(
-      'focusin',
-      e => {
+      });
+      state.canvas.addEventListener('focusin', e => {
         if (e.target.hasAttribute('data-mark'))
           show(state, +e.target.dataset.mark);
-      }
-    );
-    state.canvas.addEventListener(
-      'focusout',
-      e => {
+      });
+      state.canvas.addEventListener('focusout', e => {
         if (!state.canvas.contains(e.relatedTarget))
           hide(state);
-      }
-    );
+      });
 
-    // Support keyboard movement and explicit inspection of chart marks.
-    state.canvas.addEventListener(
-      'keydown',
-      e => {
-        // Inspect a directly targeted mark when available.
+      state.canvas.addEventListener('keydown', e => {
+        // Handle keys only on chart marks.
         const el = e.target.closest?.('[data-mark]');
         if (!el)
           return;
 
-        // Select the next record using chart-specific keyboard rules.
-        let i = +el.dataset.mark;
-        let n = state.records.length;
-        if (state.config.kind === 'heatmap' && ['ArrowDown', 'ArrowUp'].includes(e.key)) {
-          const stride = state.config.data.columns.length;
-          i = (i + (e.key === 'ArrowDown' ? stride : n - stride)) % n;
-        }
-        else if (['ArrowRight', 'ArrowDown'].includes(e.key))
-          i = (i + 1) % n;
-        else if (['ArrowLeft', 'ArrowUp'].includes(e.key))
-          i = (i + n - 1) % n;
-        else if (e.key === 'Home')
-          i = 0;
-        else if (e.key === 'End')
-          i = n - 1;
-        else if (e.key === 'Escape') {
+        // Dismiss or explicitly inspect the focused mark.
+        const index = +el.dataset.mark;
+        if (e.key === 'Escape') {
           hide(state);
           return;
         }
-        else if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          show(state, i);
+          show(state, index);
           return;
         }
-        else
-          return;
 
-        // Move the keyboard tab stop and focus to the selected mark.
+        // Move the keyboard tab stop and focus using the kind's grid stride.
+        const next = nextIndex(e.key, index, state.records.length, kinds[state.config.kind].stride?.(state.config));
+        if (next === null)
+          return;
         e.preventDefault();
         state.records.forEach(r => r.element.setAttribute('tabindex', '-1'));
-        state.records[i].element.setAttribute('tabindex', '0');
-        state.records[i].element.focus();
-      }
-    );
+        state.records[next].element.setAttribute('tabindex', '0');
+        state.records[next].element.focus();
+      });
 
-    // Coalesce width changes into one chart render per animation frame.
-    let width = state.canvas.clientWidth;
-    let scheduled = false;
-    new ResizeObserver(() => {
-      // Ignore negligible width changes before scheduling a render.
-      const next = state.canvas.clientWidth;
-      if (Math.abs(next - width) < 1)
-        return;
-
-      // Remember the new width and schedule the pending render once.
-      width = next;
-      if (!scheduled) {
+      // Redraw marks once per animation frame after width changes; the legend and table do not depend on width.
+      let width = state.canvas.clientWidth;
+      let scheduled = false;
+      new ResizeObserver(() => {
+        const next = state.canvas.clientWidth;
+        if (Math.abs(next - width) < 1 || scheduled)
+          return;
+        width = next;
         scheduled = true;
         requestAnimationFrame(() => {
           scheduled = false;
-          render(state);
+          draw(state);
         });
-      }
-    }).observe(state.canvas);
-  });
-  window.ExplainerCharts = {
-    /**
-     * Apply a shallow configuration patch and redraw an existing chart.
-     * @param {string} id Generated chart ID; unknown IDs are ignored.
-     * @param {object} patch Fields compatible with the existing chart kind and data.
-     *   Values must satisfy the renderer's chart contract; patches are not validated here.
-     */
-    update(id, patch) {
-      // Ignore updates for unknown chart instances.
-      const state = instances.get(id);
-      if (!state)
-        return;
-
-      // Apply the configuration patch and rebuild the chart.
-      Object.assign(state.config, patch);
-      render(state);
+      }).observe(state.canvas);
     }
-  };
-})();
+
+    document.querySelectorAll('[data-chart]').forEach(bind);
+    window.ExplainerCharts = {
+      /**
+       * Apply a shallow configuration patch and redraw an existing chart.
+       * @param {string} id Generated chart ID; unknown IDs are ignored.
+       * @param {object} patch Fields compatible with the existing chart kind and data.
+       *   Values must satisfy the renderer's chart contract; patches are not validated here.
+       */
+      update(id, patch) {
+        // Ignore updates for unknown chart instances.
+        const state = instances.get(id);
+        if (!state)
+          return;
+
+        // Apply the configuration patch and rebuild the chart and its data views.
+        Object.assign(state.config, patch);
+        renderData(state);
+        draw(state);
+      }
+    };
+  })();

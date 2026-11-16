@@ -59,8 +59,8 @@ just check
 ```
 
 `just check` verifies Python formatting, Ruff lints, strict basedpyright types,
-minified JavaScript freshness, Python behavior tests, and JavaScript build and
-navigation tests. Use `just format` to
+minified JavaScript and WOFF2 font freshness, Python behavior tests, and
+JavaScript build, navigation, diagram, and chart tests. Use `just format` to
 format Python files, or run `just lint`, `just typecheck`, and `just test`
 separately. `just --list` shows all recipes.
 

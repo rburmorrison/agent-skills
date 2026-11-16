@@ -26,7 +26,7 @@ Document fields:
 }
 ```
 
-`html` also accepts an `html` string instead of `file`. Fragments go inside main; do not supply `doctype`, `html`, `head`, `body`, an H1, or a second navigation shell. Scripts load after the components and `window.Explainer` API are ready. Each script file runs in its own function scope. Use `document.getElementById`/scoped selectors to find your elements. No script imports, CDNs, network requests, or sibling file fetches at runtime. Supply all data in the fragment/script or chart config.
+`html` also accepts an `html` string instead of `file`. Fragments go inside main; do not supply `doctype`, `html`, `head`, `body`, an H1, or a second navigation shell. Scripts load after the components and `window.Explainer` API are ready. Each script file runs in its own function scope. Use `document.getElementById`/scoped selectors to find your elements. Content inside tabs and closed disclosures has no size until it is shown, so size custom visuals with a `ResizeObserver` on their container rather than the window `resize` event. No script imports, CDNs, network requests, or sibling file fetches at runtime. Supply all data in the fragment/script or chart config.
 
 Example fragment:
 
@@ -58,7 +58,7 @@ Every control should visibly change the relevant result; use one state to derive
 
 ## Styling and Accessibility
 
-Use tokens `--bg`, `--paper`, `--ink`, `--muted`, `--accent`, `--line`, `--wash`, `--table-head`, and `--radius-media`. Available classes include `.visual`, `.visual-label`, `.visual-body`, `.controls`, `.control-group`, `.metric`, `.caption`, `.card`, `.two`, and `.sr-only`. Use `currentColor` for icons. SVG text inherits the embedded document font. Use `viewBox`, padding for labels, and responsive widths. Keep label/connector geometry clear at narrow widths; use a horizontally scrollable container when genuine diagram complexity requires it.
+Use tokens `--bg`, `--paper`, `--ink`, `--muted`, `--accent`, `--line`, `--wash`, `--table-head`, and `--radius-media`. For additional data series, use the chart palette after `--accent`: `--chart-secondary`, `--chart-third`, `--chart-fourth`, and `--chart-fifth`. Shadow colors are `--shadow-soft`, `--shadow`, and `--shadow-strong`. Available classes include `.visual`, `.visual-label`, `.visual-body`, `.controls`, `.control-group`, `.metric`, `.caption`, `.card`, `.two`, and `.sr-only`. Use `currentColor` for icons. SVG text inherits the embedded document font. Use `viewBox`, padding for labels, and responsive widths. Keep label/connector geometry clear at narrow widths; use a horizontally scrollable container when genuine diagram complexity requires it.
 
 Controls need visible labels, native keyboard behavior or equivalent key handling, and focus indication. SVG/canvas visuals need descriptive accessible text and a nearby textual result or data table where the information is otherwise inaccessible. Honor `prefers-reduced-motion`; avoid animation unrelated to the explanation. Test both Light and Dark appearances of the selected theme set if custom colors are used, including System under both OS/browser preferences.
 

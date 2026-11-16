@@ -211,7 +211,7 @@ class RenderSecurityTests(unittest.TestCase):
         }
 
         # Reject injected range values before producing markup.
-        with self.assertRaisesRegex(ValueError, "finite numbers"):
+        with self.assertRaisesRegex(ValueError, "finite number"):
             _ = self.build(injected)
 
         # Reject strings, booleans, and nonfinite numbers in every numeric field.
@@ -219,7 +219,7 @@ class RenderSecurityTests(unittest.TestCase):
             for value in ["1", True, float("nan"), float("inf")]:
                 with self.subTest(field=field, value=value):
                     block = {"type": "range", "label": "Amount", field: value}
-                    with self.assertRaisesRegex(ValueError, "finite numbers"):
+                    with self.assertRaisesRegex(ValueError, "finite number"):
                         _ = self.build(block)
 
         # Render a valid fractional range.

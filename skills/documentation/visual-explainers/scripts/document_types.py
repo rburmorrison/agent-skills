@@ -1,18 +1,101 @@
 """Input field contracts for document variants and internal sequence geometry.
 
-Fields describe the values consumed by each operation. JSON and mapping callers
-remain subject to the renderer's existing runtime checks; these types do not
-validate input or authorize executable custom content.
+Fields describe the values consumed by each operation. check_fields validates
+an input mapping's required fields, and its top-level list, object, and number
+fields, against these declarations; the renderer checks nested values. The
+types do not authorize executable custom content.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+import math
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, ForwardRef, TypedDict, cast
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     from diagram_layout import GraphEdge, GraphNode, Point, PositionedLabel
+
+# Annotation names checked at runtime, with the accepted Python types and a reader-facing name.
+# Strings, integers, and booleans stay unchecked: the renderer stringifies or tests their
+# truthiness, so values such as a numeric title or "ordered": 1 have always rendered.
+_RUNTIME_TYPES: dict[str, tuple[tuple[type, ...], str]] = {
+    "float": ((int, float), "a finite number"),
+    "list": ((list,), "a list"),
+    "Mapping": ((Mapping,), "an object"),
+}
+
+
+def _expectation(annotation: str) -> tuple[tuple[type, ...], str] | None:
+    """Resolve a field annotation to the runtime types it accepts.
+
+    Args:
+        annotation: Annotation source text, such as "float", "list[Metric]", or "str | int".
+
+    Returns:
+        Accepted types and a description, or None for annotations that are not
+        checked at the top level, such as str, object, or another TypedDict.
+    """
+
+    # Combine union members, leaving the union unchecked if any member is.
+    parts = [part.strip().split("[", 1)[0] for part in annotation.split("|")]
+    resolved = [_RUNTIME_TYPES.get(part) for part in parts]
+    if any(item is None for item in resolved):
+        return None
+
+    # Merge the accepted types and describe the alternatives in order.
+    accepted = tuple(t for item in resolved if item for t in item[0])
+    return accepted, " or ".join(item[1] for item in resolved if item)
+
+
+def check_fields(values: object, spec: type, label: str) -> None:
+    """Check a mapping's required fields and its list, object, and number fields.
+
+    Args:
+        values: Input value expected to be a mapping.
+        spec: TypedDict declaring the fields.
+        label: Reader-facing name of the value, such as "table block".
+
+    Raises:
+        ValueError: The value is not a mapping, a required field is missing,
+            or a declared list, object, or number field has the wrong type or
+            is not finite.
+    """
+
+    # Require a mapping before inspecting its fields.
+    if not isinstance(values, Mapping):
+        raise ValueError(f"{label} must be an object")
+
+    fields = cast("Mapping[str, object]", values)
+    annotations: dict[str, ForwardRef | str] = spec.__annotations__
+    required: frozenset[str] = getattr(spec, "__required_keys__", frozenset())
+
+    # Report the first missing required field in declaration order.
+    for name in annotations:
+        if name in required and name not in fields:
+            raise ValueError(f"{label} requires field '{name}'")
+
+    # Check each present field against its declared top-level type.
+    for name, annotation in annotations.items():
+        if name not in fields:
+            continue
+        source = (
+            annotation.__forward_arg__
+            if isinstance(annotation, ForwardRef)
+            else str(annotation)
+        )
+        expectation = _expectation(source)
+        value = fields[name]
+        if expectation is None:
+            continue
+
+        # Treat booleans as distinct from numbers, as JSON does.
+        accepted, description = expectation
+        mistyped = not isinstance(value, accepted) or (
+            isinstance(value, bool) and bool not in accepted
+        )
+        nonfinite = isinstance(value, float) and not math.isfinite(value)
+        if mistyped or nonfinite:
+            raise ValueError(f"{label} field '{name}' must be {description}")
 
 
 class _DocumentTitle(TypedDict):
@@ -212,14 +295,28 @@ class _ControlContent(TypedDict):
 
 
 class ControlBlock(_ControlContent, total=False):
-    """Range or choice control fields with a visible label."""
+    """Fields shared by range and choice controls."""
 
     id: str
+
+
+class RangeBlock(ControlBlock, total=False):
+    """A numeric slider; bounds default to 0 through 100 and step to 1."""
+
     min: float
     max: float
     value: float
     step: float
+
+
+class _ChoiceOptions(TypedDict):
     options: list[ChoiceOption]
+
+
+class ChoiceBlock(_ChoiceOptions, ControlBlock, total=False):
+    """A select control whose value matches one option's value."""
+
+    value: object
 
 
 class HtmlBlock(TypedDict, total=False):
@@ -302,6 +399,8 @@ class Chart(_ChartContent, total=False):
     unit: str
     xUnit: str
     binUnit: str
+    xMax: float
+    xMin: float
     yMax: float
     yMin: float
     pointPrefix: str
@@ -393,9 +492,3 @@ class InlineHtml(TypedDict):
     """Required inline custom markup."""
 
     html: str
-
-
-class ChoiceBlock(TypedDict):
-    """Required options for a choice control."""
-
-    options: list[ChoiceOption]

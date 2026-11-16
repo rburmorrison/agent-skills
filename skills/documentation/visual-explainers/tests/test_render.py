@@ -10,7 +10,14 @@ from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from render import ASSETS, THEMES, Renderer, check_html, validate_chart
+from render import (
+    ASSETS,
+    THEMES,
+    Renderer,
+    check_html,
+    validate_bounds,
+    validate_chart,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -232,7 +239,15 @@ class RenderTests(unittest.TestCase):
         renderer = Renderer({"title": "Invalid"}, FIXTURES)
 
         # Reject non-block values and unknown block variants.
-        for block in [None, 7, {}, {"type": "missing"}]:
+        blocks: list[object] = [
+            None,
+            7,
+            {},
+            {"type": "missing"},
+            {"type": ["x"]},
+            {"type": {}},
+        ]
+        for block in blocks:
             with (
                 self.subTest(block=block),
                 self.assertRaisesRegex(ValueError, "Unknown block type:"),
@@ -295,6 +310,108 @@ class RenderTests(unittest.TestCase):
                 self.assertRaisesRegex(ValueError, message),
             ):
                 validate_chart(kind, data)
+
+    def test_axis_bounds_must_be_ordered_finite_numbers(self) -> None:
+        # Pair invalid bound combinations with their expected diagnostics.
+        cases: list[tuple[str, Mapping[str, object], str]] = [
+            ("line", {"xMin": 0}, "apply only to scatter"),
+            ("scatter", {"xMin": "0"}, "xMin and xMax must be finite numbers"),
+            ("bar", {"yMax": float("nan")}, "yMin and yMax must be finite numbers"),
+            ("scatter", {"xMin": 5, "xMax": 5}, "xMin must be less than xMax"),
+            ("box", {"yMin": 10, "yMax": 2}, "yMin must be less than yMax"),
+        ]
+
+        # Verify that each invalid combination is rejected.
+        for kind, options, message in cases:
+            with (
+                self.subTest(kind=kind, options=options),
+                self.assertRaisesRegex(ValueError, message),
+            ):
+                validate_bounds(kind, options)
+
+        # Accept one-sided and ordered bounds, including scatter x bounds.
+        validate_bounds("scatter", {"xMin": 1000, "xMax": 1010, "yMin": 0})
+        validate_bounds("line", {"yMax": 100})
+
+    def test_documents_and_blocks_report_missing_and_mistyped_fields(self) -> None:
+        # Pair malformed documents with the field-level diagnostics they produce.
+        cases: list[tuple[Mapping[str, object], str]] = [
+            ({}, "document requires field 'title'"),
+            (
+                {"title": "T", "intro": [{"type": "range", "label": "N", "min": "1"}]},
+                "range block field 'min' must be a finite number",
+            ),
+            (
+                {"title": "T", "sections": [{"blocks": []}]},
+                "section requires field 'title'",
+            ),
+            (
+                {"title": "T", "intro": [{"type": "table", "headers": ["A"]}]},
+                "table block requires field 'rows'",
+            ),
+            (
+                {"title": "T", "intro": [{"type": "list", "items": "one"}]},
+                "list block field 'items' must be a list",
+            ),
+            (
+                {"title": "T", "intro": [{"type": "choice", "label": "Pick"}]},
+                "choice block requires field 'options'",
+            ),
+            (
+                {
+                    "title": "T",
+                    "intro": [{"type": "diagram", "kind": "sequence", "actors": []}],
+                },
+                "sequence diagram requires field 'messages'",
+            ),
+            (
+                {
+                    "title": "T",
+                    "intro": [
+                        {"type": "chart", "kind": "bar", "title": "C", "data": []}
+                    ],
+                },
+                "chart block field 'data' must be an object",
+            ),
+        ]
+
+        # Verify that each malformed input stops with its diagnostic.
+        for document, message in cases:
+            with (
+                self.subTest(document=document),
+                self.assertRaisesRegex(ValueError, re.escape(message)),
+            ):
+                _ = Renderer(document, FIXTURES).render()
+
+    def test_scalar_fields_keep_accepting_values_that_always_rendered(self) -> None:
+        # Compose a document using numeric titles and integer flags.
+        document: Mapping[str, object] = {
+            "title": 2024,
+            "brand": 7,
+            "sections": [
+                {
+                    "title": 2025,
+                    "blocks": [
+                        {"type": "list", "ordered": 1, "items": ["a"]},
+                        {"type": "disclosure", "title": 3, "open": 1, "blocks": ["b"]},
+                        {
+                            "type": "chart",
+                            "kind": "line",
+                            "title": 4,
+                            "selectedIndex": 0.0,
+                            "data": {
+                                "categories": ["x"],
+                                "series": [{"name": "S", "values": [1]}],
+                            },
+                        },
+                    ],
+                }
+            ],
+        }
+
+        # Build it as earlier releases did.
+        output = Renderer(document, FIXTURES).render()
+        self.assertIn(">2025</h2>", output)
 
 
 if __name__ == "__main__":

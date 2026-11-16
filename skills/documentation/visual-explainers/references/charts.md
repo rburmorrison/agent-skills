@@ -1,8 +1,8 @@
 # Interactive Charts
 
-A chart block accepts `type:"chart"`, `kind`, `title`, `data`, and optional `id`, `caption`, `xLabel`, `yLabel`, `unit`, `xUnit`, `binUnit`, `valueLabel`, `pointPrefix`, `yMin`, `yMax`, `selectedIndex`. Use camelCase exactly for chart option names. Match unit labels to the numbers; e.g. values already in milliseconds use `unit:"ms"`.
+A chart block accepts `type:"chart"`, `kind`, `title`, `data`, and optional `id`, `caption`, `xLabel`, `yLabel`, `unit`, `xUnit`, `binUnit`, `valueLabel`, `pointPrefix`, `xMin`, `xMax`, `yMin`, `yMax`, `selectedIndex`. Use camelCase exactly for chart option names. Match unit labels to the numbers; e.g. values already in milliseconds use `unit:"ms"`.
 
-The renderer supplies axes, responsive labels, theme colors, exact-value inspection, keyboard navigation, and a View Data table. Do not draw your own tooltip or axes for these charts. Numeric values must be finite numbers, not strings. Label illustrative datasets as illustrative. There is no requirement to add a chart when the content does not benefit from one.
+The renderer supplies axes, responsive labels, theme colors, exact-value inspection, keyboard navigation, and a View Data table. Do not draw your own tooltip or axes for these charts. Numeric values must be finite numbers, not strings. Displayed numbers use the document `lang` for digit grouping and decimal marks, without rounding data values. Label illustrative datasets as illustrative. There is no requirement to add a chart when the content does not benefit from one.
 
 ## Data Shapes
 
@@ -22,7 +22,7 @@ Change `kind` to `area` for filled areas. Multiple areas overlap; they are **not
 
 Keep category labels short; explain longer names in surrounding text or a table.
 
-**Scatter** — numeric x/y observations, including negative coordinates. Each point needs a label.
+**Scatter** — numeric x/y observations, including negative coordinates. Each point needs a label. Both axes fit the data instead of starting at zero; set `xMin`/`xMax` or `yMin`/`yMax` to fix either range. `xMin`/`xMax` apply only to scatter charts.
 
 ```json
 {"type":"chart","kind":"scatter","title":"Size and Duration","xLabel":"Size (KB)","yLabel":"Duration (ms)","xUnit":"KB","unit":"ms","data":{"points":[{"label":"Observation A","x":10,"y":45},{"label":"Observation B","x":30,"y":70}]}}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="$lang">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="$policy">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="$description">
+<title>$title</title>
+<style>$css</style>
+</head>
+<body data-theme="$theme" data-appearance="system">
+<a class="skip" href="#main">Skip to Content</a>
+<div class="progress" aria-hidden="true"></div>
+<header>
+<div class="header-start">
+<button id="toc-toggle" class="sidebar-toggle" type="button" aria-label="Hide Contents" title="Hide Contents" aria-controls="contents" aria-expanded="true">$contents_icon</button>
+<span class="brand">$brand</span>
+</div>
+<div class="tools">
+<div class="theme-control">
+<button id="theme-toggle" class="header-icon-button" type="button" aria-label="Change Appearance" title="Change Appearance" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu">$theme_icon</button>
+<div id="theme-menu" class="theme-menu" role="menu" aria-label="Appearance" hidden>$menu</div>
+</div>
+<button class="header-icon-button" data-print type="button" aria-label="Print" title="Print">$print_icon</button>
+</div>
+</header>
+<div class="contents-backdrop" aria-hidden="true"></div>
+<div class="layout">
+<div class="contents-slot">
+<aside id="contents" aria-labelledby="contents-title">
+<div class="contents-heading">
+<p id="contents-title">On This Page</p>
+<button class="contents-close" type="button" aria-label="Close Contents">$close_icon</button>
+</div>
+<nav aria-label="Table of Contents"></nav>
+</aside>
+</div>
+<main id="main">$body</main>
+</div>
+<script>$js</script>
+<template id="font-licenses"><pre>$licenses</pre></template>
+</body>
+</html>

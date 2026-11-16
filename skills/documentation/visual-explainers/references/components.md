@@ -12,7 +12,7 @@ The shell creates H1. Sections create H2 and ToC entries. You choose all section
 
 `theme` selects one supported set at generation time, for example `"theme": "plain"`. Only `plain` is currently supported. Each output embeds just that set’s paired light/dark palettes; the reader cannot switch sets.
 
-To add a supported set, place its paired color tokens and menu swatches in `assets/themes/<name>.css` and register its path in `THEMES` in `scripts/render.py`. Use `assets/themes/plain.css` as the token contract: its `light-dark()` values resolve through the shell’s selected color scheme. Keep set-specific styling in that asset so it is embedded only when selected. The shared shell owns layout, appearance switching, and print behavior.
+To add a supported set, place its paired color tokens, shadow and backdrop colors, print palette, and menu swatches in `assets/themes/<name>.css` and register its path in `THEMES` in `scripts/render.py`. Use `assets/themes/plain.css` as the token contract: its `light-dark()` values resolve through the shell’s selected color scheme. Keep set-specific styling in that asset so it is embedded only when selected. The shared shell owns layout, appearance switching, and print behavior.
 
 ## Inline Text
 
