@@ -78,8 +78,10 @@ later version (`AGPL-3.0-or-later`). See [LICENSE](LICENSE) for the full terms.
 This work is provided without any warranty, including the implied warranties of
 merchantability or fitness for a particular purpose.
 
-The bundled [Manrope](skills/documentation/visual-explainers/assets/fonts/manrope-OFL.txt)
-and [JetBrains Mono](skills/documentation/visual-explainers/assets/fonts/jetbrainsmono-OFL.txt)
+The bundled [Manrope](skills/documentation/visual-explainers/assets/fonts/manrope-OFL.txt),
+[JetBrains Mono](skills/documentation/visual-explainers/assets/fonts/jetbrainsmono-OFL.txt),
+[IBM Plex Sans](skills/documentation/visual-explainers/assets/fonts/ibmplexsans-OFL.txt),
+and [IBM Plex Mono](skills/documentation/visual-explainers/assets/fonts/ibmplexmono-OFL.txt)
 fonts retain their SIL Open Font License 1.1 terms. The bundled
 [Pygments archive](skills/documentation/visual-explainers/scripts/vendor/pygments-2.21.0.zip)
 retains its BSD license and includes its upstream license and author notices.

@@ -1,4 +1,7 @@
 Manrope variable font and license: https://github.com/google/fonts/tree/main/ofl/manrope
 JetBrains Mono variable font and license: https://github.com/google/fonts/tree/main/ofl/jetbrainsmono
 Retrieved 2026-11-04. Both use SIL Open Font License 1.1; complete licenses are adjacent and embedded in generated HTML.
+IBM Plex Sans variable font (IBMPlexSans[wdth,wght].ttf, saved as IBMPlexSans.ttf) and license: https://github.com/google/fonts/tree/main/ofl/ibmplexsans
+IBM Plex Mono Regular and Medium fonts and license: https://github.com/google/fonts/tree/main/ofl/ibmplexmono
+Retrieved 2026-11-15. Both use SIL Open Font License 1.1; complete licenses are adjacent and embedded in generated HTML for the report theme set.
 The .woff2 files are generated from the .ttf sources with `just build-fonts`; documents embed the WOFF2 copies, and the builder reads text metrics from the TrueType files.

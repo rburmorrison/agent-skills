@@ -1,0 +1,166 @@
+{
+  "stylesheet": "report.css",
+  "numbered": true,
+  "fonts": [
+    {
+      "role": "sans",
+      "file": "IBMPlexSans.ttf",
+      "weight": "100 700",
+      "license": "ibmplexsans-OFL.txt"
+    },
+    {
+      "role": "mono",
+      "file": "IBMPlexMono-Regular.ttf",
+      "weight": "400",
+      "license": "ibmplexmono-OFL.txt"
+    },
+    {
+      "role": "mono",
+      "file": "IBMPlexMono-Medium.ttf",
+      "weight": "500 900",
+      "license": "ibmplexmono-OFL.txt"
+    }
+  ],
+  "tokens": {
+    "bg": [
+      "#f7f7f5",
+      "#121417"
+    ],
+    "paper": [
+      "#ffffff",
+      "#181b1f"
+    ],
+    "ink": [
+      "#1b1e22",
+      "#e6e8eb"
+    ],
+    "muted": [
+      "#5a626c",
+      "#9ba3ad"
+    ],
+    "accent": [
+      "#a14a1f",
+      "#f0a477"
+    ],
+    "line": [
+      "#dcdfe3",
+      "#2c3138"
+    ],
+    "table-head": [
+      "#eff1f3",
+      "#1f2329"
+    ],
+    "wash": [
+      "#f2f3f4",
+      "#1d2025"
+    ],
+    "button-ink": [
+      "#ffffff",
+      "#121417"
+    ],
+    "alert-note": [
+      "#1f5fae",
+      "#8cb8f2"
+    ],
+    "alert-tip": [
+      "#2b6b4a",
+      "#85c9a0"
+    ],
+    "alert-important": [
+      "#6448a0",
+      "#b9a2ea"
+    ],
+    "alert-warning": [
+      "#835600",
+      "#e1b866"
+    ],
+    "alert-caution": [
+      "#a23838",
+      "#f19b9b"
+    ],
+    "chart-secondary": [
+      "#2b7f73",
+      "#6cc4b6"
+    ],
+    "chart-third": [
+      "#4a6fa5",
+      "#8fb0dc"
+    ],
+    "chart-fourth": [
+      "#8a55a6",
+      "#cfa1e6"
+    ],
+    "chart-fifth": [
+      "#6b7684",
+      "#a3adb9"
+    ],
+    "code-range-ink-0": [
+      "#28618e",
+      "#8bc5f1"
+    ],
+    "code-range-wash-0": [
+      "#e7f1f9",
+      "#253746"
+    ],
+    "code-range-ink-1": [
+      "#735298",
+      "#c7a4ef"
+    ],
+    "code-range-wash-1": [
+      "#f0eaf7",
+      "#362c43"
+    ],
+    "code-range-ink-2": [
+      "#226b5b",
+      "#86d5bc"
+    ],
+    "code-range-wash-2": [
+      "#e4f3ed",
+      "#243c33"
+    ],
+    "code-range-ink-3": [
+      "#79551d",
+      "#ebc58b"
+    ],
+    "code-range-wash-3": [
+      "#f7efdf",
+      "#403625"
+    ],
+    "code-range-ink-4": [
+      "#8b4260",
+      "#efa9bf"
+    ],
+    "code-range-wash-4": [
+      "#f8e9ef",
+      "#402b34"
+    ],
+    "code-range-ink-5": [
+      "#44618d",
+      "#a7bdf1"
+    ],
+    "code-range-wash-5": [
+      "#ebeff9",
+      "#2d3445"
+    ]
+  },
+  "accents": {
+    "default": "rust",
+    "presets": {
+      "rust": {},
+      "blue": {
+        "accent": [
+          "#1f4f8f",
+          "#8db4ec"
+        ],
+        "chart-secondary": [
+          "#c0622a",
+          "#eba06a"
+        ],
+        "chart-third": [
+          "#2b7f73",
+          "#6cc4b6"
+        ]
+      }
+    }
+  }
+}

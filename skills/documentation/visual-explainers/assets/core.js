@@ -17,6 +17,10 @@
     a.textContent = h.textContent;
     if (h.tagName === 'H3')
       a.className = 'sub';
+
+    // Carry a theme set's build-time number so the entry matches its heading.
+    if (h.dataset.number)
+      a.dataset.number = h.dataset.number;
     nav.append(a);
   });
   const navLinks = [...nav.querySelectorAll('a')];

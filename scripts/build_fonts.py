@@ -17,7 +17,6 @@ FONTS = (
     Path(__file__).resolve().parents[1]
     / "skills/documentation/visual-explainers/assets/fonts"
 )
-SOURCES = ("Manrope.ttf", "JetBrainsMono.ttf")
 
 
 def compress(source: Path) -> bytes:
@@ -53,11 +52,11 @@ def main() -> None:
     )
     check = bool(parser.parse_args().check)
 
-    # Compare or write each generated font beside its source.
+    # Compare or write a generated font beside every TrueType source.
     outdated: list[str] = []
-    for name in SOURCES:
-        target = FONTS / name.replace(".ttf", ".woff2")
-        data = compress(FONTS / name)
+    for source in sorted(FONTS.glob("*.ttf")):
+        target = source.with_suffix(".woff2")
+        data = compress(source)
         if check:
             if not target.exists() or target.read_bytes() != data:
                 outdated.append(target.name)

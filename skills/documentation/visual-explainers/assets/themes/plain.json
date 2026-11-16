@@ -1,0 +1,145 @@
+{
+  "stylesheet": "plain.css",
+  "fonts": [
+    {
+      "role": "sans",
+      "file": "Manrope.ttf",
+      "weight": "200 800",
+      "license": "manrope-OFL.txt"
+    },
+    {
+      "role": "mono",
+      "file": "JetBrainsMono.ttf",
+      "weight": "100 800",
+      "license": "jetbrainsmono-OFL.txt"
+    }
+  ],
+  "tokens": {
+    "bg": [
+      "#fafafa",
+      "#181818"
+    ],
+    "paper": [
+      "#ffffff",
+      "#222222"
+    ],
+    "ink": [
+      "#202020",
+      "#eeeeee"
+    ],
+    "muted": [
+      "#606060",
+      "#b5b5b5"
+    ],
+    "accent": [
+      "#333333",
+      "#dddddd"
+    ],
+    "line": [
+      "#d4d4d4",
+      "#484848"
+    ],
+    "table-head": [
+      "#e3e3e3",
+      "#383838"
+    ],
+    "wash": [
+      "#f0f0f0",
+      "#2c2c2c"
+    ],
+    "button-ink": [
+      "#ffffff",
+      "#181818"
+    ],
+    "alert-note": [
+      "#236ac0",
+      "#8abfff"
+    ],
+    "alert-tip": [
+      "#207942",
+      "#7dd69d"
+    ],
+    "alert-important": [
+      "#8050b8",
+      "#c7a1f5"
+    ],
+    "alert-warning": [
+      "#936500",
+      "#edca77"
+    ],
+    "alert-caution": [
+      "#c13e48",
+      "#ff9da4"
+    ],
+    "chart-secondary": [
+      "#c47732",
+      "#efb35d"
+    ],
+    "chart-third": [
+      "#248c91",
+      "#69c9ca"
+    ],
+    "chart-fourth": [
+      "#bf5682",
+      "#eea0bd"
+    ],
+    "chart-fifth": [
+      "#4d83bc",
+      "#82b8f1"
+    ],
+    "code-range-ink-0": [
+      "#28618e",
+      "#8bc5f1"
+    ],
+    "code-range-wash-0": [
+      "#e7f1f9",
+      "#253746"
+    ],
+    "code-range-ink-1": [
+      "#735298",
+      "#c7a4ef"
+    ],
+    "code-range-wash-1": [
+      "#f0eaf7",
+      "#362c43"
+    ],
+    "code-range-ink-2": [
+      "#226b5b",
+      "#86d5bc"
+    ],
+    "code-range-wash-2": [
+      "#e4f3ed",
+      "#243c33"
+    ],
+    "code-range-ink-3": [
+      "#79551d",
+      "#ebc58b"
+    ],
+    "code-range-wash-3": [
+      "#f7efdf",
+      "#403625"
+    ],
+    "code-range-ink-4": [
+      "#8b4260",
+      "#efa9bf"
+    ],
+    "code-range-wash-4": [
+      "#f8e9ef",
+      "#402b34"
+    ],
+    "code-range-ink-5": [
+      "#44618d",
+      "#a7bdf1"
+    ],
+    "code-range-wash-5": [
+      "#ebeff9",
+      "#2d3445"
+    ]
+  },
+  "accents": {
+    "default": "graphite",
+    "presets": {
+      "graphite": {}
+    }
+  }
+}

@@ -108,6 +108,8 @@ class Document(_DocumentTitle, total=False):
     lang: str
     theme: str
     """Theme set selected at generation time; defaults to plain."""
+    accent: str | AccentPair
+    """Accent preset of the selected theme set, or a custom pair; defaults to the set's preset."""
     description: str
     brand: str
     lead: str
@@ -115,6 +117,15 @@ class Document(_DocumentTitle, total=False):
     sections: list[Section]
     styles: list[str]
     scripts: list[str]
+
+
+class AccentPair(TypedDict):
+    """Custom accent colors that must keep 4.5:1 contrast with the theme's surfaces."""
+
+    light: str
+    """Light-appearance accent as `#rrggbb`."""
+    dark: str
+    """Dark-appearance accent as `#rrggbb`."""
 
 
 class _SectionContent(TypedDict):

@@ -1,5 +1,6 @@
 """Document output and rejection contracts across renderer variants."""
 
+import base64
 import json
 import re
 import sys
@@ -10,6 +11,7 @@ from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from diagram_layout import FontMetrics
 from render import (
     ASSETS,
     THEMES,
@@ -130,26 +132,230 @@ class RenderTests(unittest.TestCase):
         self.assertEqual(default, explicit)
 
     def test_output_embeds_only_the_selected_theme_set(self) -> None:
-        # Load the bundled theme and define a distinguishable alternate.
-        plain_css = THEMES["plain"].read_text(encoding="utf-8")
-        warm_css = "body{--bg:light-dark(#fff0ed,#211b18)}"
+        # Derive a distinguishable set from the bundled plain manifest.
+        plain = cast(
+            "dict[str, object]",
+            json.loads(THEMES["plain"].read_text(encoding="utf-8")),
+        )
+        tokens = cast("dict[str, list[str]]", plain["tokens"])
+        warm = {**plain, "tokens": {**tokens, "bg": ["#fff0ed", "#211b18"]}}
 
-        # Register a disposable theme and render both selections.
+        # Register the disposable set and render both selections.
         with tempfile.TemporaryDirectory() as directory:
-            warm = Path(directory) / "warm.css"
-            _ = warm.write_text(warm_css, encoding="utf-8")
-            with patch.dict(THEMES, {"warm": warm}):
-                plain = Renderer({"title": "Appearance"}, FIXTURES).render()
+            manifest = Path(directory) / "warm.json"
+            _ = manifest.write_text(json.dumps(warm), encoding="utf-8")
+            with patch.dict(THEMES, {"warm": manifest}):
+                default = Renderer({"title": "Appearance"}, FIXTURES).render()
                 alternate = Renderer(
                     {"title": "Appearance", "theme": "warm"}, FIXTURES
                 ).render()
 
-        # Verify that each document embeds only its selected theme.
-        self.assertIn(plain_css, plain)
-        self.assertNotIn(warm_css, plain)
-        self.assertIn(warm_css, alternate)
-        self.assertNotIn(plain_css, alternate)
+        # Verify that each document carries only its own palette.
+        self.assertIn("--bg:light-dark(#fafafa,#181818)", default)
+        self.assertNotIn("#fff0ed", default)
+        self.assertIn("--bg:light-dark(#fff0ed,#211b18)", alternate)
+        self.assertNotIn("#fafafa", alternate)
         self.assertIn('<body data-theme="warm" data-appearance="system">', alternate)
+
+    def test_report_theme_embeds_only_its_fonts_licenses_and_styles(self) -> None:
+        # Render the same content in both bundled sets.
+        plain = Renderer({"title": "Fonts"}, FIXTURES).render()
+        report = Renderer({"title": "Fonts", "theme": "report"}, FIXTURES).render()
+
+        # Encode the leading bytes of each generated WOFF2 font as embedded data.
+        fonts = {
+            name: base64.b64encode(
+                (ASSETS / "fonts" / name).with_suffix(".woff2").read_bytes()[:3000]
+            ).decode()
+            for name in [
+                "Manrope.ttf",
+                "JetBrainsMono.ttf",
+                "IBMPlexSans.ttf",
+                "IBMPlexMono-Regular.ttf",
+                "IBMPlexMono-Medium.ttf",
+            ]
+        }
+        report_css = (ASSETS / "themes" / "report.css").read_text(encoding="utf-8")
+
+        # Verify that plain keeps its own fonts and licenses and no report styles.
+        self.assertIn(fonts["Manrope.ttf"], plain)
+        self.assertIn(fonts["JetBrainsMono.ttf"], plain)
+        self.assertNotIn(fonts["IBMPlexSans.ttf"], plain)
+        self.assertNotIn("ibmplexsans-OFL.txt", plain)
+        self.assertNotIn(report_css, plain)
+
+        # Verify that report swaps in IBM Plex, its licenses, and its stylesheet.
+        for name in [
+            "IBMPlexSans.ttf",
+            "IBMPlexMono-Regular.ttf",
+            "IBMPlexMono-Medium.ttf",
+        ]:
+            self.assertIn(fonts[name], report)
+        self.assertNotIn(fonts["Manrope.ttf"], report)
+        self.assertIn("ibmplexsans-OFL.txt", report)
+        self.assertIn("ibmplexmono-OFL.txt", report)
+        self.assertNotIn("manrope-OFL.txt", report)
+        self.assertIn(report_css, report)
+        self.assertIn('<body data-theme="report" data-appearance="system">', report)
+
+    def test_accent_presets_and_custom_pairs_set_the_accent_token(self) -> None:
+        # Render the default, each report preset, and a custom pair.
+        def render(accent: object = None) -> str:
+            document: dict[str, object] = {"title": "Accent", "theme": "report"}
+            if accent is not None:
+                document["accent"] = accent
+            return Renderer(document, FIXTURES).render()
+
+        default = render()
+        rust = render("rust")
+        blue = render("blue")
+        custom = render({"light": "#5C6420", "dark": "#c2c97a"})
+
+        # Verify that the default is the rust preset and blue replaces it.
+        self.assertEqual(default, rust)
+        self.assertIn("--accent:light-dark(#a14a1f,#f0a477)", rust)
+        self.assertIn("--accent:light-dark(#1f4f8f,#8db4ec)", blue)
+        self.assertIn("--chart-secondary:light-dark(#c0622a,#eba06a)", blue)
+        self.assertNotIn("#a14a1f", blue)
+
+        # Verify that a custom pair replaces only the accent, normalized to lowercase.
+        self.assertIn("--accent:light-dark(#5c6420,#c2c97a)", custom)
+        self.assertIn("--chart-secondary:light-dark(#2b7f73,#6cc4b6)", custom)
+
+    def test_invalid_accents_are_rejected(self) -> None:
+        for accent, message in [
+            ("green", "accent must be rust, blue, or"),
+            ("graphite", "accent must be rust, blue, or"),
+            ({"light": "#fff", "dark": "#000000"}, "accent must be"),
+            ({"light": "#5c6420"}, "accent must be"),
+            (
+                {"light": "#5c6420", "dark": "#c2c97a", "chart": "#000000"},
+                "accent must be",
+            ),
+            (
+                {"light": "#eeeeee", "dark": "#c2c97a"},
+                "too little contrast: accent on bg in light",
+            ),
+            (
+                {"light": "#5c6420", "dark": "#303030"},
+                "too little contrast: accent on bg in dark",
+            ),
+            (
+                {"light": "#717171", "dark": "#c2c97a"},
+                "too little contrast: accent on wash in light",
+            ),
+        ]:
+            with (
+                self.subTest(accent=accent),
+                self.assertRaisesRegex(ValueError, re.escape(message)),
+            ):
+                _ = Renderer(
+                    {"title": "Accent", "theme": "report", "accent": accent}, FIXTURES
+                ).render()
+
+    def test_report_numbers_are_fixed_in_document_order(self) -> None:
+        # Mix numbered items with an intro heading, a closed disclosure, and tabs.
+        caption = "Shown"
+        document: dict[str, object] = {
+            "title": "Numbering",
+            "theme": "report",
+            "intro": [{"type": "heading", "text": "Intro Heading"}],
+            "sections": [
+                {
+                    "title": "First",
+                    "blocks": [
+                        {"type": "heading", "text": "Alpha"},
+                        {
+                            "type": "disclosure",
+                            "title": "Closed",
+                            "blocks": [
+                                {"type": "heading", "text": "Hidden"},
+                                {
+                                    "type": "table",
+                                    "headers": ["A"],
+                                    "rows": [["1"]],
+                                    "caption": caption,
+                                },
+                            ],
+                        },
+                        {
+                            "type": "tabs",
+                            "tabs": [
+                                {
+                                    "title": "One",
+                                    "blocks": [{"type": "heading", "text": "In Tab"}],
+                                },
+                                {
+                                    "title": "Two",
+                                    "blocks": [
+                                        {
+                                            "type": "table",
+                                            "headers": ["A"],
+                                            "rows": [["1"]],
+                                            "caption": caption,
+                                        }
+                                    ],
+                                },
+                            ],
+                        },
+                        {"type": "heading", "text": "Beta"},
+                        {"type": "heading", "level": 4, "text": "Minor"},
+                    ],
+                },
+                {
+                    "title": "Second",
+                    "blocks": [
+                        {"type": "table", "headers": ["A"], "rows": [["1"]]},
+                        {"type": "equation", "text": "a + b", "caption": caption},
+                        {
+                            "type": "diagram",
+                            "kind": "flow",
+                            "nodes": [{"label": "Step"}],
+                            "caption": caption,
+                        },
+                        {"type": "heading", "text": "Gamma"},
+                    ],
+                },
+            ],
+        }
+
+        # Render the report document and the same content in plain.
+        report = Renderer(document, FIXTURES).render()
+        plain = Renderer({**document, "theme": "plain"}, FIXTURES).render()
+
+        # Verify headings: intro and tab headings and H4 stay unnumbered, and a
+        # heading inside a closed disclosure keeps its place in the sequence.
+        self.assertEqual(
+            ["1", "1.1", "1.2", "1.3", "2", "2.1"],
+            re.findall(r'<h[23] id="[^"]+" data-number="([0-9.]+)"', report),
+        )
+        self.assertEqual(2, len(re.findall(r'<h3 id="[^"]+">', report)))
+        self.assertNotIn('data-number="0', report)
+
+        # Verify captions: captioned tables count across panels; equations do not.
+        self.assertEqual(
+            ["1", "2"],
+            re.findall(r'<caption class="table-caption" data-number="(\d+)">', report),
+        )
+        self.assertEqual(
+            ["1"], re.findall(r'<figcaption[^>]* data-number="(\d+)"', report)
+        )
+
+        # Verify that a set without numbering emits no numbers.
+        self.assertNotIn("data-number=", plain)
+
+    def test_diagram_labels_are_measured_with_the_theme_font(self) -> None:
+        # Measure one label with each set's diagram metrics.
+        label = "Acknowledge the durable commit"
+        plain = Renderer({"title": "Metrics"}, FIXTURES).diagram_metrics()
+        report = Renderer(
+            {"title": "Metrics", "theme": "report"}, FIXTURES
+        ).diagram_metrics()
+
+        # Verify that the report set measures with IBM Plex Sans.
+        expected = FontMetrics(ASSETS / "fonts" / "IBMPlexSans.ttf").width(label, 14)
+        self.assertEqual(expected, report.width(label, 14))
+        self.assertNotEqual(plain.width(label, 14), report.width(label, 14))
 
     def test_removed_palettes_and_unknown_theme_sets_are_rejected(self) -> None:
         for theme in [
@@ -164,7 +370,7 @@ class RenderTests(unittest.TestCase):
         ]:
             with (
                 self.subTest(theme=theme),
-                self.assertRaisesRegex(ValueError, "theme must be plain"),
+                self.assertRaisesRegex(ValueError, "theme must be plain, report"),
             ):
                 _ = Renderer({"title": "Appearance", "theme": theme}, FIXTURES).render()
 

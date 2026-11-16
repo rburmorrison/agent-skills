@@ -1,0 +1,339 @@
+/* Report theme set: restrained type, hairline rules, numbered structure. */
+body {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  --radius-media: 4px;
+  --shadow-soft: #0001;
+  --shadow: #0002;
+  --shadow-strong: #0005;
+  --backdrop: #0006;
+  --backdrop-strong: #000b;
+}
+
+button,
+select {
+  border-radius: 4px;
+}
+
+:not(pre) > code {
+  border-radius: 3px;
+}
+
+.brand {
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+
+.progress {
+  height: 2px;
+}
+
+/* Headings and the hero. */
+h1,
+h2,
+h3 {
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 30px;
+  line-height: 1.25;
+  letter-spacing: -.012em;
+  margin: 0 0 16px;
+}
+
+h2 {
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -.015em;
+  margin: 0 0 18px;
+}
+
+h3 {
+  font-size: 18px;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+  margin: 32px 0 12px;
+}
+
+h4 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.lead {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+main > section + section {
+  margin-top: 40px;
+}
+
+main > section:not(.hero) {
+  border-top: 1px solid var(--line);
+  padding-top: 28px;
+}
+
+/* Show the builder's structural numbers on headings, contents entries, and captions. */
+main h2[data-number]::before,
+main h3[data-number]::before {
+  content: attr(data-number);
+  color: var(--accent);
+  margin-right: .45em;
+}
+
+.component-title {
+  font-size: 17px;
+  letter-spacing: -.01em;
+}
+
+aside nav a {
+  display: flex;
+  gap: 10px;
+  padding: 7px 0 7px 13px;
+  border-left: 1px solid var(--line);
+  line-height: 1.45;
+}
+
+aside nav a::before {
+  content: attr(data-number);
+  flex: 0 0 auto;
+  min-width: 22px;
+  padding-top: 1px;
+  font: 12px/1.5 "Explainer Mono", ui-monospace, monospace;
+  color: var(--muted);
+}
+
+aside nav a:not([data-number])::before {
+  display: none;
+}
+
+aside nav a.sub {
+  padding-left: 24px;
+  font-size: 13px;
+}
+
+aside nav a:hover {
+  color: var(--ink);
+}
+
+aside nav a[aria-current] {
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+  color: var(--ink);
+  background: transparent;
+  font-weight: 500;
+}
+
+aside nav a.sub[aria-current] {
+  padding-left: 23px;
+}
+
+aside nav a[aria-current]::before {
+  color: var(--accent);
+}
+
+aside .contents-heading p {
+  font: 500 11px/1.4 "Explainer Mono", ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Captions: tables carry a header caption, figures a numbered line below. */
+.table-caption {
+  caption-side: top;
+  margin: 0;
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.table-caption[data-number]::before,
+figcaption[data-number]::before {
+  font: 12px/1.5 "Explainer Mono", ui-monospace, monospace;
+  color: var(--ink);
+  margin-right: .6em;
+}
+
+.table-caption[data-number]::before {
+  content: "Table " attr(data-number);
+}
+
+figcaption[data-number]::before {
+  content: "Figure " attr(data-number);
+}
+
+/* Tables: hairline rows on paper, label-style headers. */
+.table-wrap {
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+table {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.table-wrap th {
+  padding: 10px 16px;
+  background: var(--table-head);
+  border-bottom: 1px solid var(--muted);
+  font: 500 11px/1.4 "Explainer Mono", ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.table-wrap td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.table-wrap tbody tr,
+.table-wrap tbody tr:nth-child(even) {
+  background: var(--paper);
+}
+
+.table-wrap tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Alerts: an outlined, lightly tinted panel with a label-style title. */
+.alert {
+  border: 1px solid color-mix(in srgb, var(--alert-color) 32%, var(--line));
+  border-radius: var(--radius-media);
+  background: color-mix(in srgb, var(--alert-color) 5%, var(--paper));
+  padding: 14px 18px;
+}
+
+.alert-title {
+  gap: 8px;
+  margin-bottom: 6px;
+  font: 500 11px/1.4 "Explainer Mono", ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.alert-title svg {
+  width: 16px;
+  height: 16px;
+}
+
+.alert p {
+  font-size: 15px;
+}
+
+/* Metrics: one ruled grid of figures. */
+.metric-grid {
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-media);
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.metric-card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: 1px 0 0 var(--line), 0 1px 0 var(--line);
+  padding: 16px 18px;
+}
+
+.metric-card .metric {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -.02em;
+}
+
+.metric-label {
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.metric-detail {
+  font-family: "Explainer Mono", ui-monospace, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* Panels and controls share the smaller radius and flatter surfaces. */
+.codebox,
+.node,
+.chart-tooltip,
+.chart-status {
+  border-radius: var(--radius-media);
+}
+
+.codebar {
+  font-family: "Explainer Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.visual-label {
+  font-weight: 500;
+}
+
+.theme-menu {
+  border-radius: 6px;
+}
+
+summary {
+  font-weight: 500;
+}
+
+@media (max-width: 850px) {
+  h1 {
+    font-size: 26px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+
+  .lead {
+    font-size: 16px;
+  }
+
+  aside nav a {
+    padding-block: 11px;
+  }
+
+  aside nav a.sub {
+    font-size: 14px;
+  }
+}
+
+/* Print a white page; every preset's light chart colors keep at least 4:1 on white. */
+@media print {
+  body {
+    --bg: white !important;
+    --paper: white !important;
+    --ink: black !important;
+    --muted: #444 !important;
+    --line: #aaa !important;
+    --wash: #eee !important;
+    --table-head: #ddd !important;
+  }
+
+  h1 {
+    font-size: 20pt;
+  }
+
+  h2 {
+    font-size: 15pt;
+  }
+
+  h3 {
+    font-size: 12pt;
+  }
+
+  .alert {
+    background: none;
+  }
+}

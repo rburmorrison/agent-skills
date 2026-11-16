@@ -47,7 +47,7 @@ Custom HTML, CSS, and JavaScript require `--trusted-custom`; see [custom.md](ref
 - **Interactions:** accessible tabs, disclosures, range controls, choices, plus custom HTML/SVG/canvas and JavaScript. See [custom.md](references/custom.md) for custom visualizations or simulations.
 - **Icons:** 72 consistent SVG symbols; choose by meaning from [icons.md](references/icons.md). Do not redraw existing controls or use emoji as UI icons.
 
-Each document embeds one theme set, selected by `theme` in the document JSON. The only supported set is currently `plain` (the default), with paired Light and Dark appearances. The header menu offers System (initial, follows the reader’s OS/browser preference), Light, and Dark. See [components.md](references/components.md#theme-sets) for selection and theme-set extension details.
+Each document embeds one theme set, selected by `theme` in the document JSON: `plain` (the default) or `report`, a restrained report style with numbered sections, contents, tables, and figures. Each set has paired Light and Dark appearances. `accent` selects one of the set’s presets (`report`: `rust`, the default, or `blue`; `plain` has only `graphite`, its gray default) or a custom `{"light": "#rrggbb", "dark": "#rrggbb"}` pair; the builder rejects a custom pair below 4.5:1 contrast. Choose the set and accent the user asks for. The header menu offers System (initial, follows the reader’s OS/browser preference), Light, and Dark. See [components.md](references/components.md#theme-sets) for selection and theme-set extension details.
 
 The shell provides navigation, appearance, and print controls automatically; do not build them. The builder embeds fonts, CSS, scripts, and media.
 

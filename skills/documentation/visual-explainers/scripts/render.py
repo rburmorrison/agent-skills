@@ -29,6 +29,7 @@ from diagram_layout import (
 )
 from document_types import check_fields
 from mathml import render_mathml
+from themes import FONT_FAMILIES, Theme, palette_css, parse_theme, resolve_palette
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
@@ -37,7 +38,10 @@ if TYPE_CHECKING:
 
 SKILL = Path(__file__).resolve().parents[1]
 ASSETS = SKILL / "assets"
-THEMES = {"plain": ASSETS / "themes" / "plain.css"}
+THEMES = {
+    "plain": ASSETS / "themes" / "plain.json",
+    "report": ASSETS / "themes" / "report.json",
+}
 SHELL = ASSETS / "shell.html"
 APPEARANCES = ("system", "light", "dark")
 CHARTS = ("line", "area", "bar", "scatter", "histogram", "donut", "heatmap", "box")
@@ -322,6 +326,14 @@ class Renderer:
         self.used_diagrams: bool = False
         self.code_categories: set[str] = set()
         self._metrics: FontMetrics | None = None
+        self._theme: Theme | None = None
+
+        # Initialize static numbering for theme sets that number their structure.
+        self.section_number: int = 0
+        self.subsection_number: int = 0
+        self.table_number: int = 0
+        self.figure_number: int = 0
+        self.tab_depth: int = 0
 
     def uid(self, requested: str | None = None) -> str:
         """Reserve an identifier in this renderer's encounter order.
@@ -525,9 +537,12 @@ class Renderer:
         if level not in (3, 4):
             raise ValueError("Nested heading level must be 3 or 4; sections provide H2")
 
-        # Render the nested heading with language-aware capitalization.
+        # Render the nested heading with language-aware capitalization; only
+        # H3 joins the contents and its numbering.
         return (
-            f'<h{level} id="{self.uid()}">'
+            f'<h{level} id="{self.uid()}"'
+            + (self.number("subsection") if level == 3 else "")
+            + ">"
             + self.heading(block["text"])
             + f"</h{level}>"
         )
@@ -712,7 +727,9 @@ class Renderer:
 
         # Render the optional table caption.
         caption = (
-            '<caption class="table-caption">'
+            '<caption class="table-caption"'
+            + self.number("table")
+            + ">"
             + inline(block.get("caption"))
             + "</caption>"
             if block.get("caption")
@@ -755,7 +772,11 @@ class Renderer:
             + esc(block.get("alt"))
             + '">'
             + (
-                "<figcaption>" + inline(block.get("caption")) + "</figcaption>"
+                "<figcaption"
+                + self.number("figure")
+                + ">"
+                + inline(block.get("caption"))
+                + "</figcaption>"
                 if block.get("caption")
                 else ""
             )
@@ -840,9 +861,11 @@ class Renderer:
         if not tabs:
             raise ValueError("tabs requires at least one tab")
 
-        # Render paired tab buttons and panels in encounter order.
+        # Render paired tab buttons and panels in encounter order. Headings in
+        # panels have no contents entry, so they stay unnumbered.
         nav: list[str] = []
         panels: list[str] = []
+        self.tab_depth += 1
 
         for i, tab in enumerate(tabs):
             # Reserve each tab and panel ID before rendering its button.
@@ -864,6 +887,7 @@ class Renderer:
             )
 
         # Assemble the accessible tab group.
+        self.tab_depth -= 1
         return (
             '<div class="tabs"><div class="tab-list" role="tablist" aria-label="'
             + esc(block.get("label", "Examples"))
@@ -1109,7 +1133,11 @@ class Renderer:
             + body
             + "</div>"
             + (
-                '<figcaption class="diagram-caption">' + inline(cap) + "</figcaption>"
+                '<figcaption class="diagram-caption"'
+                + self.number("figure")
+                + ">"
+                + inline(cap)
+                + "</figcaption>"
                 if cap
                 else ""
             )
@@ -1177,22 +1205,92 @@ class Renderer:
             + "</div>"
         )
 
+    def number(self, kind: str) -> str:
+        """Allocate the next structural number when the theme set numbers content.
+
+        Numbers are fixed at build time so that closed disclosures, hidden tab
+        panels, and print layout cannot shift them, and the contents script
+        copies heading numbers to their entries.
+
+        Args:
+            kind: `section`, `subsection`, `table`, or `figure`, in document order.
+
+        Returns:
+            A `data-number` attribute, or an empty string for an unnumbered set or
+            for subsections in the intro or inside tabs, which have no contents entry.
+
+        Raises:
+            ValueError: The document's theme is not a supported set.
+        """
+
+        # Leave every item unnumbered in sets that do not number content.
+        if not self.theme().numbered:
+            return ""
+
+        # Advance the counter for this kind of item.
+        match kind:
+            case "section":
+                self.section_number += 1
+                self.subsection_number = 0
+                value = str(self.section_number)
+            case "subsection":
+                if not self.section_number or self.tab_depth:
+                    return ""
+                self.subsection_number += 1
+                value = f"{self.section_number}.{self.subsection_number}"
+            case "table":
+                self.table_number += 1
+                value = str(self.table_number)
+            case _:
+                self.figure_number += 1
+                value = str(self.figure_number)
+
+        return f' data-number="{value}"'
+
+    def theme(self) -> Theme:
+        """Load and cache the document's selected theme set.
+
+        Returns:
+            The set named by the document's `theme`, or `plain` by default.
+
+        Raises:
+            ValueError: The theme is not a supported set, or its bundled
+                manifest is malformed.
+            OSError: The bundled manifest cannot be read.
+        """
+
+        # Load the selected manifest only on first use.
+        if self._theme is None:
+            # Decoded JSON may hold any value here, despite the declared field type.
+            name = cast("object", self.doc.get("theme", "plain"))
+            if not isinstance(name, str) or name not in THEMES:
+                raise ValueError("theme must be " + ", ".join(THEMES))
+            manifest = cast(
+                "object", json.loads(THEMES[name].read_text(encoding="utf-8"))
+            )
+            self._theme = parse_theme(name, manifest)
+
+        return self._theme
+
     def diagram_metrics(self) -> FontMetrics:
         """Load and cache font metrics for diagram measurements.
 
         Returns:
-            Metrics from the bundled Manrope font, reused for this renderer.
+            Metrics from the selected theme's sans font, reused for this renderer.
 
         Raises:
+            ValueError: The document's theme is not a supported set.
             OSError: The font cannot be read.
             KeyError: A required font table is absent.
             ValueError: The font has no supported character map.
             struct.error: A font table is truncated or malformed.
         """
 
-        # Load the bundled font only on the first geometry request.
+        # Load the theme's sans font only on the first geometry request.
         if self._metrics is None:
-            self._metrics = FontMetrics(ASSETS / "fonts/Manrope.ttf")
+            self._metrics = FontMetrics(
+                ASSETS / "fonts" / self.theme().metrics_font.file
+            )
 
         return self._metrics
 
@@ -1506,7 +1604,11 @@ class Renderer:
             + self.heading(chart["title"])
             + '</strong></div><div class="chart-body"><div class="chart-legend" aria-label="Legend"></div><div class="chart-canvas"></div><div class="chart-tooltip" role="tooltip" hidden></div><p class="chart-status" aria-live="polite"></p>'
             + (
-                "<figcaption>" + inline(chart.get("caption")) + "</figcaption>"
+                "<figcaption"
+                + self.number("figure")
+                + ">"
+                + inline(chart.get("caption"))
+                + "</figcaption>"
                 if chart.get("caption")
                 else ""
             )
@@ -1527,19 +1629,18 @@ class Renderer:
             OSError: A required asset cannot be read or resolved.
         """
 
-        # Require the document's declared fields, a supported theme, and operator authorization for custom assets.
+        # Require the document's declared fields, a supported theme, a valid
+        # accent, and operator authorization for custom assets.
         document = self.doc
         check_fields(document, spec.Document, "document")
-        theme = document.get("theme", "plain")
+        theme = self.theme()
+        palette = resolve_palette(theme, document.get("accent"))
         if not self.trusted_custom and (
             document.get("styles") or document.get("scripts")
         ):
             raise ValueError(
                 "Custom styles and scripts require --trusted-custom; review all custom content as code first"
             )
-
-        if theme not in THEMES:
-            raise ValueError("theme must be " + ", ".join(THEMES))
 
         # Render the hero and sections in document order.
         sections = document.get("sections", [])
@@ -1563,7 +1664,9 @@ class Renderer:
             body += (
                 '<section><h2 id="'
                 + ident
-                + '">'
+                + '"'
+                + self.number("section")
+                + ">"
                 + self.heading(section["title"])
                 + '</h2><div class="content-stack">'
                 + self.blocks(section["blocks"])
@@ -1586,29 +1689,28 @@ class Renderer:
             for appearance in APPEARANCES
         )
 
-        # Embed bundled fonts, licenses, and selected styles.
+        # Embed the selected theme's fonts, licenses, and styles.
         css = ""
 
-        for family, file, weight in [
-            ("Explainer Sans", "Manrope.woff2", "200 800"),
-            ("Explainer Mono", "JetBrainsMono.woff2", "100 800"),
-        ]:
-            # Encode each font and append its face declaration.
+        for face in theme.fonts:
+            # Encode the WOFF2 copy generated beside each TrueType source.
+            woff2 = (ASSETS / "fonts" / face.file).with_suffix(".woff2")
             uri = (
                 "data:font/woff2;base64,"
-                + base64.b64encode((ASSETS / "fonts" / file).read_bytes()).decode()
+                + base64.b64encode(woff2.read_bytes()).decode()
             )
-            css += f'@font-face{{font-family:"{family}";src:url("{uri}") format("woff2");font-weight:{weight};font-style:normal;font-display:swap}}'
+            css += f'@font-face{{font-family:"{FONT_FAMILIES[face.role]}";src:url("{uri}") format("woff2");font-weight:{face.weight};font-style:normal;font-display:swap}}'
 
-        # Read the bundled font licenses for the generated document.
+        # Read the licenses of only the embedded fonts.
         licenses = [
-            file.name + "\n" + file.read_text(encoding="utf-8")
-            for file in sorted((ASSETS / "fonts").glob("*-OFL.txt"))
+            name + "\n" + (ASSETS / "fonts" / name).read_text(encoding="utf-8")
+            for name in sorted({face.license for face in theme.fonts})
         ]
 
-        # Append the bundled base stylesheet and selected theme.
+        # Append the base stylesheet, the resolved palette, and set-specific styles.
         css += (ASSETS / "base.css").read_text(encoding="utf-8")
-        css += "\n" + THEMES[theme].read_text(encoding="utf-8")
+        css += "\n" + palette_css(palette)
+        css += "\n" + (ASSETS / "themes" / theme.stylesheet).read_text(encoding="utf-8")
 
         # Include only syntax styles used by the document.
         if self.code_categories:
@@ -1673,7 +1775,7 @@ class Renderer:
             description=esc(document.get("description", document.get("lead", ""))),
             title=esc(document["title"]),
             css=css,
-            theme=theme,
+            theme=theme.name,
             contents_icon=self.icon("contents"),
             brand=esc(document.get("brand", document["title"])),
             theme_icon=self.icon("theme"),
