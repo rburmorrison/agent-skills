@@ -14,25 +14,25 @@ def render_failures(checks: Sequence[Check]) -> str:
     ])
 ```
 
-Name the stages, introduce them with short comments, and separate changes of purpose:
+Name the stages, introduce each with a short comment stating its purpose, and separate changes of purpose:
 
 ```python
 def render_failures(checks: Sequence[Check]) -> str:
-    # Collect failed checks and count them for the summary.
+    # Filter once so the count and the details describe the same failures.
     failed_checks = [check for check in checks if not check.passed]
     summary = f"{len(failed_checks)} checks failed"
 
-    # Format the details for each failed check.
+    # Keep each failure's name with its message so it can be traced.
     details = [
         f"- {check.name}: {check.message}"
         for check in failed_checks
     ]
 
-    # Assemble the summary and details into the report.
+    # Put the summary first so the count precedes the details.
     return "\n".join([summary, *details])
 ```
 
-This remains one coherent function. The simple comprehension is useful; three extra helpers would add little meaning.
+Each comment gives the stage's purpose or a constraint the code does not state. This remains one coherent function. The simple comprehension is useful; three extra helpers would add little meaning.
 
 ## Named Domain Values
 
@@ -123,13 +123,13 @@ The arms form one dispatch operation, so neither the function nor its individual
 
 ## Implementation Comments
 
-### Short Functions With Multiple Steps
+### Short Functions with Multiple Steps
 
 Logical steps, rather than function length or statement count, determine whether step comments are required. Even this short function has two stages:
 
 ```rust
 fn normalize_tags(input: &str) -> Vec<String> {
-    // Collect nonempty tags in lowercase.
+    // Collect nonempty tags in lowercase so matching ignores case.
     let mut tags: Vec<_> = input
         .split(',')
         .map(str::trim)
@@ -137,7 +137,7 @@ fn normalize_tags(input: &str) -> Vec<String> {
         .map(str::to_lowercase)
         .collect();
 
-    // Sort and remove duplicate tags.
+    // Sort before deduplicating; `dedup` removes only adjacent repeats.
     tags.sort_unstable();
     tags.dedup();
 
@@ -145,7 +145,7 @@ fn normalize_tags(input: &str) -> Vec<String> {
 }
 ```
 
-Collecting the values and organizing them have different purposes. Sorting and deduplication work together as one stage. The final return needs no separate comment.
+Collecting the values and organizing them have different purposes. Sorting and deduplication work together as one stage, and the second comment states the ordering constraint that joins them. The final return needs no separate comment.
 
 ### Decisions and Ordering
 
@@ -180,18 +180,18 @@ fn render_sections(sections: &[Section]) -> String {
     let mut output = String::new();
 
     for section in sections {
-        // Write the section heading.
+        // Start with the title so the entries below read as its members.
         output.push_str(&section.title);
         output.push('\n');
 
-        // Write the entries beneath the heading.
+        // List each entry as a bullet, preserving input order.
         for entry in &section.entries {
             output.push_str("- ");
             output.push_str(entry);
             output.push('\n');
         }
 
-        // Separate this section from the next.
+        // End with a blank line so sections do not run together.
         output.push('\n');
     }
 
@@ -199,7 +199,21 @@ fn render_sections(sections: &[Section]) -> String {
 }
 ```
 
-The comments identify three stages within the outer loop. A single comment such as "Write the heading and entries" would hide the transition into the inner loop; comment each stage where it starts. Routine buffer initialization and returning the result need no narration, but whitespace still separates them from the traversal. Keep cohesive code together instead of creating helpers solely to shorten the function or avoid comments.
+The comments identify three stages within the outer loop and state what each is for. A single comment such as "Write the heading and entries" would hide the transition into the inner loop; comment each stage where it starts. Routine buffer initialization and returning the result need no narration, but whitespace still separates them from the traversal. Keep cohesive code together instead of creating helpers solely to shorten the function or avoid comments.
+
+### Stage Comments Versus Narration
+
+A counterexample, not a model; each comment merely restates its statement:
+
+```rust
+// Push the title.
+output.push_str(&section.title);
+
+// Push a newline.
+output.push('\n');
+```
+
+Stage comments name a stage's purpose, not each statement.
 
 ### Single-Step Functions
 

@@ -13,7 +13,7 @@ Read applicable project instructions and the code relevant to the requested beha
 
 Use available project context before asking for information. Distinguish established facts, user decisions, technical choices, and unresolved assumptions. Check external contracts and tool capabilities where the proposed design depends on them.
 
-Before designing custom parsing, formatting, layout, scheduling, or other behavior covered by an existing dependency, inspect the supported version's documentation or implementation and relevant call sites. Identify the built-in capability, the application policy it leaves to the caller, and any concrete contract gap. Prefer using or configuring that capability; a wrapper or replacement must own a responsibility the dependency does not already satisfy. Do not add a dependency merely to avoid a small cohesive operation. Record unavailable evidence as uncertainty rather than assuming a capability exists or is missing.
+Before designing custom parsing, formatting, layout, scheduling, or other behavior covered by an existing dependency, inspect the supported version's documentation or implementation and relevant call sites, and plan to reuse its capability as `code-authoring` requires. Record the evidence found and any unavailable evidence as uncertainty rather than assuming a capability exists or is missing.
 
 ## Resolve Decisions
 
@@ -56,12 +56,9 @@ Make the following explicit when relevant, without imposing empty sections on sm
 - A feasible user-workflow check: setup, actual application entry point, actions, expected visible results and state, and cleanup. Record known obstacles to execution.
 - Remaining routine discretion, such as incidental helper extraction and idiomatic syntax.
 - Independent review coverage for non-trivial changes and any known verification limitations.
+- An Implementer Brief closing the plan, as described below.
 
-When source documentation or caller-facing behavior changes, read the relevant documentation standards in `code-authoring` from the available skill locations without executing its authoring workflow. If unavailable, state the limitation and use the supplied requirements.
-
-For READMEs, guides, standalone reference material, built-in help, and user examples, name each planned edit's path and section or symbol, the existing claim made inaccurate by the change, the required correction, and its verification. Listing a file or saying "update documentation" is not sufficient scope. Leave accurate content unchanged. New documents, sections, examples, or previously undocumented facts require an explicit user request or confirmation, even inside an existing passage. You may ask whether the user wants a specific addition and explain why; wait for confirmation before including it. Record that authorization in the map. If none is needed or requested, state "No usage-documentation edits planned." The implementer must not edit usage documentation outside this map; a newly discovered need requires a confirmed plan amendment.
-
-Source implementation comments and API doc comments/docstrings remain allowed within the affected code under `code-authoring`; they do not require listing every comment in the map. Assign contract facts to their owning interfaces, keep member facts on members, and distinguish type-wide guarantees from operation-specific guarantees. This allowance does not authorize expanding guides or standalone documentation. Plan a final accuracy inspection, including related documentation outside the edit map; inspection does not authorize unplanned edits. Surface project requirements that would need additions beyond the requested scope.
+When source documentation or caller-facing behavior changes, read the documentation reference in `code-authoring` (`references/documentation.md`) from the available skill locations without executing its authoring workflow; if unavailable, state the limitation and use the supplied requirements. Produce the documentation change map as that reference defines it, ask the user before planning any addition, and state "No usage-documentation edits planned." when none are planned. Plan the final accuracy inspection it describes.
 
 Make responsibility boundaries a concrete planning deliverable for non-trivial changes. For each substantial operation, specify:
 
@@ -73,16 +70,14 @@ Make responsibility boundaries a concrete planning deliverable for non-trivial c
 
 When substantial calculations would otherwise sit among I/O operations, plan a pure operation accepting ordinary values and a separate operation that coordinates external effects. Keep reads, calculations, and writes within the required consistency boundary. Choose these boundaries from the actual behavior and code; a step such as "implement storage logic" leaves that design unfinished.
 
-For each coherent family of domain rules, compare meaningful declarations interpreted by a small shared mechanism with procedural branching. Choose the representation that makes the rules easiest to read together, even with only two cases and before duplication becomes costly. Keep related selectors and metadata together, prefer supported declarative dependency APIs, and record the concrete readability benefit in the plan. Keep one-off decisions and inherently ordered operations direct; do not invent a framework or configuration language without a concrete benefit.
+For each coherent family of domain rules, decide the representation per `code-authoring`'s guidance on declarative domain rules and record the concrete readability reason in the plan.
 
 Before finishing, trace a representative request and a meaningful failure through the proposed operations. Check that each responsibility has an owner and the implementer can connect their contracts without choosing the major decomposition. Connect acceptance criteria to implementation steps and verification scenarios. Check that paths and reused capabilities were inspected, consequential choices have agreement and reasons, the documentation map is bounded, and remaining discretion is only routine. Keep cohesive sequences together; do not prescribe every helper, create layers without a concrete purpose, or use function-length targets.
 
-Do not assume the same model will implement. A model switch in the same chat preserves the conversation, but the plan must still state the decisions and concrete work. Avoid vague steps such as "add validation" or unresolved menus of approaches. Read [the plan example](references/plan-example.md) when calibrating the necessary detail.
+Every plan ends with an **Implementer Brief**: a short list (about 10 bullets at most) the implementing model reads before editing. It covers: load `code-authoring`; the documentation-map entries or "No usage-documentation edits planned."; this plan's stop-and-ask triggers (decisions deliberately left to the user, and changes that would need a plan amendment); the checks to run with expected results; the user-workflow check; and the review expectation. Restate only what this plan needs; do not copy general rules. Do not assume the same model will implement: a model switch preserves the conversation, but the plan must still state the decisions and concrete work, avoiding vague steps such as "add validation" and unresolved menus of approaches. Read [the small example](references/plan-example-small.md) for small corrections and [the full example](references/plan-example.md) for substantial changes when calibrating the necessary detail.
 
 Use the chat for the plan unless the user or project asks for a saved artifact. Do not edit source or configuration while planning. Do not turn approval of a planning-only deliverable into authorization to implement.
 
 ## Transition
 
-Once planning is complete and implementation is authorized, carry forward the plan and decisions; do not restart the interview after a model switch. Use `code-authoring` if available.
-
-Carry this rule into the handoff: a new consequential choice or change to agreed decisions or documentation scope requires an immediate user question. Pause dependent work, continue independent work, and record the answer and rationale before resuming. Follow `code-authoring`'s Roadblocks and Handoff procedure when available. Work awaiting an answer or required capability remains explicitly incomplete.
+Once planning is complete and implementation is authorized, carry forward the plan and decisions; do not restart the interview after a model switch. Use `code-authoring` if available. List this plan's stop-and-ask triggers in the Implementer Brief; the immediate-question procedure itself is owned by `code-authoring`'s Roadblocks and Handoff.

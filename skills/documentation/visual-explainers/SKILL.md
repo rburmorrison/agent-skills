@@ -47,9 +47,9 @@ Custom HTML, CSS, and JavaScript require `--trusted-custom`; see [custom.md](ref
 - **Interactions:** accessible tabs, disclosures, range controls, choices, plus custom HTML/SVG/canvas and JavaScript. See [custom.md](references/custom.md) for custom visualizations or simulations.
 - **Icons:** 72 consistent SVG symbols; choose by meaning from [icons.md](references/icons.md). Do not redraw existing controls or use emoji as UI icons.
 
-Each document embeds one theme set, selected by `theme` in the document JSON. The only supported set is currently `plain` (the default), with paired Light and Dark appearances. The header menu offers System, Light, and Dark for that set. System is selected initially and follows the reader’s OS/browser appearance preference live. See [components.md](references/components.md#theme-sets) for selection and theme-set extension details.
+Each document embeds one theme set, selected by `theme` in the document JSON. The only supported set is currently `plain` (the default), with paired Light and Dark appearances. The header menu offers System (initial, follows the reader’s OS/browser preference), Light, and Dark. See [components.md](references/components.md#theme-sets) for selection and theme-set extension details.
 
-The shell supplies a sticky header, an animated desktop ToC sidebar and mobile contents drawer with scroll spy; a top-left contents icon; an appearance menu icon; and a print icon. Fonts, CSS, scripts, and media are embedded by the builder. These controls need no author-written code.
+The shell provides navigation, appearance, and print controls automatically; do not build them. The builder embeds fonts, CSS, scripts, and media.
 
 ## Content and Appearance
 

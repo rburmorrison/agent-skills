@@ -1,6 +1,7 @@
 ---
 name: implement-verified-steps
 description: Implement an agreed plan through distinct steps with checks and one independent review per step. Use only when explicitly requested, with targeted follow-up only for concrete unresolved risks.
+disable-model-invocation: true
 ---
 
 # Implement Verified Steps
@@ -9,7 +10,7 @@ Use only when explicitly invoked or when the user explicitly requests this workf
 
 ## Set the Checkpoints before Implementation
 
-Use the agreed plan and decisions, including after a model switch. If meaningful steps are missing, complete planning with `plan-changes` before editing. Resolve consequential questions one at a time during planning; do not reopen settled decisions between steps. Newly discovered consequential choices or changes to documentation scope follow `code-authoring`'s immediate-question policy, with dependent work paused until answered.
+Use the agreed plan and decisions, including after a model switch. If meaningful steps are missing, complete planning with `plan-changes` before editing. Resolve consequential questions one at a time during planning; do not reopen settled decisions between steps. Newly discovered consequential choices or changes to documentation scope follow `code-authoring`'s Roadblocks and Handoff rule.
 
 Each step must state its coherent responsibility, affected paths and operations, exact boundary contracts, dependencies, acceptance criteria, and relevant checks with expected outcomes. Carry forward the decision record, documentation map, and remaining implementation discretion. Choose meaningful, verifiable checkpoints rather than a step for every file, function, or edit. A small task may need only one step. Identify final integration and user-workflow checks and what the final step's review must assess across the completed work.
 
@@ -29,7 +30,7 @@ The default is one independent review per planned step. Fixing findings does not
 
 Request a follow-up only when a material fix leaves a concrete risk that the existing review and checks do not cover. Before requesting it, state: "This fix changed X. Y remains unverified. The follow-up will check Z." Keep that review targeted to the risk and affected paths. A repeated full review is exceptional and requires substantial rework that invalidated the earlier assessment.
 
-Do not run a "review until no findings" loop. Repeated concerns without new evidence should be resolved against the agreed contracts. If a material issue requires a new consequential choice or scope amendment, ask immediately under the shared policy and continue independent work. If an answer or capability remains unavailable, mark the affected work incomplete and report the blocker at the end. Do not advance dependent work as if a blocked checkpoint passed.
+Do not run a "review until no findings" loop. Repeated concerns without new evidence should be resolved against the agreed contracts. If a material issue requires a new consequential choice or scope amendment, ask immediately under `code-authoring`'s Roadblocks and Handoff rule, and report any blocker that remains at the end. Do not advance dependent work as if a blocked checkpoint passed.
 
 If later edits affect a completed step, rerun affected checks and reassess only the review conclusions those edits invalidate. Apply the same concrete-risk criterion before requesting another reviewer.
 

@@ -9,11 +9,9 @@ Use for new code, features, fixes, refactors, and source or usage documentation 
 
 Use the agreed plan and decisions from the conversation. If consequential behavior or scope remains unresolved, complete planning with the user one question at a time before editing; use `plan-changes` if available. A small unambiguous task needs only proportionate planning.
 
-## Documentation Scope
+## Documentation
 
-Code changes allow useful inline implementation comments and source API doc comments/docstrings for affected code without listing each in the plan. Usage documentation—READMEs, guides, standalone reference material, built-in help, and user examples—requires a bounded documentation map: exact location, existing inaccurate claim and correction or explicitly requested addition, and verification. Correct claims at their existing level of detail; leave accurate content unchanged. An omitted map permits no usage-documentation edits. A direct, explicit documentation request supplies scope and may use a brief plan.
-
-New documents, sections, examples, or previously undocumented facts require an explicit user request or confirmation recorded in the plan, even inside an existing passage. Do not infer permission from code requirements, general plan approval, or your judgment that an addition would help. An accuracy inspection, reviewer finding, or documentation lint does not expand scope. For an unplanned edit, leave the material unchanged and use the immediate-question procedure under Roadblocks and Handoff.
+Source comments and API doc comments/docstrings are allowed for affected code. Edit usage documentation (READMEs, guides, standalone reference material, built-in help, and user examples) only at the plan's documentation-map entries; for anything else, ask under Roadblocks and Handoff. Read [the documentation reference](references/documentation.md) before editing any documentation or doc comments, and again for the final accuracy check.
 
 ## Execute Within Scope
 
@@ -21,7 +19,7 @@ Choose only routine local implementation details within the plan's remaining dis
 
 Concentrate filesystem, network, database, clock, and environment access at explicit boundaries where applicable. Separate substantial domain calculations from orchestration, passing ordinary values into core transformations and decisions while preserving transaction and snapshot boundaries. Use the project's existing mechanisms; introduce abstractions only for a concrete responsibility or dependency.
 
-Before implementing behavior an existing dependency may provide, inspect its supported-version documentation or implementation. Prefer its built-in behavior and configuration over custom parsing, help generation, layout arithmetic, or equivalent machinery. Keep custom code for a demonstrated application requirement or contract gap, and explain that gap near the adapter. A wrapper must add a cohesive responsibility, not merely rename or reproduce dependency behavior. If reuse would change an agreed contract, resolve that choice before switching; missing evidence is not proof that replacement is necessary.
+Before implementing behavior an existing dependency may provide, inspect its supported-version documentation or implementation. Prefer its built-in behavior and configuration over custom parsing, help generation, layout arithmetic, or equivalent machinery. Keep custom code for a demonstrated application requirement or contract gap, and explain that gap near the adapter. A wrapper must add a cohesive responsibility, not merely rename or reproduce dependency behavior. Do not add a dependency merely to avoid a small cohesive operation. If reuse would change an agreed contract, resolve that choice before switching; missing evidence is not proof that replacement is necessary.
 
 Manage dependencies through the project's package manager. Use actual package information and supported-version constraints; do not guess versions or hand-edit dependency entries as a shortcut. Respect existing workspace dependencies and lockfile policy. If the needed tool is unavailable, apply the blocker policy instead of silently bypassing it.
 
@@ -33,7 +31,7 @@ Manage dependencies through the project's package manager. Use actual package in
 - Extract coherent operations with meaningful names. Keep a simple sequence together when splitting it would add navigation without improving comprehension.
 - Organize modules by responsibility and reasons to change. Keep types near the code that owns their meaning. Treat size and complexity as inspection signals rather than incentives to create trivial files or helpers.
 - Use idioms supported by the declared language version. Pattern matching suits meaningful variants and structured alternatives; ordinary predicates can remain conditionals.
-- Keep affected interface documentation and source comments accurate using the documentation standards below.
+- Keep affected interface documentation and source comments accurate using [the documentation reference](references/documentation.md).
 
 Read [the code examples](references/code-examples.md) for non-trivial implementation or when resolving a style tradeoff. Their languages illustrate shared principles rather than restricting the skill's scope.
 
@@ -56,7 +54,7 @@ Use step comments to make the process scannable even when individual statements 
 - Use standalone single-line comments in the language's ordinary comment syntax, such as `#` or `//`. Do not use multiline or block-comment syntax for implementation comments.
 - For longer explanations, use consecutive single-line comments as one group, without blank lines between them.
 - Put a blank line above each comment group unless it is the first content at the top of its enclosing code block. Keep the comment adjacent to the code it explains.
-- Keep API documentation syntax separate: native docstrings and documentation comments follow the interface documentation standards below, not these implementation-comment formatting rules.
+- Keep API documentation syntax separate: native docstrings and documentation comments follow [the documentation reference](references/documentation.md), not these implementation-comment formatting rules.
 
 When correcting or shortening existing comments, preserve useful rationale. Include unchanged comments in the final documentation accuracy check.
 
@@ -68,37 +66,6 @@ After formatting and before independent review or handoff, perform a separate re
 2. Check each comment group's preceding line and its attachment to the stage it describes. Check the smaller whitespace breaks around setup, traversal, guards, and results even where no new comment is needed.
 3. In tests, trace setup, action, assertions, and each new scenario. Correct broad or misplaced comments and missing paragraphs before reporting the work ready. Passing formatters and tests does not complete this pass.
 
-## Document Interfaces and Decisions
-
-Apply these standards to source API doc comments/docstrings and authorized standalone interface documentation. Inspect the affected code, callers, existing documentation, and tooling before promising a contract.
-
-Interfaces intended for other components, including within the project, are the boundary for caller-facing contracts. Include types and relevant members, not just functions. Visibility keywords, underscores, and module names are evidence of intent rather than the sole definition of that boundary. Truly internal implementation details usually need no documentation comment.
-
-- Use a concise brief and complete applicable contract sections in the project's native documentation format. Omit inapplicable sections and boilerplate; do not restate type annotations without explaining meaning.
-- Keep free-form bodies exceptional: use a short body only for a caller-facing concept or interaction that must be understood together and cannot be explained clearly in the brief, members, or contract sections. Importance or non-obviousness alone does not justify a body.
-- Assign facts to their owning interfaces. Put input and result semantics in the brief or applicable contract sections, failures in the error section, and member facts on members. Remove duplication rather than moving it under Notes or Details or overloading the brief.
-- Keep type documentation self-contained: describe intrinsic meaning, members, enforced invariants, and obligations for correct use. Avoid narrating external parsers, factories, or consumers. Put an operation's behavior and guarantees on that operation; public construction or mutation may bypass validation, so do not promise that every instance is validated when only one operation guarantees it.
-- Check callers and propagated failures before describing errors. Preserve caller-relevant obligations; omit speculative failures and implementation walkthroughs. Use examples when requested and when they materially clarify correct use.
-- Use Title Case for authored headings while preserving required documentation tags, identifiers, and syntax.
-
-Read [Python documentation](references/documentation-python.md) or [Rust documentation](references/documentation-rust.md) when editing documentation in those languages. Use native formats and existing tooling for other languages.
-
-Private doc comments are useful only for otherwise unclear contracts or constraints. Documentation-only work does not authorize restructuring code or changing behavior to fit a comment.
-
-Follow project documentation lints, including for otherwise internal items, within Documentation Scope. Do not weaken checks, change visibility, or rename items to evade them.
-
-## Write Usage Documentation Within Scope
-
-Before editing a README, built-in help, or user guide, identify its audience, core purpose, and the task it helps the reader complete. Inspect the relevant entry points, supported installation method, examples, and actual help. Preserve prerequisites, consequential limitations, compatibility information, and applicable project conventions.
-
-Match each edit to the agreed documentation map before writing.
-
-Keep a README focused on its purpose, necessary setup, and a representative path to a useful result. Revise the owning passage with concise, direct prose and Title Case for authored headings. Avoid redundant feature inventories, implementation narration, and change-history details. Do not impose a fixed section template.
-
-Keep existing examples runnable from their stated starting conditions, with required inputs and enough observable output to recognize success. Capture help from the actual documented command and version, identify the command, and preserve the captured text verbatim. Do not reconstruct help, silently edit it, apply Title Case inside it, or present a shortened block as complete. Use an identified subcommand's help or a link when full help would overwhelm the document.
-
-Use existing help and references for discovery. For authorized additions, put substantial workflows or concepts in separate documents only when readers need them, link from the relevant starting point, and avoid duplicating help or API reference material. Reuse existing documentation-generation mechanisms; do not introduce tooling merely to refresh a small output block.
-
 ## Verify Behavior
 
 Read [the testing guidance](references/testing.md) when adding or changing tests. Cover meaningful agreed behavior and failure cases with readable setup, actions, and assertions. Test count is not a target.
@@ -109,32 +76,41 @@ Also exercise the changed behavior as a user would when feasible, using the actu
 
 If the workflow cannot run because tools, credentials, services, or an executable application are unavailable, use the closest feasible check and state precisely what remains unverified. Do not treat passing tests as evidence that an unexecuted user workflow works. Record the workflow attempted, observed results, and limitations for review and handoff.
 
-For documentation edits, run existing documentation lints, builds, and executable examples where applicable. Check format and attachment of changed source documentation, including review fixes; inspect rendered or extracted output when syntax may hide or misattach it. Check relevant links, prerequisites, examples, and captured help against actual behavior where feasible, using temporary inputs and avoiding unintended external effects. Report unavailable execution and unverified output accurately.
-
 Lint and type-check suppressions must be rare, narrowly scoped, and accompanied by a specific reason. Prefer fixing the underlying problem. Use native justification syntax when available, otherwise a nearby explanation. Explain configuration-level exceptions beside the setting; do not weaken checks simply to obtain a pass.
 
 ## Independent Review
 
-For non-trivial changes, default to one full review of the completed change by a separate agent with fresh context. Honor an explicit task or invoked workflow's review cadence instead; do not append the default review to that workflow. Disable conversation-history inheritance when starting a reviewer: for tools exposing `fork_turns`, use `"none"`. Supply a self-contained review brief instead. Behavioral changes involving interacting components, public contracts, persistence, or significant refactoring normally qualify. Pure formatting and typo corrections usually do not.
+For non-trivial changes, the default review is one quick, pointed review of the completed change by a fresh-context subagent running on the implementing model, without an upgrade; a separate review with a more capable model is the developer's choice. Honor an explicit task or invoked workflow's review cadence instead; do not append the default review to that workflow. Disable conversation-history inheritance when starting a reviewer: for tools exposing `fork_turns`, use `"none"`. Supply a self-contained review brief instead. Behavioral changes involving interacting components, public contracts, persistence, or significant refactoring normally qualify. Pure formatting and typo corrections usually do not.
 
 Give the reviewer the agreed plan and decisions, actual final diff including new files, relevant code, and verification results. Use `review-changes` if available. Do not supply the implementer's self-assessment or a desired verdict. Use the task's chosen reviewer model; if none was chosen, use the environment's normal inheritance rather than guessing model IDs or upgrading silently.
 
-Assess findings against the code. Fix validated findings within scope and rerun affected checks. Request a targeted follow-up autonomously only when a material change to logic, interfaces, or component interactions leaves a concrete risk uncovered by the existing review and checks. State that risk and the follow-up scope before requesting it. A second full review of the same scope is exceptional and appropriate when substantial rework invalidates the first review. Resolved findings and passing required checks normally finish the review; do not seek repeated clean verdicts or leave a known defect unaddressed solely to satisfy a round count.
+Assess findings against the code. Fix validated Blocker and Should-fix findings within scope and rerun affected checks. Fix a validated Nit only when the fix touches only lines this change already modifies, changes no behavior or test expectations, and needs no new file, dependency, or user decision. Applying a Nit that fails any condition is out of scope, however small or worthwhile it seems; raise any other Nit you recommend making as a decision in the handoff, and drop the rest. Nits never block completion. Request a targeted follow-up autonomously only when a material change to logic, interfaces, or component interactions leaves a concrete risk uncovered by the existing review and checks. State that risk and the follow-up scope before requesting it. A second full review of the same scope is exceptional and appropriate when substantial rework invalidates the first review. Resolved findings and passing required checks normally finish the review; do not seek repeated clean verdicts or leave a known defect unaddressed solely to satisfy a round count.
 
 If reviewer capability is unavailable, perform a distinct self-review and disclose that independent review was unavailable. A self-review must not be described as independent.
-
-## Final Documentation Accuracy Check
-
-At the end of every code change, after implementation and review fixes and before handoff, explicitly check whether existing documentation needs updating:
-
-1. Discover existing documentation related to the changed behavior in the repository; the plan's file list and edit map are not an exhaustive inspection list. Include interface contracts, inline implementation comments in touched code, READMEs, built-in help, guides, and examples. Inspect relevant content even if its file or comment lines were unchanged. Check existing comments against the current logic, assumptions, and rationale.
-2. Identify each document's core point, audience, and level of detail. Match needed corrections to Documentation Scope and the plan's map; ask immediately about unplanned usage-documentation needs. Correct or remove stale source comments within affected code.
-3. Audit the usage-documentation diff for unplanned edits and new facts inserted alongside valid corrections, including facts taken from implementation requirements. Remove unauthorized additions while preserving planned corrections. Verify permitted edits with the applicable documentation checks above, within the task's review cadence; do not add a documentation-only review round. Repeat the affected accuracy check if later code changes invalidate its result.
-
-Briefly state in the handoff whether planned documentation was updated, no update was needed, or an unplanned need remains awaiting a decision. Report unmet project requirements without expanding scope.
 
 ## Roadblocks and Handoff
 
 Handle routine local obstacles autonomously. When a missing consequential decision, changed requirement, or unplanned usage-documentation edit is discovered, explain the concrete issue, options, and recommendation and ask the user immediately, one question at a time. Pause dependent work and continue useful independent work. Do not reopen settled decisions without new evidence, silently narrow requirements, or wait until handoff to reveal the choice. Record the answer and reason in the plan before resuming dependent work. If an answer or capability remains unavailable, clearly mark the affected work incomplete and report what is needed.
 
-Follow [the handoff guidance](references/handoff.md) after fixes and verification. Use simple wording and bold first sentences under Invariants, Failure Modes and Recovery, and Verification and Remaining Uncertainty. Separate major sections with horizontal rules and give each invariant and failure mode a short subheading. Prefer a verification table when several behaviors map clearly to evidence and results or gaps; otherwise use prose. Cover every consequential guarantee and failure mode without an item cap; include short fenced evidence wherever available source directly supports an important claim, followed by verified source links. Links alone do not replace applicable evidence blocks. Distinguish intended behavior from observed results and remaining uncertainty. Installation, commits, publishing, and other external actions require authorization from the task; this workflow does not supply it.
+Installation, commits, publishing, and other external actions require authorization from the task; this workflow does not supply it.
+
+## Handoff
+
+After fixes and verification, write the handoff in this format, even when the work stops on an open question:
+
+- **Summary:** a short paragraph with no heading, label, or bullets. Open with a bold sentence stating what changed, such as `**Imports now skip blank lines instead of failing.**`, not a `**Summary:**` label, then say why and name any gap that affects confidence. It may mention the review.
+- **`## Invariants`** and **`## Failure Modes and Recovery`:** one `###` subheading per guarantee or failure, each opening with a bold sentence and supported by a short source excerpt and verified link where available.
+- **`## Verification and Remaining Uncertainty`:** if everything passed, one sentence naming what ran and whether planned documentation was updated. Detail only failed or skipped checks, unexercised behavior, and blocked work. No tables or lists of tests.
+- **`## Decisions Awaiting You`:** only when decisions remain. Number each item: a bold title naming the choice, the current state and what each option would change, then a recommendation and why. If you recommend keeping things as they are, leave the item out; for example, drop "I recommend leaving the duplicate parser as it is." Plan deviations and unresolved findings go here, described as choices about the code, never by review labels such as Nit or Should-fix.
+
+Use no other sections, and put `---` before each section heading. Read [the handoff guidance](references/handoff.md) for coverage, evidence, links, and examples.
+
+## Before Handoff
+
+1. The change stays within the agreed scope and remaining discretion; every consequential gap was asked about, not decided (Execute Within Scope, Roadblocks and Handoff).
+2. Formatting, lint, type, and behavior checks ran; results are recorded accurately, including anything not run (Verify Behavior).
+3. The changed behavior was exercised through the actual entry point, or the limitation is stated (Verify Behavior).
+4. The readability pass is done: each multistep function and test has a stage comment at every transition, with blank lines between stages (Explain Steps and Decisions).
+5. Usage-documentation edits match the documentation map exactly; related documentation was inspected and any unplanned need was asked about ([documentation reference](references/documentation.md)).
+6. For non-trivial changes, the independent review ran; validated Blocker and Should-fix findings are fixed and affected checks rerun. Each applied Nit touches only lines this change already modifies and changes no behavior or tests; revert any that does not (Independent Review).
+7. The handoff follows the Handoff format: a bold-led summary paragraph, then only its sections, with a recommendation and why for each decision (Handoff).

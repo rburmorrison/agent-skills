@@ -147,14 +147,14 @@ Before committing, always re-run `git status --short` and compare it to the chos
 
 If files were added, removed, renamed, or modified outside the chosen commits, stop and ask.
 
-Run one combined harness command per commit. Use heredoc commit messages for every commit, including subject-only commits.
+Run one combined shell command per commit. Use heredoc commit messages for every commit, including subject-only commits.
 
 For normal working-tree commits, stage only the files chosen for that commit with `git add path/to/file ...`, then commit. Do not use `git add -A` except for the initial commit flow or when the user explicitly asks to stage the entire working tree.
 
 Subject-only command:
 
 ```bash
-git add skills/gitmoji-commits/SKILL.md skills/gitmoji-commits/references/gitmoji-shortcodes.md && git commit -F - <<'EOF'
+git add skills/engineering/gitmoji-commits/SKILL.md skills/engineering/gitmoji-commits/references/gitmoji-shortcodes.md && git commit -F - <<'EOF'
 :memo: Document GitMoji commit workflow
 EOF
 ```
@@ -187,8 +187,8 @@ I made the following commit:
 
 📝 Document GitMoji commit workflow
 
-- skills/gitmoji-commits/SKILL.md
-- skills/gitmoji-commits/references/gitmoji-shortcodes.md
+- skills/engineering/gitmoji-commits/SKILL.md
+- skills/engineering/gitmoji-commits/references/gitmoji-shortcodes.md
 
 ---
 ```

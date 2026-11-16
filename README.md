@@ -16,7 +16,7 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 
 **Documentation**:
 
-- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone HTML explainers with reusable content components, math formulas, diagrams, eight interactive chart types, and 72 SVG icons. Includes paired light/dark appearance with system matching by default, a centered reading column, and responsive contents navigation with section tracking. A Python 3.11+ builder with a bundled syntax highlighter embeds fonts, images, and other assets for offline use; the user chooses the content and structure.
+- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone, offline HTML explainers from a JSON document using built-in components, diagrams, interactive charts, and math. A Python 3.11+ builder embeds all assets; the user chooses the content and structure.
 
 ## Usage
 
@@ -44,9 +44,9 @@ npx skills add rburmorrison/agent-skills --global --skill implement-verified-ste
 npx skills add rburmorrison/agent-skills --global --skill visual-explainers
 ```
 
-## Personal Guidance
+## Engineering Workflow Guidance
 
-Add the contents of [personal-engineering.md](guidance/personal-engineering.md) to your global `AGENTS.md` or `CLAUDE.md`.
+Add the section in [engineering-workflow.md](guidance/engineering-workflow.md) to a global or project `AGENTS.md` or `CLAUDE.md`.
 
 ## Development
 

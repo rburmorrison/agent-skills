@@ -103,3 +103,15 @@ The example assumes a runnable local CLI and SQLite adapter. If the real environ
 The implementer may choose local variable names, idiomatic loops, private helper extraction, and fixture organization within these contracts. It must not choose new validation rules, change counts or statuses, relax atomicity, add abstractions or dependencies, or expand usage documentation.
 
 If investigation cannot establish the transaction guarantee, resolve that architecture with the user before finalizing the plan. If implementation later uncovers a consequential gap, explain it and ask immediately; pause dependent work, continue independent work, and amend the decision record after the answer. Do not substitute partial writes or defer the question to the final report.
+
+## Implementer Brief
+
+- Load `code-authoring`; implement D1-D8 as written.
+- Edit only the one README sentence in the documentation map (D7); no other usage documentation. Source comments and docstrings for affected code are allowed.
+- Stop and ask before any change to exit statuses, counts (D5), atomicity (D2), validation precedence (D8), or duplicate handling (D3).
+- Stop and ask if the existing transaction adapter cannot serialize writers (D6), or before adding dependencies, abstractions, or schema changes.
+- Order: pure operations, then storage, then CLI; run each step's tests as listed.
+- Failure tests must reach the real transaction after a successful write; a fake that implements rollback does not count.
+- Finish with `uv run ruff format --check .`, `uv run ruff check .`, `uv run basedpyright`, and `uv run pytest`, all passing.
+- Run the User Workflow through `uv run catalog`; report observed output separately from test results.
+- Obtain one independent review of the completed diff against D1-D8.

@@ -1,6 +1,7 @@
 ---
 name: align-codebase
 description: Align an existing codebase with the user's engineering conventions through a scoped, behavior-preserving refactor. Use only when explicitly requested.
+disable-model-invocation: true
 ---
 
 # Align Codebase
@@ -31,4 +32,4 @@ Use `code-authoring` for execution and review. If the user also explicitly reque
 
 Keep changes tied to the agreed improvements. Preserve compatibility through existing interfaces or a small adapter when needed; avoid gratuitous abstraction or splitting. Compare verification results with the baseline and resolve introduced regressions.
 
-For a roadblock requiring a consequential choice or scope change, ask the user immediately using the shared policy, pause dependent work, and continue independent work. In the final handoff, explain the useful structural changes, the contracts preserved, verification and any pre-existing failures affecting confidence, unresolved work, and only the most useful review locations. Do not produce an exhaustive inventory of untouched style issues.
+For a roadblock requiring a consequential choice or scope change, follow `code-authoring`'s Roadblocks and Handoff rule. In the final handoff, explain the useful structural changes, the contracts preserved, verification and any pre-existing failures affecting confidence, unresolved work, and only the most useful review locations. Do not produce an exhaustive inventory of untouched style issues.

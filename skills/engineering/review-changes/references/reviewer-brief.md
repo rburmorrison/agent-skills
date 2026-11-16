@@ -14,7 +14,7 @@ Do not include a desired verdict or instruct the reviewer to confirm the impleme
 
 For each actionable finding, provide:
 
-1. A short title and appropriate priority.
+1. A short title and one priority as defined in `review-changes`: Blocker, Should-fix, or Nit.
 2. A verified file path and the smallest useful line location.
 3. The input, condition, or maintenance task that exposes the issue.
 4. The resulting failure, contract violation, or concrete comprehension cost.

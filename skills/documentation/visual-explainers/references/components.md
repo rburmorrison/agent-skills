@@ -6,11 +6,11 @@ Use JSON, not Python code. Strings inside `blocks` are paragraphs. All paths are
 
 Required: `title`. Optional: `brand` (short header name; defaults to title), `lead`, `description`, `theme` (theme set; currently only `plain`, the default), `lang` (default `en`), `intro` (blocks below the lead), `sections` (list of `{title, blocks, id?}`), `scripts` (local JS file paths), `styles` (local CSS file paths). All asset paths must be relative and remain within the JSON directory after resolving symlinks. `html` blocks and nonempty `scripts`/`styles` require the operator's `--trusted-custom` option; see [custom.md](custom.md).
 
-The shell creates H1. Sections create H2 and ToC entries. You choose all section names and ordering. Heading blocks create H3/H4; H3 joins the ToC except inside tabs. Component titles are labels, not extra sections. On mobile the header stays sticky and its contents icon opens a vertical drawer. Selecting a heading closes the drawer and scrolls smoothly to it below the header. The selected link stays highlighted during navigation, including near the end of the document. Manual scrolling resumes section tracking; reduced-motion preferences disable animation. No footer or source section is forced. Use paragraphs/links or a section when sources are useful.
+The shell creates H1. Sections create H2 and ToC entries. You choose all section names and ordering. Heading blocks create H3/H4; H3 joins the ToC except inside tabs. Component titles are labels, not extra sections. No footer or source section is forced. Use paragraphs/links or a section when sources are useful.
 
 ## Theme Sets
 
-`theme` selects one supported set at generation time, for example `"theme": "plain"`. Only `plain` is currently supported. Each output embeds just that set’s paired light/dark palettes; the reader cannot switch sets. The header menu always starts in System and offers only System, Light, and Dark. System follows the reader’s OS/browser appearance preference live; choosing Light or Dark fixes the appearance until System is selected again.
+`theme` selects one supported set at generation time, for example `"theme": "plain"`. Only `plain` is currently supported. Each output embeds just that set’s paired light/dark palettes; the reader cannot switch sets.
 
 To add a supported set, place its paired color tokens and menu swatches in `assets/themes/<name>.css` and register its path in `THEMES` in `scripts/render.py`. Use `assets/themes/plain.css` as the token contract: its `light-dark()` values resolve through the shell’s selected color scheme. Keep set-specific styling in that asset so it is embedded only when selected. The shared shell owns layout, appearance switching, and print behavior.
 
@@ -62,11 +62,11 @@ Alerts accept `kind`: `note`, `tip`, `important`, `warning`, `caution`. Instead 
 
 Code `language` labels the block and selects syntax highlighting during generation; it does not execute code. Use a recognized Pygments name or alias, such as `"Rust"` or `"rust"`; matching is case-insensitive. Missing or unknown languages render as plain text. Keep descriptions such as “Actual Source” in `annotations`, outside `language`: `"Rust · Actual Source"` is not a recognized language.
 
-Every code block has a right-aligned line-number gutter sized for its largest number. Numbers refer to source lines, including blank lines, rather than visually wrapped rows. LF, CRLF, and CR delimit source lines; a final newline adds no extra numbered row, and empty source displays one blank line. Copy includes only the original source, preserving its whitespace and line endings; numbers and annotations are excluded. If clipboard access is unavailable, a temporary source-only selection appears for manual copying and disappears when it loses focus.
+Code blocks are numbered by source line, including blank lines, not by wrapped rows. Copy copies only the source, not numbers or annotations.
 
 Use the optional `annotations` list for full-width explanatory notes. Each object requires a nonblank string `text` and accepts an optional string `title`; both use the existing safe inline formatting. `position` defaults to `"top"`, accepts `"bottom"`, or takes a positive integer meaning **after that source line**. Multiple notes at the same position keep their list order. Invalid fields, types, positions, or line numbers stop generation with an error; correct them rather than moving the note silently. Choose notes and positions that help explain the source; no annotation is required.
 
-Add `lines` to identify the source a note explains: an integer for one line or `[start, end]` for an inclusive range. This is independent of `position`; omitting it leaves a neutral general note. Bounds must be integers within the source, with start no greater than end; invalid bounds stop generation. Referenced notes show a line badge and matching source shading. Colors follow range start order, with annotation order breaking ties; identical ranges reuse a color, and the six-color palette repeats. Overlaps retain stacked 3 px rails with 1 px gaps, and the gutter reserves space for the widest stack. The earliest range supplies the resting background. Hovering or keyboard-focusing a note emphasizes its full range without hiding other rails; leaving restores the resting colors.
+Add `lines` to identify the source a note explains: an integer for one line or `[start, end]` for an inclusive range. This is independent of `position`; omitting it leaves a neutral general note. Bounds must be integers within the source, with start no greater than end; invalid bounds stop generation. Referenced notes show a line badge and matching source shading. Overlapping ranges are supported.
 
 ```json
 {
@@ -110,4 +110,4 @@ Use [diagrams.md](diagrams.md) for `diagram`, [charts.md](charts.md) for `chart`
 
 IDs are optional except when custom code refers to a component. Supply an ID starting with a letter and containing only letters, digits, hyphens, and underscores. IDs must be unique. The builder reserves shell IDs and generates the rest.
 
-Paragraphs and headings fill their containing column. The main column is centered in the available space and capped at 1,040 px, with the shell’s normal side padding. Hiding the contents recenters the column within the viewport while retaining that cap.
+Paragraphs and headings fill their containing column.
