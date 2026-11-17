@@ -24,7 +24,8 @@ Check documentation against the documentation reference in `code-authoring`. Fla
 - Does it implement the agreed behavior, including errors, edge cases, and partial failures?
 - Does every consequential choice trace to the plan and user agreement or an established requirement? Flag invented policies and undisclosed deviations even when tests pass; routine syntax and helper choices remain implementation discretion.
 - Are public contracts, domain invariants, validation, and data ownership preserved?
-- Is I/O concentrated at clear boundaries, with core logic understandable independently?
+- Is I/O concentrated at clear boundaries, with core logic understandable independently? Are calculations and decisions pure over explicit inputs, domain values immutable, and effects applied by thin coordinating operations, as the plan's contracts specify? Accept planned or clearly justified imperative code, and flag functional machinery that makes the code harder to read.
+- Does the code state what a result is rather than script how to build it, where that reads more clearly? Look for accumulator loops that would read better as expressions and hand-written procedures that a dependency's declarative API already expresses.
 - For a coherent family of domain rules, does the change follow `code-authoring`'s declarative-rules preference? Judge the concrete readability benefit and the edits another case would need; accept direct one-off decisions and exhaustive mappings when clearer, and flag disproportionate frameworks.
 - Are names, logical grouping, functions, and modules readable without unnecessary indirection or fragmentation?
 - Do repeated collection lookups introduce avoidable scaling costs? Identify the actual traversal and lookup cost, rather than requesting speculative optimization.

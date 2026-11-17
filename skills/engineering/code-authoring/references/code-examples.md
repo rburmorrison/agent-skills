@@ -377,6 +377,6 @@ with store.transaction() as transaction:
 return summarize(changes)
 ```
 
-Here `plan_updates` owns the substantial domain calculation using ordinary values; the surrounding operation owns the read, write, and commit boundary. Use the existing transaction API. Do not add a framework or extract every statement into a helper.
+Here `plan_updates` is pure: it receives ordinary values and returns `changes`, a value describing the writes, without touching storage or modifying `current`. The surrounding operation owns the read, write, and commit boundary. Tests can cover the decision with plain values and reserve the real transaction for the apply step. Use the existing transaction API. Do not add a framework or extract every statement into a helper.
 
 Watch for repeated linear searches inside a collection traversal. An ordered sequence can preserve output order while a set or map supports membership or lookup. Choose each collection for its role rather than turning a linear transformation into a quadratic one.

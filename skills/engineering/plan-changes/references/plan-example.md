@@ -40,7 +40,7 @@ Preserve existing CSV syntax, validation of individual fields, exit statuses, an
 
 New immutable types in `src/catalog/importer.py`:
 
-- `ImportPlan(inserts: tuple[Entry, ...], updates: tuple[Entry, ...])`: each identifier occurs once across both fields. Each field preserves relative input order. It contains no transaction or database handle.
+- `ImportPlan(inserts: tuple[Entry, ...], updates: tuple[Entry, ...])`: the writes to perform, decided before any is applied. Each identifier occurs once across both fields. Each field preserves relative input order. It contains no transaction or database handle.
 - `ImportResult(inserted: int, updated: int)`: nonnegative counts of successfully committed input entries, following D5. Never returned before commit succeeds.
 
 | Operation | Exact Boundary and Responsibility | I/O |
@@ -50,6 +50,20 @@ New immutable types in `src/catalog/importer.py`:
 | New `importer.plan_import` | `current: Mapping[str, Entry], incoming: tuple[Entry, ...] -> ImportPlan`; caller supplies validated, unique entries. Partition by identifier membership, with D5 for unchanged titles. | None |
 | New `store.CatalogStore.import_catalog` | `tuple[Entry, ...] -> ImportResult`; caller supplies validated entries. Own the immediate transaction, current-state read, pure planning, application, and error propagation. | SQLite |
 | Existing `cli.main` | Read UTF-8 text with existing file/decoding error handling; parse, validate, call storage, then print `Inserted {inserted}; updated {updated}` to stdout and return 0. Preserve existing failure rendering and statuses. | File and terminal |
+
+Data flow, with effectful steps marked `[effect]`:
+
+```text
+[effect] cli reads FILE                     -> str
+parse_catalog(text)                         -> tuple[InputRow, ...]
+validate_catalog(rows)                      -> tuple[Entry, ...]
+[effect] import_catalog reads current state -> Mapping[str, Entry]   (inside the transaction)
+plan_import(current, incoming)              -> ImportPlan
+[effect] import_catalog applies the plan    -> ImportResult          (same transaction, then commit)
+[effect] cli prints counts
+```
+
+Parsing, validation, and planning are pure, so their tests need no database. The storage operation only reads, delegates the decision to `plan_import`, and applies the resulting `ImportPlan`. The storage sequence below stays imperative because the transaction's ordering is the requirement.
 
 `importer.py` imports only the existing domain/error types and standard-library collection types. `store.py` imports the import types and pure planner; `importer.py` must not import storage. No new repository/service layer is needed.
 
@@ -100,7 +114,7 @@ The example assumes a runnable local CLI and SQLite adapter. If the real environ
 
 ## Remaining Discretion and Changes to the Plan
 
-The implementer may choose local variable names, idiomatic loops, private helper extraction, and fixture organization within these contracts. It must not choose new validation rules, change counts or statuses, relax atomicity, add abstractions or dependencies, or expand usage documentation.
+The implementer may choose local variable names, idiomatic loops, private helper extraction, and fixture organization within these contracts. It must not choose new validation rules, change counts or statuses, relax atomicity, add abstractions or dependencies, move import decisions out of the pure operations into storage or the CLI, or expand usage documentation.
 
 If investigation cannot establish the transaction guarantee, resolve that architecture with the user before finalizing the plan. If implementation later uncovers a consequential gap, explain it and ask immediately; pause dependent work, continue independent work, and amend the decision record after the answer. Do not substitute partial writes or defer the question to the final report.
 

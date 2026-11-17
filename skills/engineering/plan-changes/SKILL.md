@@ -9,7 +9,7 @@ Complete planning before implementation. Scale the work to the change: a small c
 
 ## Investigate
 
-Read applicable project instructions and the code relevant to the requested behavior. Identify the current behavior, entry points, data types, I/O owners, dependencies, and verification commands. Inspect enough surrounding code to check the proposed approach's feasibility; avoid an unrelated repository survey.
+Read applicable project instructions and the code relevant to the requested behavior. Identify the current behavior, entry points, data types, I/O owners, where state is mutated or hidden inputs such as the clock and environment are read, dependencies, and verification commands. Inspect enough surrounding code to check the proposed approach's feasibility; avoid an unrelated repository survey.
 
 Use available project context before asking for information. Distinguish established facts, user decisions, technical choices, and unresolved assumptions. Check external contracts and tool capabilities where the proposed design depends on them.
 
@@ -49,7 +49,7 @@ Make the following explicit when relevant, without imposing empty sections on sm
 - Agreed behavior, acceptance criteria, and exclusions.
 - The decision record, including answers from the conversation and task-specific overrides to the usual conventions or review cadence.
 - Existing file paths and symbols to change; distinguish proposed new locations from existing ones.
-- Concrete operation contracts as specified below, including invariants and data flow.
+- Concrete operation contracts as specified below, including invariants and the data-flow chain.
 - A documentation change map, including an explicit statement when no usage-documentation edits are planned.
 - Implementation steps, each with affected paths and symbols, concrete changes, existing mechanisms to reuse, dependencies, and acceptance criteria.
 - Meaningful behavior and failure cases with inputs and expected outcomes, plus runnable project check commands.
@@ -64,15 +64,31 @@ Make responsibility boundaries a concrete planning deliverable for non-trivial c
 
 - Its proposed function or method name, module, and responsibility.
 - Its exact boundary signature or equivalent input/result contract, including named types and fields, their meaning, and relevant constraints.
-- Whether it performs I/O, and which operation owns coordination, error handling, and any transaction or snapshot.
+- Whether it is pure or has effects: I/O, mutation of its inputs or shared state, or hidden inputs such as time, randomness, or environment. For effects, name which operation owns coordination, error handling, and any transaction or snapshot.
 - Precise validation rules, error categories and presentation, and partial-failure behavior. Include relevant parser or adapter failure families as well as domain failures; inspect the boundary implementation when needed.
 - Pseudocode where ordering or algorithm choices affect correctness.
 
-When substantial calculations would otherwise sit among I/O operations, plan a pure operation accepting ordinary values and a separate operation that coordinates external effects. Keep reads, calculations, and writes within the required consistency boundary. Choose these boundaries from the actual behavior and code; a step such as "implement storage logic" leaves that design unfinished.
+### Design Toward a Functional, Declarative Core
+
+Default to a core that states what the result is rather than scripting how to reach it, built from pure operations, with effects at named edges:
+
+- Domain values are immutable. Operations return new values instead of modifying their inputs or shared state.
+- Calculations and decisions are pure operations over ordinary values. Read hidden inputs such as the current time, randomness, environment, and configuration at the edge and pass them in.
+- Rules, schemas, and transformations are declarations where that reads more clearly: rule tables per `code-authoring`'s declarative domain rules; a dependency's declarative APIs, such as schema validation, derived argument parsing, or set-based queries, rather than hand-written loops; and mapping, filtering, and grouping expressions rather than accumulator loops.
+- When a decision determines writes, messages, or commands, represent the decision as a value describing those effects, and apply it in a separate operation (decide, then apply). When the goal is a target state, derive those effects by comparing the desired state with the current state rather than scripting each change. `ImportPlan` in [the full example](references/plan-example.md) has this shape.
+- Coordinating operations stay thin: gather inputs, call the core, apply its result, and own error handling and any transaction. Keep reads, calculations, and writes within the required consistency boundary.
+
+Imperative code remains appropriate where it is clearer or required: ordered I/O, local mutation inside one function, framework APIs built around mutable state, and measured performance needs. Do not introduce effect systems, monadic wrappers, state threaded through unrelated operations, custom rule engines or configuration languages, or combinator chains harder to read than a loop. When the plan keeps a substantial calculation or state change imperative, record the concrete reason. Choose boundaries from the actual behavior and code; a step such as "implement storage logic" leaves that design unfinished.
+
+For non-trivial changes, include a data-flow chain: the typed transformations from input to result, with each effectful step marked. Pseudocode supplements the chain where ordering affects correctness.
+
+When the change modifies existing imperative code, plan to separate the pure core of the behavior being changed from its effects, within the operations the change already touches, preserving behavior and public contracts. Explain the separation in the plan, and confirm it with the user when it changes module boundaries or public interfaces. Restructuring beyond the touched behavior is an optional improvement: propose it separately rather than including it.
 
 For each coherent family of domain rules, decide the representation per `code-authoring`'s guidance on declarative domain rules and record the concrete readability reason in the plan.
 
-Before finishing, trace a representative request and a meaningful failure through the proposed operations. Check that each responsibility has an owner and the implementer can connect their contracts without choosing the major decomposition. Connect acceptance criteria to implementation steps and verification scenarios. Check that paths and reused capabilities were inspected, consequential choices have agreement and reasons, the documentation map is bounded, and remaining discretion is only routine. Keep cohesive sequences together; do not prescribe every helper, create layers without a concrete purpose, or use function-length targets.
+### Check and Close the Plan
+
+Before finishing, trace a representative request and a meaningful failure through the proposed operations. Check that each responsibility and effect has an owner, pure operations receive their inputs explicitly, and the implementer can connect their contracts without choosing the major decomposition. Connect acceptance criteria to implementation steps and verification scenarios. Check that paths and reused capabilities were inspected, consequential choices have agreement and reasons, the documentation map is bounded, and remaining discretion is only routine. Keep cohesive sequences together; do not prescribe every helper, create layers without a concrete purpose, or use function-length targets.
 
 Every plan ends with an **Implementer Brief**: a short list (about 10 bullets at most) the implementing model reads before editing. It covers: load `code-authoring`; the documentation-map entries or "No usage-documentation edits planned."; this plan's stop-and-ask triggers (decisions deliberately left to the user, and changes that would need a plan amendment); the checks to run with expected results; the user-workflow check; and the review expectation. Restate only what this plan needs; do not copy general rules. Do not assume the same model will implement: a model switch preserves the conversation, but the plan must still state the decisions and concrete work, avoiding vague steps such as "add validation" and unresolved menus of approaches. Read [the small example](references/plan-example-small.md) for small corrections and [the full example](references/plan-example.md) for substantial changes when calibrating the necessary detail.
 
