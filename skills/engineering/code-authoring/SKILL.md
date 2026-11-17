@@ -45,14 +45,25 @@ Keep ordinary one-off conditionals, exhaustive mappings, local mutation, and ord
 
 ### Explain Steps and Decisions
 
-For every function with more than one logical step, introduce each meaningful stage with a short, imperative implementation comment and separate stages with blank lines. Sketch these stage comments before filling in the implementation, and revise them when the flow changes. Apply this to short functions too, and to distinct stages within loops or branches. A logical step is a coherent purpose, not an individual statement: collecting values and then organizing them are separate stages; sorting and deduplicating those values can form one stage. Routine buffer initialization and a final return do not automatically need their own comments.
+For every function with more than one logical step, introduce each meaningful stage with a brief, imperative implementation comment and separate stages with blank lines. The comment names the stage and, unless the code already makes it plain, why the stage exists or must happen where it does. Sketch these stage comments before filling in the implementation, and revise them when the flow changes. Apply this to short functions too, and to distinct stages within loops or branches. A logical step is a coherent purpose, not an individual statement: collecting values and then organizing them are separate stages; sorting and deduplicating those values can form one stage. Routine buffer initialization and a final return do not automatically need their own comments.
 
 A broad comment naming several distinct stages does not replace comments at their transitions. Selecting whether work is allowed and performing that work are separate stages, as are writing a heading and rendering its entries. Place each comment where its stage begins.
+
+Write every stage comment as exactly one line, within the file's line-length limit including indentation, or 80 characters when the project sets none. Put the reason in that line as a short clause (`so ...`, `because ...`, `before ...`). Check each stage comment against these rules:
+
+- **Reason source.** A reason names something the stage's own code does not show: a property of the input, a later consumer, an ordering dependency, or a failure it prevents.
+- **Grounding.** Write only a reason you can trace to the code, the plan or task, a test, or observed behavior. If you cannot say where it came from, it may be plausible but false; name the stage alone.
+- **Rejected reasons.** Drop a reason that describes the code below it, repeats the stage name in other words, or claims tidiness or correctness. Keep the stage name alone; do not invent a replacement.
+- **Deletion test.** Remove the reason clause. If a reader loses nothing, leave it removed.
+- **Overlong lines.** Cut words before cutting facts. If two facts the code cannot show still do not fit, keep the one that explains why the stage exists and drop the other. Never continue a stage comment onto a second line.
+- **Routine setup.** Initialization, unpacking, and returns that need no comment do not gain one to carry a reason.
+
+These rules can remove a reason, never a stage comment. Every stage keeps its one-line comment and the blank line above it, with or without a reason.
 
 Use step comments to make the process scannable even when individual statements are clear. Explain consequential decisions, ordering requirements, assumptions, and constraints near the relevant code, including why a check or exception is necessary. A single-step function usually needs no comment unless its rationale is otherwise unclear; a straightforward predicate or mapping remains one step regardless of its line count. Keep clear names and cohesive code, and avoid narrating every assignment or match arm. Do not fragment a coherent function merely to avoid step comments.
 
 - Use standalone single-line comments in the language's ordinary comment syntax, such as `#` or `//`. Do not use multiline or block-comment syntax for implementation comments.
-- For longer explanations, use consecutive single-line comments as one group, without blank lines between them.
+- Stage comments are always one line. Only a rationale comment on a specific decision, whose one constraint cannot be stated in a line, may use consecutive single-line comments as one group, without blank lines between them. This should be rare.
 - Put a blank line above each comment group unless it is the first content at the top of its enclosing code block. Keep the comment adjacent to the code it explains.
 - Keep API documentation syntax separate: native docstrings and documentation comments follow [the documentation reference](references/documentation.md), not these implementation-comment formatting rules.
 
@@ -63,8 +74,9 @@ See [the implementation comment examples](references/code-examples.md#implementa
 After formatting and before independent review or handoff, perform a separate readability pass on the finished source, including changed tests:
 
 1. Read each affected function and its nested blocks in execution order. Identify where the purpose changes, then check that a local stage comment marks each transition; reading only the existing comments can conceal an omitted stage.
-2. Check each comment group's preceding line and its attachment to the stage it describes. Check the smaller whitespace breaks around setup, traversal, guards, and results even where no new comment is needed.
-3. In tests, trace setup, action, assertions, and each new scenario. Correct broad or misplaced comments and missing paragraphs before reporting the work ready. Passing formatters and tests does not complete this pass.
+2. For each stage comment, confirm it is one line within the length limit, then apply the reason-source, grounding, and deletion tests above. For each reason, name where it came from; if you cannot, remove the reason and keep the stage name. Also confirm that no stage with a non-obvious constraint lacks a reason.
+3. Check each comment group's preceding line and its attachment to the stage it describes. Check the smaller whitespace breaks around setup, traversal, guards, and results even where no new comment is needed.
+4. In tests, trace setup, action, assertions, and each new scenario. Correct broad or misplaced comments and missing paragraphs before reporting the work ready. Passing formatters and tests does not complete this pass.
 
 ## Verify Behavior
 
@@ -110,7 +122,7 @@ Use no other sections, and put `---` before each section heading. Read [the hand
 1. The change stays within the agreed scope and remaining discretion; every consequential gap was asked about, not decided (Execute Within Scope, Roadblocks and Handoff).
 2. Formatting, lint, type, and behavior checks ran; results are recorded accurately, including anything not run (Verify Behavior).
 3. The changed behavior was exercised through the actual entry point, or the limitation is stated (Verify Behavior).
-4. The readability pass is done: each multistep function and test has a stage comment at every transition, with blank lines between stages (Explain Steps and Decisions).
+4. The readability pass is done: each multistep function and test has a one-line stage comment at every transition that gives the reason where the code does not, with blank lines between stages (Explain Steps and Decisions).
 5. Usage-documentation edits match the documentation map exactly; related documentation was inspected and any unplanned need was asked about ([documentation reference](references/documentation.md)).
 6. For non-trivial changes, the independent review ran; validated Blocker and Should-fix findings are fixed and affected checks rerun. Each applied Nit touches only lines this change already modifies and changes no behavior or tests; revert any that does not (Independent Review).
 7. The handoff follows the Handoff format: a bold-led summary paragraph, then only its sections, with a recommendation and why for each decision (Handoff).

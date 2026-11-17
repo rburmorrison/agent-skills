@@ -28,11 +28,11 @@ def render_failures(checks: Sequence[Check]) -> str:
         for check in failed_checks
     ]
 
-    # Put the summary first so the count precedes the details.
+    # Lead with the count so a reader can stop after one line.
     return "\n".join([summary, *details])
 ```
 
-Each comment gives the stage's purpose or a constraint the code does not state. This remains one coherent function. The simple comprehension is useful; three extra helpers would add little meaning.
+Each comment names its stage and gives a reason the code does not state. This remains one coherent function. The simple comprehension is useful; three extra helpers would add little meaning.
 
 ## Named Domain Values
 
@@ -156,20 +156,19 @@ fn prepare_text(
     bytes: &[u8],
     max_bytes: usize,
 ) -> Result<Option<&str>, std::str::Utf8Error> {
-    // Skip oversized content before scanning its encoding.
-    // This keeps validation work within the configured size limit.
+    // Skip oversized content first so validation work stays bounded.
     if bytes.len() > max_bytes {
         return Ok(None);
     }
 
-    // Validate the encoding before returning the content as text.
+    // Validate the encoding.
     let text = std::str::from_utf8(bytes)?;
 
     Ok(Some(text))
 }
 ```
 
-The size check explains both its purpose and why it precedes encoding validation. The rationale belongs beside that decision, not only in API documentation or the handoff.
+The size check explains both its purpose and why it precedes encoding validation. The encoding comment names its stage alone because the code already shows why it runs; an invented reason would only add length. The rationale belongs beside that decision, not only in API documentation or the handoff.
 
 ### Stages Inside a Loop
 
@@ -184,7 +183,7 @@ fn render_sections(sections: &[Section]) -> String {
         output.push_str(&section.title);
         output.push('\n');
 
-        // List each entry as a bullet, preserving input order.
+        // List each entry as a bullet.
         for entry in &section.entries {
             output.push_str("- ");
             output.push_str(entry);
@@ -199,7 +198,7 @@ fn render_sections(sections: &[Section]) -> String {
 }
 ```
 
-The comments identify three stages within the outer loop and state what each is for. A single comment such as "Write the heading and entries" would hide the transition into the inner loop; comment each stage where it starts. Routine buffer initialization and returning the result need no narration, but whitespace still separates them from the traversal. Keep cohesive code together instead of creating helpers solely to shorten the function or avoid comments.
+The comments identify three stages within the outer loop. Two give reasons the code cannot show; the bullet stage needs none. A single comment such as "Write the heading and entries" would hide the transition into the inner loop; comment each stage where it starts. Routine buffer initialization and returning the result need no narration, but whitespace still separates them from the traversal. Keep cohesive code together instead of creating helpers solely to shorten the function or avoid comments.
 
 ### Stage Comments Versus Narration
 
@@ -214,6 +213,38 @@ output.push('\n');
 ```
 
 Stage comments name a stage's purpose, not each statement.
+
+### Stage Reasons
+
+Three comments for the same stage:
+
+```rust
+// Merge overlapping ranges.
+
+// Merge overlapping ranges so the result is correct and clean.
+
+// Merge overlaps so later lookups can binary-search disjoint ranges.
+```
+
+The first names the stage but hides why merging must happen here. The second pads it with a generic claim. The third is one line and states the downstream dependency the code cannot show. When no such dependency or constraint exists, the first form is correct.
+
+Each of these fails a rule, and the fix keeps the stage name alone or drops the comment:
+
+```python
+# Create an empty cart; the loop below adds items to it.
+# Fails: describes the code below. Routine setup needs no comment at all.
+
+# Reject expired coupons so that only valid coupons remain.
+# Fails: restates the stage name. Use "# Reject expired coupons."
+
+# Apply discounts in a clean and consistent way.
+# Fails: claims tidiness. Use "# Apply discounts."
+
+# Apply percentage discounts before fixed ones so a fixed discount cannot push
+# the total below zero, and so receipts list them in the order customers expect.
+# Fails: two lines. Keep the fact that explains why the order matters:
+# "# Apply percentages first so fixed discounts cannot push totals below zero."
+```
 
 ### Single-Step Functions
 
@@ -255,19 +286,18 @@ for record in records:
     apply_record(record)
 ```
 
-### Longer Explanations
+### Rare Comment Groups
 
-Use consecutive single-line comments as one group, with a blank line above the group. Do not use a block comment or a standalone string for an implementation explanation:
+Even decision rationale usually fits one line:
 
 ```rust
 let boundary = buffer.len() - overlap;
 
-// Retain the overlapping suffix because a delimiter may span two chunks.
-// The next read will prepend these bytes before scanning again.
+// Keep the overlapping suffix because a delimiter may span two chunks.
 buffer.drain(..boundary);
 ```
 
-This fragment assumes `overlap` is no greater than the buffer length and that the surrounding reader scans the retained bytes with the next chunk.
+This fragment assumes `overlap` is no greater than the buffer length and that the surrounding reader scans the retained bytes with the next chunk. Use consecutive single-line comments as one group only for a decision whose single constraint cannot be stated in one line, never for a stage comment, and never a block comment or a standalone string.
 
 ### API Documentation Syntax
 
