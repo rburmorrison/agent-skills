@@ -198,6 +198,30 @@ class RenderTests(unittest.TestCase):
         self.assertIn(report_css, report)
         self.assertIn('<body data-theme="report" data-appearance="system">', report)
 
+    def test_hexfield_theme_embeds_its_font_styles_and_field_script(self) -> None:
+        # Render the same content in the plain and hexfield sets.
+        plain = Renderer({"title": "Field"}, FIXTURES).render()
+        hexfield = Renderer({"title": "Field", "theme": "hexfield"}, FIXTURES).render()
+
+        # Read the assets only the hexfield set should carry.
+        inter = base64.b64encode(
+            (ASSETS / "fonts" / "Inter.woff2").read_bytes()[:3000]
+        ).decode()
+        css = (ASSETS / "themes" / "hexfield.css").read_text(encoding="utf-8")
+        script = (ASSETS / "hexfield.min.js").read_text(encoding="utf-8").strip()
+
+        # Verify that hexfield embeds Inter, its stylesheet, and its field script.
+        self.assertIn(inter, hexfield)
+        self.assertIn("inter-OFL.txt", hexfield)
+        self.assertIn(css, hexfield)
+        self.assertIn(script, hexfield)
+        self.assertIn('<body data-theme="hexfield" data-appearance="system">', hexfield)
+
+        # Verify that other sets carry none of them.
+        self.assertNotIn(inter, plain)
+        self.assertNotIn(css, plain)
+        self.assertNotIn("ExplainerHexfield", plain)
+
     def test_accent_presets_and_custom_pairs_set_the_accent_token(self) -> None:
         # Render the default, each report preset, and a custom pair.
         def render(accent: object = None) -> str:
@@ -370,7 +394,9 @@ class RenderTests(unittest.TestCase):
         ]:
             with (
                 self.subTest(theme=theme),
-                self.assertRaisesRegex(ValueError, "theme must be plain, report"),
+                self.assertRaisesRegex(
+                    ValueError, "theme must be plain, report, hexfield"
+                ),
             ):
                 _ = Renderer({"title": "Appearance", "theme": theme}, FIXTURES).render()
 

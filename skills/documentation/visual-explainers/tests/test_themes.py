@@ -103,6 +103,8 @@ class ThemeTests(unittest.TestCase):
             ),
             ({"stylesheet": ""}, "stylesheet must be a nonempty string"),
             ({"numbered": "yes"}, "numbered must be true or false"),
+            ({"script": "../core.js"}, "script must be a .js file name"),
+            ({"script": "hexfield.css"}, "script must be a .js file name"),
             (
                 {"tokens": {"bg": ["#ffffff", "#000000"]}},
                 "tokens must include accent, button-ink, paper, wash",
@@ -125,6 +127,13 @@ class ThemeTests(unittest.TestCase):
                 self.assertRaisesRegex(ValueError, message),
             ):
                 _ = parse_theme("sample", manifest(**changes))
+
+    def test_script_is_optional_and_names_a_bundled_source(self) -> None:
+        self.assertIsNone(parse_theme("sample", manifest()).script)
+        self.assertEqual(
+            "hexfield.js",
+            parse_theme("sample", manifest(script="hexfield.js")).script,
+        )
 
     def test_presets_override_only_the_tokens_they_name(self) -> None:
         # Add a preset that changes the accent alone.

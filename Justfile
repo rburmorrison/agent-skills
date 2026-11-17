@@ -39,13 +39,14 @@ lint:
 typecheck:
     uv run --locked basedpyright
 
-# Run Python behavior tests and JavaScript build, navigation, diagram, and chart tests.
+# Run Python behavior tests and JavaScript build, navigation, diagram, chart, and hexfield tests.
 test:
     uv run --locked python -m unittest discover -s skills/documentation/visual-explainers/tests -p 'test_*.py'
     node tests/test-javascript-build.mjs
     node skills/documentation/visual-explainers/tests/test_navigation.js
     node skills/documentation/visual-explainers/tests/test_diagram_view.js
     node skills/documentation/visual-explainers/tests/test_charts.js
+    node skills/documentation/visual-explainers/tests/test_hexfield.js
 
 # Run all verification without changing source files.
 check: format-check lint typecheck check-js check-fonts test

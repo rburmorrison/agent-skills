@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { minify } from 'terser';
 
 const ASSETS = new URL('../skills/documentation/visual-explainers/assets/', import.meta.url);
-const SOURCE_NAMES = ['charts.js', 'navigation.js', 'core.js', 'diagrams.js'];
+const SOURCE_NAMES = ['charts.js', 'navigation.js', 'core.js', 'diagrams.js', 'hexfield.js'];
 
 /**
  * Remove comments and unnecessary whitespace without optimizing or renaming code.

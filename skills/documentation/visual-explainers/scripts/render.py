@@ -41,6 +41,7 @@ ASSETS = SKILL / "assets"
 THEMES = {
     "plain": ASSETS / "themes" / "plain.json",
     "report": ASSETS / "themes" / "report.json",
+    "hexfield": ASSETS / "themes" / "hexfield.json",
 }
 SHELL = ASSETS / "shell.html"
 APPEARANCES = ("system", "light", "dark")
@@ -1739,6 +1740,12 @@ class Renderer:
                 else ""
             )
         )
+
+        # Append the selected set's own behavior after the shell controller.
+        if theme.script:
+            js += "\n" + (
+                ASSETS / Path(theme.script).with_suffix(".min.js").name
+            ).read_text(encoding="utf-8")
 
         # Append reviewed custom scripts inside their existing isolated scopes.
         for file in document.get("scripts", []):

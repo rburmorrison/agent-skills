@@ -1,0 +1,334 @@
+/* Hexfield theme set: graphite surfaces over a pointer-responsive hex field. */
+body {
+  --shadow-soft: #0001;
+  --shadow: #0002;
+  --shadow-strong: #0005;
+  --backdrop: #0006;
+  --backdrop-strong: #000b;
+
+  /* Resting field lines carry their opacity: blue-gray pencil on light, faint ink on dark. */
+  --hexfield-line: light-dark(rgb(74 95 143 / 8.5%), rgb(230 232 236 / 5.6%));
+
+  /* Panels are frosted glass that floats over the field. */
+  --hexfield-panel: color-mix(in srgb, var(--paper) 66%, transparent);
+  --hexfield-panel-line: color-mix(in srgb, var(--ink) 10%, transparent);
+  --hexfield-shadow-near: light-dark(rgb(20 30 50 / 6%), rgb(0 0 0 / 30%));
+  --hexfield-shadow-far: light-dark(rgb(20 30 50 / 18%), rgb(0 0 0 / 50%));
+  --hexfield-lift: 0 1px 2px var(--hexfield-shadow-near), 0 12px 28px -8px var(--hexfield-shadow-far);
+  --hexfield-label: 500 12.5px/1.45 "Explainer Mono", ui-monospace, monospace;
+
+  /* Hexagon outline and fill masks for contents and list markers. */
+  --hexfield-hex-outline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 11'%3E%3Cpath d='M5 .6 9.3 3.05v4.9L5 10.4.7 7.95v-4.9z' fill='none' stroke='black' stroke-width='1.3'/%3E%3C/svg%3E");
+  --hexfield-hex-fill: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 11'%3E%3Cpath d='M5 0l5 2.75v5.5L5 11 0 8.25v-5.5z'/%3E%3C/svg%3E");
+}
+
+/* The field canvas sits behind every page element; its colors are read by the script. */
+.hexfield-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: var(--hexfield-line);
+  caret-color: var(--accent);
+}
+
+/* Header: frosted glass with the sectioned progress bar as its lower edge. */
+header {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom-color: transparent;
+}
+
+.brand {
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+
+.progress {
+  display: none;
+}
+
+.hexfield-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 4px;
+  height: 4px;
+  pointer-events: none;
+}
+
+/* Each segment's ends are cut at a hexagon's 60° angle. */
+.hexfield-progress span {
+  flex: 1 1 0;
+  min-width: 0;
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+  clip-path: polygon(2.3px 0, 100% 0, calc(100% - 2.3px) 100%, 0 100%);
+}
+
+.hexfield-progress i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+}
+
+.hexfield-progress .is-current i {
+  background: linear-gradient(90deg, var(--accent) 70%, color-mix(in srgb, var(--accent) 55%, var(--ink)));
+}
+
+/* Headings and the hero. */
+h1,
+h2,
+h3 {
+  font-weight: 650;
+}
+
+h1 {
+  letter-spacing: -.035em;
+}
+
+h2 {
+  letter-spacing: -.03em;
+}
+
+h3 {
+  letter-spacing: -.02em;
+}
+
+/* Contents: hexagon markers, filled for the section being read. */
+aside .contents-heading p {
+  font: var(--hexfield-label);
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+
+nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 0;
+  border-radius: 8px;
+}
+
+nav a::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 10px;
+  height: 11px;
+  background: currentColor;
+  -webkit-mask: var(--hexfield-hex-outline) center / contain no-repeat;
+  mask: var(--hexfield-hex-outline) center / contain no-repeat;
+}
+
+nav a:hover {
+  color: var(--ink);
+}
+
+nav a[aria-current] {
+  border-left: 0;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  font-weight: 650;
+}
+
+nav a[aria-current]::before {
+  -webkit-mask-image: var(--hexfield-hex-fill);
+  mask-image: var(--hexfield-hex-fill);
+}
+
+/* Bulleted lists use hexagon outlines in the accent. */
+main ul:not([class]) {
+  list-style: none;
+  padding-left: 4px;
+}
+
+main ul:not([class]) > li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+main ul:not([class]) > li::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 10px;
+  height: 11px;
+  background: var(--accent);
+  -webkit-mask: var(--hexfield-hex-outline) center / contain no-repeat;
+  mask: var(--hexfield-hex-outline) center / contain no-repeat;
+}
+
+.timeline-item::before {
+  width: 13px;
+  height: 15px;
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+/* Panels: frosted, outlined, and lifted off the field. */
+.visual,
+.card,
+.metric-card,
+.table-wrap,
+.codebox,
+.tabs,
+.alert {
+  background: var(--hexfield-panel);
+  border: 1px solid var(--hexfield-panel-line);
+  box-shadow: var(--hexfield-lift);
+  backdrop-filter: blur(8px) saturate(1.2);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+}
+
+/* Panels nested in another panel stay flat so glass doesn't stack. */
+:is(.visual, .card, .tabs, .alert) :is(.visual, .card, .metric-card, .table-wrap, .codebox, .alert) {
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.codebox {
+  border-radius: 12px;
+}
+
+.alert {
+  background: color-mix(in srgb, var(--alert-color) 7%, var(--hexfield-panel));
+  border-color: color-mix(in srgb, var(--alert-color) 30%, transparent);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.alert-title {
+  gap: 8px;
+  margin-bottom: 6px;
+  font: var(--hexfield-label);
+  font-size: 13px;
+  letter-spacing: .02em;
+}
+
+.alert-title .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.visual-label {
+  font: var(--hexfield-label);
+  font-size: 13px;
+  letter-spacing: .02em;
+  color: var(--ink);
+}
+
+.visual-label strong {
+  font-weight: 500;
+}
+
+/* Inner surfaces become tints so the glass shows through. */
+.controls,
+.disclosure-body {
+  background: color-mix(in srgb, var(--wash) 55%, transparent);
+}
+
+.codebar {
+  background: transparent;
+  border-bottom: 1px solid var(--hexfield-panel-line);
+  font: var(--hexfield-label);
+  letter-spacing: .02em;
+  color: var(--muted);
+}
+
+.codebox > .code-content {
+  background: color-mix(in srgb, var(--wash) 55%, transparent);
+}
+
+th {
+  background: color-mix(in srgb, var(--table-head) 70%, transparent);
+  font: var(--hexfield-label);
+  letter-spacing: .02em;
+  color: var(--muted);
+}
+
+tbody tr {
+  background: transparent;
+}
+
+tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--wash) 45%, transparent);
+}
+
+td {
+  border-top: 1px solid var(--hexfield-panel-line);
+}
+
+/* Captions and small labels speak in the mono face. */
+.caption,
+figcaption,
+.table-caption {
+  font: var(--hexfield-label);
+}
+
+/* A table's caption heads its panel like a label strip. */
+.table-caption {
+  caption-side: top;
+  margin: 0;
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--hexfield-panel-line);
+}
+
+.metric-label {
+  font: var(--hexfield-label);
+  letter-spacing: .02em;
+}
+
+button,
+select {
+  border-radius: 8px;
+}
+
+:not(pre) > code {
+  border-radius: 5px;
+}
+
+/* Print a white page without the field, glass, or lift. */
+@media print {
+  body {
+    --bg: white !important;
+    --paper: white !important;
+    --ink: black !important;
+    --muted: #444 !important;
+    --line: #aaa !important;
+    --wash: #eee !important;
+    --table-head: #ddd !important;
+    --hexfield-panel: white;
+    --hexfield-panel-line: #aaa;
+  }
+
+  .hexfield-canvas,
+  .hexfield-progress {
+    display: none;
+  }
+
+  .visual,
+  .card,
+  .metric-card,
+  .table-wrap,
+  .codebox,
+  .tabs,
+  .alert {
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .chart {
+    --chart-secondary: #75511c;
+    --chart-third: #28686a;
+    --chart-fourth: #8b3e62;
+    --chart-fifth: #335d8c;
+  }
+}

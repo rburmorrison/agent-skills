@@ -27,6 +27,7 @@ FONT_FAMILIES = {"sans": "Explainer Sans", "mono": "Explainer Mono"}
 """CSS family names the shell uses for each manifest font role."""
 
 _HEX = re.compile(r"#[0-9a-fA-F]{6}")
+_SCRIPT = re.compile(r"[a-z][a-z0-9-]*\.js")
 _APPEARANCES = ("light", "dark")
 
 
@@ -55,6 +56,9 @@ class Theme:
     tokens, such as shadows and the print palette, and set-specific styling."""
     fonts: tuple[FontFace, ...]
     """Embedded faces; the first sans face also supplies diagram text metrics."""
+    script: str | None
+    """Readable script in the bundled assets directory whose generated `.min.js`
+    copy runs after the shell controller, or None when the set adds no behavior."""
     numbered: bool
     """Whether documents number sections, subsections, captioned tables, and figures."""
     tokens: Mapping[str, Pair]
@@ -93,6 +97,11 @@ def parse_theme(name: str, data: object) -> Theme:
     manifest = _mapping(data, where)
     accents = _mapping(manifest.get("accents"), where + " accents")
     stylesheet = _string(manifest.get("stylesheet"), where + " stylesheet")
+    script = manifest.get("script")
+    if script is not None and not (
+        isinstance(script, str) and _SCRIPT.fullmatch(script)
+    ):
+        raise ValueError(where + " script must be a .js file name")
     numbered = manifest.get("numbered", False)
     if not isinstance(numbered, bool):
         raise ValueError(where + " numbered must be true or false")
@@ -137,6 +146,7 @@ def parse_theme(name: str, data: object) -> Theme:
         name=name,
         stylesheet=stylesheet,
         fonts=tuple(fonts),
+        script=script,
         numbered=numbered,
         tokens=tokens,
         default_accent=default,

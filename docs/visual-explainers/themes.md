@@ -8,8 +8,9 @@ The theme is fixed when the document is built. Readers can switch only between S
 | --- | --- | --- |
 | `plain` (default) | `graphite` (default) | General explainers, guides, and walkthroughs |
 | `report` | `blue` (default), `rust` | Formal reports and analyses that refer to numbered sections, tables, and figures |
+| `hexfield` | `blue` (default) | Technical explainers and walkthroughs with an app-like, interactive feel |
 
-Both themes also accept a custom accent as a light and dark color pair, such as "a green accent of `#2f6f3e` in light mode and `#8fd19e` in dark mode." The builder rejects a pair that doesn't keep 4.5:1 contrast with the page, panels, and button text in both appearances.
+Every theme also accepts a custom accent as a light and dark color pair, such as "a green accent of `#2f6f3e` in light mode and `#8fd19e` in dark mode." The builder rejects a pair that doesn't keep 4.5:1 contrast with the page, panels, and button text in both appearances.
 
 ## Plain
 
@@ -34,3 +35,11 @@ A restrained report style using IBM Plex Sans and IBM Plex Mono. It numbers sect
 | Light | Dark |
 | --- | --- |
 | ![Report theme with the rust accent in light mode](images/report-rust-light.png) | ![Report theme with the rust accent in dark mode](images/report-rust-dark.png) |
+
+## Hexfield
+
+Cool graphite surfaces, Inter text, and JetBrains Mono labels. Panels are frosted glass that float over a faint field of hexagons along the page sides and behind the title. Hovering lights nearby cells, dragging across empty space leaves a fading trail, and clicking empty space sends a ripple; with reduced motion, a click glows in place instead. The reading-progress bar is split into one segment per section. Printing drops the field and glass.
+
+| Light | Dark |
+| --- | --- |
+| ![Hexfield theme with the blue accent in light mode](images/hexfield-blue-light.png) | ![Hexfield theme with the blue accent in dark mode](images/hexfield-blue-dark.png) |

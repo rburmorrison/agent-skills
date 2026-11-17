@@ -81,7 +81,8 @@ merchantability or fitness for a particular purpose.
 The bundled [Manrope](skills/documentation/visual-explainers/assets/fonts/manrope-OFL.txt),
 [JetBrains Mono](skills/documentation/visual-explainers/assets/fonts/jetbrainsmono-OFL.txt),
 [IBM Plex Sans](skills/documentation/visual-explainers/assets/fonts/ibmplexsans-OFL.txt),
-and [IBM Plex Mono](skills/documentation/visual-explainers/assets/fonts/ibmplexmono-OFL.txt)
+[IBM Plex Mono](skills/documentation/visual-explainers/assets/fonts/ibmplexmono-OFL.txt),
+and [Inter](skills/documentation/visual-explainers/assets/fonts/inter-OFL.txt)
 fonts retain their SIL Open Font License 1.1 terms. The bundled
 [Pygments archive](skills/documentation/visual-explainers/scripts/vendor/pygments-2.21.0.zip)
 retains its BSD license and includes its upstream license and author notices.
