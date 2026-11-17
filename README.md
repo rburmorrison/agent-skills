@@ -16,7 +16,7 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 
 **Documentation**:
 
-- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone, offline HTML explainers from a JSON document using built-in components, diagrams, interactive charts, and math. A Python 3.11+ builder embeds all assets; the user chooses the content and structure.
+- [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone, offline HTML explainers from a JSON document using built-in components, diagrams, interactive charts, and math. A Python 3.11+ builder embeds all assets; the user chooses the content, structure, and [theme](docs/visual-explainers/themes.md).
 
 ## Usage
 

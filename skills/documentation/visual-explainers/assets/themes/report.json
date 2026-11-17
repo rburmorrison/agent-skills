@@ -39,8 +39,8 @@
       "#9ba3ad"
     ],
     "accent": [
-      "#a14a1f",
-      "#f0a477"
+      "#1f4f8f",
+      "#8db4ec"
     ],
     "line": [
       "#dcdfe3",
@@ -79,12 +79,12 @@
       "#f19b9b"
     ],
     "chart-secondary": [
-      "#2b7f73",
-      "#6cc4b6"
+      "#c0622a",
+      "#eba06a"
     ],
     "chart-third": [
-      "#4a6fa5",
-      "#8fb0dc"
+      "#2b7f73",
+      "#6cc4b6"
     ],
     "chart-fourth": [
       "#8a55a6",
@@ -144,21 +144,21 @@
     ]
   },
   "accents": {
-    "default": "rust",
+    "default": "blue",
     "presets": {
-      "rust": {},
-      "blue": {
+      "blue": {},
+      "rust": {
         "accent": [
-          "#1f4f8f",
-          "#8db4ec"
+          "#a14a1f",
+          "#f0a477"
         ],
         "chart-secondary": [
-          "#c0622a",
-          "#eba06a"
-        ],
-        "chart-third": [
           "#2b7f73",
           "#6cc4b6"
+        ],
+        "chart-third": [
+          "#4a6fa5",
+          "#8fb0dc"
         ]
       }
     }

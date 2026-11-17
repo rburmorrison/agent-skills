@@ -211,8 +211,8 @@ class RenderTests(unittest.TestCase):
         blue = render("blue")
         custom = render({"light": "#5C6420", "dark": "#c2c97a"})
 
-        # Verify that the default is the rust preset and blue replaces it.
-        self.assertEqual(default, rust)
+        # Verify that the default is the blue preset and rust differs from it.
+        self.assertEqual(default, blue)
         self.assertIn("--accent:light-dark(#a14a1f,#f0a477)", rust)
         self.assertIn("--accent:light-dark(#1f4f8f,#8db4ec)", blue)
         self.assertIn("--chart-secondary:light-dark(#c0622a,#eba06a)", blue)
@@ -220,12 +220,12 @@ class RenderTests(unittest.TestCase):
 
         # Verify that a custom pair replaces only the accent, normalized to lowercase.
         self.assertIn("--accent:light-dark(#5c6420,#c2c97a)", custom)
-        self.assertIn("--chart-secondary:light-dark(#2b7f73,#6cc4b6)", custom)
+        self.assertIn("--chart-secondary:light-dark(#c0622a,#eba06a)", custom)
 
     def test_invalid_accents_are_rejected(self) -> None:
         for accent, message in [
-            ("green", "accent must be rust, blue, or"),
-            ("graphite", "accent must be rust, blue, or"),
+            ("green", "accent must be blue, rust, or"),
+            ("graphite", "accent must be blue, rust, or"),
             ({"light": "#fff", "dark": "#000000"}, "accent must be"),
             ({"light": "#5c6420"}, "accent must be"),
             (
