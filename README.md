@@ -48,6 +48,8 @@ npx skills add rburmorrison/agent-skills --global --skill visual-explainers
 
 Add the section in [engineering-workflow.md](guidance/engineering-workflow.md) to a global or project `AGENTS.md` or `CLAUDE.md`.
 
+`plan-changes` delegates code exploration to your harness's exploration subagent when it has one. This lowers cost only when that agent runs on a cheaper model than the planner. Claude Code, Codex, and OpenCode do not run it on a low-cost model by default, so set the agent's model in your harness configuration.
+
 ## Development
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/),

@@ -4,7 +4,7 @@ For changes beyond a small, unambiguous correction, plan before editing. Use `pl
 
 Before editing any file, including for a small fix, invoke the `code-authoring` skill and follow it through verification and handoff. When continuing an agreed plan, including after a model switch or in a new session, read its plan file when one exists and follow the plan and its Implementer Brief, and ask immediately about any consequential gap instead of deciding it.
 
-Use `setup-project` when establishing a new project. For non-trivial changes, run one independent review in a fresh-context subagent using `review-changes`.
+Use `setup-project` when establishing a new project. Run one independent review in a fresh-context subagent using `review-changes`, unless the change is small as `code-authoring` defines.
 
 Verify changes as a user would, through the actual CLI, UI, API, or caller when feasible, and report what remains unverified. Never claim a check passed unless it ran.
 

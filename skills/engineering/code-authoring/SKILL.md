@@ -120,9 +120,14 @@ Lint and type-check suppressions must be rare, narrowly scoped, and accompanied 
 
 **When**
 
-- For non-trivial changes, the default is one quick, pointed review of the completed change by a fresh-context subagent running on the implementing model, without an upgrade. A separate review with a more capable model is the developer's choice.
-- Behavioral changes involving interacting components, public contracts, persistence, or significant refactoring normally qualify. Pure formatting and typo corrections usually do not.
-- Honor an explicit task or invoked workflow's review cadence instead; do not append the default review to that workflow.
+- A small change needs no independent review; the Before Handoff checklist is its check. A change is small when all of these hold:
+  1. It is confined to one function or one cohesive block, or to comments, documentation, or configuration values.
+  2. It changes no public contract, persisted data or format, or interaction between components.
+  3. Where the change alters behavior, a check that actually ran, a test or an entry-point run, exercises it.
+  4. No consequential question came up during the work.
+- Every other change gets, by default, one quick, pointed review of the completed change by a fresh-context subagent running on the implementing model, without an upgrade. A separate review with a more capable model is the developer's choice.
+- When the plan states the review expectation, follow it. If a change planned as small stops meeting a condition, review it.
+- An explicit request for a review overrides the small-change rule. Honor an explicit task or invoked workflow's review cadence instead of this default; do not append the default review to that workflow.
 
 **Starting the reviewer**
 
@@ -175,6 +180,6 @@ When the plan is a `.plans/` file, change its `Status:` line to `complete` once 
 3. The changed behavior was exercised through the actual entry point, or the limitation is stated (Verify Behavior).
 4. The readability pass is done: each multistep function and test has a one-line stage comment at every transition that gives the reason where the code does not, with blank lines between stages (Explain Steps and Decisions).
 5. Usage-documentation edits match the documentation map exactly; related documentation was inspected and any unplanned need was asked about ([documentation reference](references/documentation.md)).
-6. For non-trivial changes, the independent review ran; validated Blocker and Should-fix findings are fixed and affected checks rerun. Each applied Nit touches only lines this change already modifies and changes no behavior or tests; revert any that does not (Independent Review).
+6. Unless no review is required (Independent Review), the independent review ran; validated Blocker and Should-fix findings are fixed and affected checks rerun. Each applied Nit touches only lines this change already modifies and changes no behavior or tests; revert any that does not (Independent Review).
 7. The handoff follows the Handoff format: the `You asked:` line, a bold-led summary paragraph, then only its sections. Every invariant and failure mode the plan named appears with an `Exercised by` line, and each decision has a recommendation and why (Handoff).
 8. A plan saved under `.plans/` has its answered questions in the decision record, and is marked `Status: complete` when no decision awaits and nothing is blocked (Roadblocks and Handoff, Handoff).
