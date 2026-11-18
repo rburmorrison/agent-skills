@@ -2,7 +2,7 @@
 
 Start the reviewer without inheriting the implementation conversation. The implementing agent should supply this brief instead:
 
-- The requested outcome, agreed plan, decision record with reasons and agreement, documentation change map, remaining implementation discretion, and exclusions.
+- The plan file's path when the plan was saved. Otherwise the requested outcome, agreed plan, decision record with reasons and agreement, named invariants and failure modes, documentation change map, remaining implementation discretion, and exclusions.
 - The repository or workspace location and an unambiguous base and current state, including new files.
 - Relevant interfaces and source locations needed to understand the change.
 - Checks actually run, their results, and known limitations; distinguish tests from actual user-workflow execution and observed application state.

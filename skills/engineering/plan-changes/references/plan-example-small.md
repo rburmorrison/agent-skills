@@ -2,6 +2,10 @@
 
 This is a completed illustrative plan for a small fix in a fictional Python CLI repository. Paths, symbols, and commands are assumed investigation findings; a real planner must inspect its project and replace them with verified facts.
 
+The plan has one implementation step, so it stays in the chat and no file is written.
+
+Goal: Make `report --since DATE` include entries dated exactly on DATE.
+
 ## Request and Investigation
 
 Request: "`report --since DATE` drops entries dated exactly on DATE. Fix it."
@@ -15,6 +19,10 @@ None consequential: the intended behavior is already documented, and no other ca
 ## Change
 
 In `select_entries`, replace `entry.date > since` with `entry.date >= since`. Add one case to `tests/test_report.py`: an entry dated exactly on `since` is included. Exit statuses, output format, and the no-bound path stay unchanged.
+
+## Invariants and Failure Modes
+
+- I1: An entry dated on the `--since` date appears in the report.
 
 ## Checks
 

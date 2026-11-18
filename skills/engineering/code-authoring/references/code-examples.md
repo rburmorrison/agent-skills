@@ -380,3 +380,82 @@ return summarize(changes)
 Here `plan_updates` is pure: it receives ordinary values and returns `changes`, a value describing the writes, without touching storage or modifying `current`. The surrounding operation owns the read, write, and commit boundary. Tests can cover the decision with plain values and reserve the real transaction for the apply step. Use the existing transaction API. Do not add a framework or extract every statement into a helper.
 
 Watch for repeated linear searches inside a collection traversal. An ordered sequence can preserve output order while a set or map supports membership or lookup. Choose each collection for its role rather than turning a linear transformation into a quadratic one.
+
+## Decide, Then Apply
+
+A cleanup that reads the clock, decides, and writes in one loop cannot be tested without a store, and judges each session at a slightly different instant:
+
+```python
+def expire_sessions(store: SessionStore) -> None:
+    for session in store.load_sessions():
+        if session.last_seen < datetime.now(UTC) - IDLE_LIMIT:
+            store.delete(session.identifier)
+```
+
+Return the decision as a value, and apply it separately:
+
+```python
+@dataclass(frozen=True)
+class Expiry:
+    identifiers: tuple[str, ...]
+
+
+def plan_expiry(sessions: Sequence[Session], now: datetime) -> Expiry:
+    cutoff = now - IDLE_LIMIT
+
+    return Expiry(
+        tuple(
+            session.identifier
+            for session in sessions
+            if session.last_seen < cutoff
+        )
+    )
+
+
+def expire_sessions(store: SessionStore, now: datetime) -> Expiry:
+    # Decide from one read of the store, before any session is deleted.
+    expiry = plan_expiry(store.load_sessions(), now)
+
+    # Apply the decision.
+    for identifier in expiry.identifiers:
+        store.delete(identifier)
+
+    return expiry
+```
+
+`plan_expiry` is pure: the caller passes the sessions and the time, and a test needs only plain values. `Expiry` describes the writes without performing them, so the caller can log it, show it in a dry run, or apply it. `expire_sessions` stays thin and owns both effects. Its loop remains a loop because it performs ordered writes.
+
+## Expressions over Accumulator Loops
+
+An accumulator makes the reader run the loop to learn what the result is:
+
+```python
+overdue = []
+for invoice in invoices:
+    if invoice.due < today and not invoice.paid:
+        overdue.append(invoice.number)
+overdue.sort()
+```
+
+An expression states the result directly:
+
+```python
+overdue = sorted(
+    invoice.number
+    for invoice in invoices
+    if invoice.due < today and not invoice.paid
+)
+```
+
+Keep the loop when the expression would be harder to read. Totals per customer need a sort and a grouping pass as an expression; a local accumulator inside one function is clearer, and nothing outside the function can see the mutation:
+
+```python
+def paid_totals(orders: Sequence[Order]) -> dict[str, int]:
+    totals: defaultdict[str, int] = defaultdict(int)
+
+    for order in orders:
+        if order.paid:
+            totals[order.customer] += order.amount_cents
+
+    return dict(totals)
+```

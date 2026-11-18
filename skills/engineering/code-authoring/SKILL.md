@@ -7,7 +7,7 @@ description: Write or modify code, tests, interface documentation, READMEs, help
 
 Use for new code, features, fixes, refactors, and source or usage documentation edits. For planning or review tasks, apply the relevant standards without executing the authoring workflow.
 
-Use the agreed plan and decisions from the conversation. If consequential behavior or scope remains unresolved, complete planning with the user one question at a time before editing; use `plan-changes` if available. A small unambiguous task needs only proportionate planning.
+Use the agreed plan and decisions: the `.plans/` file named in the conversation or task when one exists, otherwise the plan held by the harness or the conversation. If consequential behavior or scope remains unresolved, complete planning with the user one question at a time before editing; use `plan-changes` if available. A small unambiguous task needs only proportionate planning.
 
 ## Documentation
 
@@ -15,13 +15,39 @@ Source comments and API doc comments/docstrings are allowed for affected code. E
 
 ## Execute Within Scope
 
-Choose only routine local implementation details within the plan's remaining discretion, preserving agreed behavior, public contracts, architectural boundaries, and scope. Do not invent missing validation rules, error policies, compatibility decisions, or architecture and call them implementation details. Follow the plan's contracts and rationale; when a consequential gap or conflict appears, use the immediate-question policy below. Necessary supporting changes must serve the requested outcome. Keep optional cleanup, new features, dependency upgrades, and reorganizations outside the change unless planned.
+**Scope**
 
-Build toward a functional, declarative core with effects at explicit edges. Concentrate filesystem, network, database, clock, randomness, and environment access in coordinating operations, and pass ordinary values into pure transformations and decisions while preserving transaction and snapshot boundaries. Prefer immutable domain values and operations that return new values over mutating inputs or shared state; when a decision determines writes or commands, return it as a value and apply it separately. State what a result is rather than how to build it where that reads more clearly: mapping, filtering, and grouping expressions over accumulator loops, a dependency's declarative APIs over hand-written procedures, and declarative domain rules as described below. Local mutation inside one function, ordered I/O, and framework APIs built around mutable state remain direct when clearer. Follow the plan's pure and effectful contracts; moving a decision into an effectful operation is a consequential change. Use the project's existing mechanisms; introduce abstractions only for a concrete responsibility or dependency, and avoid functional machinery such as effect wrappers that makes the code harder to read.
+- Choose only routine local implementation details within the plan's remaining discretion, preserving agreed behavior, public contracts, architectural boundaries, and scope.
+- Do not invent missing validation rules, error policies, compatibility decisions, or architecture and call them implementation details.
+- Follow the plan's contracts and rationale. When a consequential gap or conflict appears, use the immediate-question policy under Roadblocks and Handoff.
+- Necessary supporting changes must serve the requested outcome. Keep optional cleanup, new features, dependency upgrades, and reorganizations outside the change unless planned.
 
-Before implementing behavior an existing dependency may provide, inspect its supported-version documentation or implementation. Prefer its built-in behavior and configuration over custom parsing, help generation, layout arithmetic, or equivalent machinery. Keep custom code for a demonstrated application requirement or contract gap, and explain that gap near the adapter. A wrapper must add a cohesive responsibility, not merely rename or reproduce dependency behavior. Do not add a dependency merely to avoid a small cohesive operation. If reuse would change an agreed contract, resolve that choice before switching; missing evidence is not proof that replacement is necessary.
+**Functional, declarative core**
 
-Manage dependencies through the project's package manager. Use actual package information and supported-version constraints; do not guess versions or hand-edit dependency entries as a shortcut. Respect existing workspace dependencies and lockfile policy. If the needed tool is unavailable, apply the blocker policy instead of silently bypassing it.
+- Build toward a functional, declarative core with effects at explicit edges.
+- Concentrate filesystem, network, database, clock, randomness, and environment access in coordinating operations. Pass ordinary values into pure transformations and decisions while preserving transaction and snapshot boundaries.
+- Prefer immutable domain values and operations that return new values over mutating inputs or shared state.
+- When a decision determines writes or commands, return it as a value and apply it separately. See [decide, then apply](references/code-examples.md#decide-then-apply).
+- State what a result is rather than how to build it where that reads more clearly: mapping, filtering, and grouping expressions over accumulator loops, a dependency's declarative APIs over hand-written procedures, and declarative domain rules as described below. See [expressions over accumulator loops](references/code-examples.md#expressions-over-accumulator-loops).
+- Local mutation inside one function, ordered I/O, and framework APIs built around mutable state remain direct when clearer. Imperative code is also appropriate for performance needs that are measured or a stated hot path, where the plan names the path, the data size, and the cost avoided.
+- Follow the plan's pure and effectful contracts; moving a decision into an effectful operation is a consequential change.
+- Use the project's existing mechanisms. Introduce abstractions only for a concrete responsibility or dependency, and avoid functional machinery such as effect wrappers that makes the code harder to read.
+
+**Existing dependencies**
+
+- Before implementing behavior an existing dependency may provide, inspect its supported-version documentation or implementation.
+- Prefer its built-in behavior and configuration over custom parsing, help generation, layout arithmetic, or equivalent machinery.
+- Keep custom code for a demonstrated application requirement or contract gap, and explain that gap near the adapter.
+- A wrapper must add a cohesive responsibility, not merely rename or reproduce dependency behavior.
+- Do not add a dependency merely to avoid a small cohesive operation.
+- If reuse would change an agreed contract, resolve that choice before switching; missing evidence is not proof that replacement is necessary.
+
+**Dependency management**
+
+- Manage dependencies through the project's package manager.
+- Use actual package information and supported-version constraints; do not guess versions or hand-edit dependency entries as a shortcut.
+- Respect existing workspace dependencies and lockfile policy.
+- If the needed tool is unavailable, apply the blocker policy instead of silently bypassing it.
 
 ## Shape Readable Code
 
@@ -92,17 +118,37 @@ Lint and type-check suppressions must be rare, narrowly scoped, and accompanied 
 
 ## Independent Review
 
-For non-trivial changes, the default review is one quick, pointed review of the completed change by a fresh-context subagent running on the implementing model, without an upgrade; a separate review with a more capable model is the developer's choice. Honor an explicit task or invoked workflow's review cadence instead; do not append the default review to that workflow. Disable conversation-history inheritance when starting a reviewer: for tools exposing `fork_turns`, use `"none"`. Supply a self-contained review brief instead. Behavioral changes involving interacting components, public contracts, persistence, or significant refactoring normally qualify. Pure formatting and typo corrections usually do not.
+**When**
 
-Give the reviewer the agreed plan and decisions, actual final diff including new files, relevant code, and verification results. Use `review-changes` if available. Do not supply the implementer's self-assessment or a desired verdict. Use the task's chosen reviewer model; if none was chosen, use the environment's normal inheritance rather than guessing model IDs or upgrading silently.
+- For non-trivial changes, the default is one quick, pointed review of the completed change by a fresh-context subagent running on the implementing model, without an upgrade. A separate review with a more capable model is the developer's choice.
+- Behavioral changes involving interacting components, public contracts, persistence, or significant refactoring normally qualify. Pure formatting and typo corrections usually do not.
+- Honor an explicit task or invoked workflow's review cadence instead; do not append the default review to that workflow.
 
-Assess findings against the code. Fix validated Blocker and Should-fix findings within scope and rerun affected checks. Fix a validated Nit only when the fix touches only lines this change already modifies, changes no behavior or test expectations, and needs no new file, dependency, or user decision. Applying a Nit that fails any condition is out of scope, however small or worthwhile it seems; raise any other Nit you recommend making as a decision in the handoff, and drop the rest. Nits never block completion. Request a targeted follow-up autonomously only when a material change to logic, interfaces, or component interactions leaves a concrete risk uncovered by the existing review and checks. State that risk and the follow-up scope before requesting it. A second full review of the same scope is exceptional and appropriate when substantial rework invalidates the first review. Resolved findings and passing required checks normally finish the review; do not seek repeated clean verdicts or leave a known defect unaddressed solely to satisfy a round count.
+**Starting the reviewer**
 
-If reviewer capability is unavailable, perform a distinct self-review and disclose that independent review was unavailable. A self-review must not be described as independent.
+- Disable conversation-history inheritance: for tools exposing `fork_turns`, use `"none"`. Supply a self-contained review brief instead.
+- Give the reviewer the agreed plan and decisions (the plan file's path when one exists), the actual final diff including new files, relevant code, and verification results. Use `review-changes` if available.
+- Do not supply the implementer's self-assessment or a desired verdict.
+- Use the task's chosen reviewer model. If none was chosen, use the environment's normal inheritance rather than guessing model IDs or upgrading silently.
+- If reviewer capability is unavailable, perform a distinct self-review and disclose that independent review was unavailable. A self-review must not be described as independent.
+
+**After the review**
+
+- When findings return, read [handling review findings](references/review-findings.md) before changing anything. It owns which findings to fix, how Nits are limited, and when a follow-up review is warranted.
 
 ## Roadblocks and Handoff
 
-Handle routine local obstacles autonomously. When a missing consequential decision, changed requirement, or unplanned usage-documentation edit is discovered, explain the concrete issue, options, and recommendation and ask the user immediately, one question at a time. Pause dependent work and continue useful independent work. Do not reopen settled decisions without new evidence, silently narrow requirements, or wait until handoff to reveal the choice. Record the answer and reason in the plan before resuming dependent work. If an answer or capability remains unavailable, clearly mark the affected work incomplete and report what is needed.
+Handle routine local obstacles autonomously. When a missing consequential decision, changed requirement, or unplanned usage-documentation edit is discovered, ask the user immediately, one question at a time. The question always goes to the user; do not try to consult another model. Write it so the user can answer without opening the code:
+
+1. Open with `You asked: ` and the plan's goal sentence, then state the concrete issue in one sentence.
+2. Show the current code or text: the file, the symbol or section, a short excerpt, and what it does.
+3. Compare the options on one concrete input or scenario.
+4. State what each option changes for the user and for the code.
+5. End with your recommendation and its downside, labelled `Implementer's recommendation`.
+
+When the plan is a `.plans/` file, add the question and the excerpt under its `## Open Questions` before asking, so the evidence is on record for whoever helps the user answer. Record the answer and reason in the plan's decision record before resuming dependent work, and remove the open question. With no `.plans/` file, record the question, answer, and reason in the conversation.
+
+Pause dependent work and continue useful independent work. Do not reopen settled decisions without new evidence, silently narrow requirements, or wait until handoff to reveal the choice. If an answer or capability remains unavailable, clearly mark the affected work incomplete and report what is needed.
 
 Installation, commits, publishing, and other external actions require authorization from the task; this workflow does not supply it.
 
@@ -110,12 +156,17 @@ Installation, commits, publishing, and other external actions require authorizat
 
 After fixes and verification, write the handoff in this format, even when the work stops on an open question:
 
-- **Summary:** a short paragraph with no heading, label, or bullets. Open with a bold sentence stating what changed, such as `**Imports now skip blank lines instead of failing.**`, not a `**Summary:**` label, then say why and name any gap that affects confidence. It may mention the review.
-- **`## Invariants`** and **`## Failure Modes and Recovery`:** one `###` subheading per guarantee or failure, each opening with a bold sentence and supported by a short source excerpt and verified link where available.
-- **`## Verification and Remaining Uncertainty`:** if everything passed, one sentence naming what ran and whether planned documentation was updated. Detail only failed or skipped checks, unexercised behavior, and blocked work. No tables or lists of tests.
-- **`## Decisions Awaiting You`:** only when decisions remain. Number each item: a bold title naming the choice, the current state and what each option would change, then a recommendation and why. If you recommend keeping things as they are, leave the item out; for example, drop "I recommend leaving the duplicate parser as it is." Plan deviations and unresolved findings go here, described as choices about the code, never by review labels such as Nit or Should-fix.
+- **Request:** the first line is `You asked: ` followed by the plan's goal sentence. With no plan, restate the request in one sentence.
+- **Summary:** a short paragraph with no heading, label, or bullets. Open with a bold sentence stating what changed, such as `**Imports now skip blank lines instead of failing.**`, not a `**Summary:**` label, then say why and name any gap that affects confidence. Give formatting, lint, type, and test results and whether planned documentation was updated as one clause. It may mention the review.
+- **`## Invariants`** and **`## Failure Modes and Recovery`:** one `###` subheading per guarantee or failure, each opening with a bold sentence and supported by a short source excerpt and verified link where available, then an `**Exercised by:**` line naming the test or observed run that covers it, or `not exercised`. Cover every invariant and failure mode the plan named, and mark any other `(not in the plan)`.
+- **`## Observed Behavior`:** the commands or actions actually run through the application's entry point, each with its trimmed, verbatim output. Omit it when the workflow could not run.
+- **`## Not Verified`:** only when something is unverified: a failed or skipped check, a `not exercised` item, a workflow that could not run, or blocked work. For each, say what was not checked, why, what could go wrong, and how to check it.
+- **`## Choices Made Without Asking`:** only when there are any. One line each: the choice and its reason. List a choice when a reasonable alternative existed and the plan did not settle it; omit local names and syntax.
+- **`## Decisions Awaiting You`:** only when decisions remain. Number each item: a bold title naming the choice, the current state and what each option would change, then a recommendation and why. If you recommend keeping things as they are, leave the item out; for example, drop "I recommend leaving the duplicate parser as it is." The exception is a plan deviation you already made: always list it, even when you recommend keeping it. Plan deviations and unresolved findings go here, described as choices about the code, never by review labels such as Nit or Should-fix.
 
 Use no other sections, and put `---` before each section heading. Read [the handoff guidance](references/handoff.md) for coverage, evidence, links, and examples.
+
+When the plan is a `.plans/` file, change its `Status:` line to `complete` once no decision awaits and nothing is blocked. Never delete a plan file.
 
 ## Before Handoff
 
@@ -125,4 +176,5 @@ Use no other sections, and put `---` before each section heading. Read [the hand
 4. The readability pass is done: each multistep function and test has a one-line stage comment at every transition that gives the reason where the code does not, with blank lines between stages (Explain Steps and Decisions).
 5. Usage-documentation edits match the documentation map exactly; related documentation was inspected and any unplanned need was asked about ([documentation reference](references/documentation.md)).
 6. For non-trivial changes, the independent review ran; validated Blocker and Should-fix findings are fixed and affected checks rerun. Each applied Nit touches only lines this change already modifies and changes no behavior or tests; revert any that does not (Independent Review).
-7. The handoff follows the Handoff format: a bold-led summary paragraph, then only its sections, with a recommendation and why for each decision (Handoff).
+7. The handoff follows the Handoff format: the `You asked:` line, a bold-led summary paragraph, then only its sections. Every invariant and failure mode the plan named appears with an `Exercised by` line, and each decision has a recommendation and why (Handoff).
+8. A plan saved under `.plans/` has its answered questions in the decision record, and is marked `Status: complete` when no decision awaits and nothing is blocked (Roadblocks and Handoff, Handoff).

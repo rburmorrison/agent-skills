@@ -46,6 +46,7 @@ Provide this context with the question before requesting an answer, including wh
 
 Make the following explicit when relevant, without imposing empty sections on small tasks:
 
+- A one-sentence goal stating the requested outcome in the user's terms. Questions and the handoff repeat it, so write it to stand alone.
 - Agreed behavior, acceptance criteria, and exclusions.
 - The decision record, including answers from the conversation and task-specific overrides to the usual conventions or review cadence.
 - Existing file paths and symbols to change; distinguish proposed new locations from existing ones.
@@ -54,6 +55,8 @@ Make the following explicit when relevant, without imposing empty sections on sm
 - Implementation steps, each with affected paths and symbols, concrete changes, existing mechanisms to reuse, dependencies, and acceptance criteria.
 - Meaningful behavior and failure cases with inputs and expected outcomes, plus runnable project check commands.
 - A feasible user-workflow check: setup, actual application entry point, actions, expected visible results and state, and cleanup. Record known obstacles to execution.
+- The invariants and failure modes the change must establish, each as one numbered sentence (`I1`, `F1`). An invariant is something always or never true after the change, for every input. A failure mode is what goes wrong, what the user sees, what state is left, and how to recover. The handoff reports against this list.
+- The material routine choices you made without asking, one line each with its reason, so the user can spot a choice that should have been a question. This list never holds a consequential choice; those are asked.
 - Remaining routine discretion, such as incidental helper extraction and idiomatic syntax.
 - Independent review coverage for non-trivial changes and any known verification limitations.
 - An Implementer Brief closing the plan, as described below.
@@ -66,6 +69,7 @@ Make responsibility boundaries a concrete planning deliverable for non-trivial c
 - Its exact boundary signature or equivalent input/result contract, including named types and fields, their meaning, and relevant constraints.
 - Whether it is pure or has effects: I/O, mutation of its inputs or shared state, or hidden inputs such as time, randomness, or environment. For effects, name which operation owns coordination, error handling, and any transaction or snapshot.
 - Precise validation rules, error categories and presentation, and partial-failure behavior. Include relevant parser or adapter failure families as well as domain failures; inspect the boundary implementation when needed.
+- A stage outline: the operation's ordered stage names, which the implementer turns into its stage comments.
 - Pseudocode where ordering or algorithm choices affect correctness.
 
 ### Design Toward a Functional, Declarative Core
@@ -78,7 +82,7 @@ Default to a core that states what the result is rather than scripting how to re
 - When a decision determines writes, messages, or commands, represent the decision as a value describing those effects, and apply it in a separate operation (decide, then apply). When the goal is a target state, derive those effects by comparing the desired state with the current state rather than scripting each change. `ImportPlan` in [the full example](references/plan-example.md) has this shape.
 - Coordinating operations stay thin: gather inputs, call the core, apply its result, and own error handling and any transaction. Keep reads, calculations, and writes within the required consistency boundary.
 
-Imperative code remains appropriate where it is clearer or required: ordered I/O, local mutation inside one function, framework APIs built around mutable state, and measured performance needs. Do not introduce effect systems, monadic wrappers, state threaded through unrelated operations, custom rule engines or configuration languages, or combinator chains harder to read than a loop. When the plan keeps a substantial calculation or state change imperative, record the concrete reason. Choose boundaries from the actual behavior and code; a step such as "implement storage logic" leaves that design unfinished.
+Imperative code remains appropriate where it is clearer or required: ordered I/O, local mutation inside one function, framework APIs built around mutable state, and performance needs that are measured or a stated hot path, where the plan names the path, the data size, and the cost avoided. Do not introduce effect systems, monadic wrappers, state threaded through unrelated operations, custom rule engines or configuration languages, or combinator chains harder to read than a loop. When the plan keeps a substantial calculation or state change imperative, record the concrete reason. Choose boundaries from the actual behavior and code; a step such as "implement storage logic" leaves that design unfinished.
 
 For non-trivial changes, include a data-flow chain: the typed transformations from input to result, with each effectful step marked. Pseudocode supplements the chain where ordering affects correctness.
 
@@ -90,9 +94,21 @@ For each coherent family of domain rules, decide the representation per `code-au
 
 Before finishing, trace a representative request and a meaningful failure through the proposed operations. Check that each responsibility and effect has an owner, pure operations receive their inputs explicitly, and the implementer can connect their contracts without choosing the major decomposition. Connect acceptance criteria to implementation steps and verification scenarios. Check that paths and reused capabilities were inspected, consequential choices have agreement and reasons, the documentation map is bounded, and remaining discretion is only routine. Keep cohesive sequences together; do not prescribe every helper, create layers without a concrete purpose, or use function-length targets.
 
-Every plan ends with an **Implementer Brief**: a short list (about 10 bullets at most) the implementing model reads before editing. It covers: load `code-authoring`; the documentation-map entries or "No usage-documentation edits planned."; this plan's stop-and-ask triggers (decisions deliberately left to the user, and changes that would need a plan amendment); the checks to run with expected results; the user-workflow check; and the review expectation. Restate only what this plan needs; do not copy general rules. Do not assume the same model will implement: a model switch preserves the conversation, but the plan must still state the decisions and concrete work, avoiding vague steps such as "add validation" and unresolved menus of approaches. Read [the small example](references/plan-example-small.md) for small corrections and [the full example](references/plan-example.md) for substantial changes when calibrating the necessary detail.
+Every plan ends with an **Implementer Brief**: a short list (about 10 bullets at most) the implementing model reads before editing. It covers: load `code-authoring`; the documentation-map entries or "No usage-documentation edits planned."; this plan's stop-and-ask triggers (decisions deliberately left to the user, and changes that would need a plan amendment); the checks to run with expected results; the user-workflow check; the review expectation; and, for a saved plan, marking the file complete at handoff. Restate only what this plan needs; do not copy general rules. Do not assume the same model or session will implement: the implementer may have only the plan file, so the plan must state the decisions and concrete work, avoiding vague steps such as "add validation" and unresolved menus of approaches. Read [the small example](references/plan-example-small.md) for small corrections and [the full example](references/plan-example.md) for substantial changes when calibrating the necessary detail.
 
-Use the chat for the plan unless the user or project asks for a saved artifact. Do not edit source or configuration while planning. Do not turn approval of a planning-only deliverable into authorization to implement.
+### Save the Plan
+
+Write a plan with more than one implementation step to a file; keep a smaller plan in the chat. A user or project instruction asking for a chat plan overrides this default.
+
+When the harness has placed you in a planning mode that provides its own way to present or save a plan, deliver the full plan through that instead, and write nothing under `.plans/`. Use the same format: the title, `Status:` and `Goal:` lines, the plan, `## Open Questions`, and the Implementer Brief. The harness then shows the whole plan, so no separate chat summary is needed. In every other mode:
+
+- Use the path `.plans/<YYYY-MM-DD>-<short-slug>.md` at the project root. When creating `.plans/`, also create `.plans/.gitignore` containing the single line `*`, so version control ignores the directory, including that file.
+- Open the file with a `# ` title, then `Status: in progress`, then `Goal: ` and the goal sentence, each on its own line. Place an `## Open Questions` section, containing `None.` until the implementer records one, before the Implementer Brief.
+- The file is the only full copy. In the chat, give the goal sentence, the decision record, the routine choices, and the file path, then ask for agreement. Revise the file in place when the user changes or rejects part of the plan.
+- Never delete a plan file. The implementer marks it `Status: complete` at handoff, and the user removes it.
+- If the project root cannot be written, say so and keep the full plan in the chat.
+
+Do not edit source or configuration while planning. Do not turn approval of a planning-only deliverable into authorization to implement.
 
 ## Transition
 

@@ -2,6 +2,13 @@
 
 This is a completed illustrative plan for a fictional Python CLI repository, not a claim about files in the skills repository. The paths, existing interfaces, and commands below are assumed investigation findings. A real planner must inspect its project and replace these with verified facts; do not hand placeholders to the implementer.
 
+The plan has four implementation steps, so it is saved as `.plans/2026-03-02-atomic-catalog-import.md`, and the file opens with these lines after its title:
+
+```text
+Status: in progress
+Goal: Make `catalog import` update existing identifiers and apply each file completely or not at all.
+```
+
 ## Request and Investigation
 
 Request: "Make the existing CSV import update existing identifiers and make the whole import atomic."
@@ -35,6 +42,12 @@ For this example, the following answers have already been obtained:
 | D8 | Report the first validation error in input order; within a row check identifier, title, then duplication. | User confirmed this precedence after discussing aggregate errors; deterministic feedback keeps the CLI's correction-and-retry flow simple. |
 
 Preserve existing CSV syntax, validation of individual fields, exit statuses, and error rendering. Export, new formats, UI work, schema changes, dependencies, and unrelated refactoring are excluded. No consequential questions remain open.
+
+## Routine Choices Made by the Planner
+
+- The pure operations go in a new `src/catalog/importer.py`, because `csv_input.py` owns CSV syntax only.
+- The names `validate_catalog` and `plan_import` follow the existing `parse_catalog`.
+- Inserts are applied before updates; inside one transaction the order has no observable effect.
 
 ## Types and Operation Contracts
 
@@ -81,7 +94,21 @@ return ImportResult(len(inserts), len(updates))
 
 Any read, insert, update, or commit failure propagates through the existing adapter, rolls back, and produces no success output. Do not catch a storage error inside the transaction and return normally. Keep the read, plan, and writes on the same transaction; a transaction using a stale pre-read would violate D2/D6.
 
+Stage outlines:
+
+- `validate_catalog`: check each row's fields; reject a repeated identifier; build the entries.
+- `plan_import`: partition the incoming entries by whether their identifier is already stored.
+- `import_catalog`: the storage sequence above, one stage per line inside the transaction.
+
 Representative request: CLI reads CSV, parser retains record numbers, validator rejects bad input, storage locks and reads, pure planning partitions entries, storage applies and commits, CLI prints counts. Failure trace: after one insert succeeds, an update fails; the adapter rolls back both changes, the CLI prints the storage error, and returns 1.
+
+## Invariants and Failure Modes
+
+- I1: An import commits every validated entry or changes nothing (D2).
+- I2: No storage read or write happens before the whole file has validated (D2).
+- I3: Each input identifier is counted exactly once, as inserted or as updated (D5).
+- F1: An invalid field or duplicate identifier exits 2 with the first error in input order on stderr and leaves the catalog unchanged; the user corrects the file and reruns.
+- F2: A storage failure during the read or a write exits 1 with the storage error on stderr and rolls back; the user reruns the same file.
 
 ## Documentation Change Map
 
@@ -116,7 +143,11 @@ The example assumes a runnable local CLI and SQLite adapter. If the real environ
 
 The implementer may choose local variable names, idiomatic loops, private helper extraction, and fixture organization within these contracts. It must not choose new validation rules, change counts or statuses, relax atomicity, add abstractions or dependencies, move import decisions out of the pure operations into storage or the CLI, or expand usage documentation.
 
-If investigation cannot establish the transaction guarantee, resolve that architecture with the user before finalizing the plan. If implementation later uncovers a consequential gap, explain it and ask immediately; pause dependent work, continue independent work, and amend the decision record after the answer. Do not substitute partial writes or defer the question to the final report.
+If investigation cannot establish the transaction guarantee, resolve that architecture with the user before finalizing the plan. If implementation later uncovers a consequential gap, explain it and ask immediately; record it under Open Questions; pause dependent work, continue independent work, and amend the decision record after the answer. Do not substitute partial writes or defer the question to the final report.
+
+## Open Questions
+
+None.
 
 ## Implementer Brief
 
@@ -129,3 +160,4 @@ If investigation cannot establish the transaction guarantee, resolve that archit
 - Finish with `uv run ruff format --check .`, `uv run ruff check .`, `uv run basedpyright`, and `uv run pytest`, all passing.
 - Run the User Workflow through `uv run catalog`; report observed output separately from test results.
 - Obtain one independent review of the completed diff against D1-D8.
+- Mark this file `Status: complete` at handoff if no decision awaits.
