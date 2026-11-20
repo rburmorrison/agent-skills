@@ -583,9 +583,9 @@ class Renderer:
             f'<div class="alert" data-alert="{kind}"><div class="alert-title">'
             + self.icon(kind)
             + self.heading(block.get("title", kind.title()))
-            + "</div>"
+            + '</div><div class="content-stack">'
             + body
-            + "</div>"
+            + "</div></div>"
         )
 
     def _code_annotation(self, annotation: CodeAnnotation, index: int | None) -> str:
@@ -1643,6 +1643,9 @@ class Renderer:
                 "Custom styles and scripts require --trusted-custom; review all custom content as code first"
             )
 
+        # Validate and render intro blocks before omitting an empty wrapper.
+        intro = self.blocks(document.get("intro", []))
+
         # Render the hero and sections in document order.
         sections = document.get("sections", [])
         body = (
@@ -1654,7 +1657,7 @@ class Renderer:
                 if document.get("lead")
                 else ""
             )
-            + self.blocks(document.get("intro", []))
+            + ('<div class="content-stack">' + intro + "</div>" if intro else "")
             + "</section>"
         )
 

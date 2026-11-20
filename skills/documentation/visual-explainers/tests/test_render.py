@@ -28,6 +28,72 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
 class RenderTests(unittest.TestCase):
+    def test_intro_and_alert_bodies_use_shared_block_spacing(self) -> None:
+        # Follow a four-box group with prose in both previously unspaced locations.
+        metrics = {
+            "type": "metrics",
+            "items": [{"value": n, "label": f"Step {n}"} for n in range(1, 5)],
+        }
+        blocks = [metrics, "Following paragraph."]
+        output = Renderer(
+            {
+                "title": "Spacing",
+                "intro": blocks,
+                "sections": [
+                    {
+                        "title": "Alerts",
+                        "blocks": [
+                            {"type": "alert", "blocks": blocks},
+                            {"type": "alert", "text": "Single paragraph."},
+                        ],
+                    }
+                ],
+            },
+            FIXTURES,
+        ).render()
+
+        # Keep the intro and nested alert blocks together in the same layout primitive.
+        self.assertIn(
+            '<h1>Spacing</h1><div class="content-stack"><div class="metric-grid">',
+            output,
+        )
+        self.assertIn(
+            'Note</div><div class="content-stack"><div class="metric-grid">', output
+        )
+        self.assertIn(
+            '<div class="content-stack"><p>Single paragraph.</p></div></div>', output
+        )
+        self.assertEqual([], check_html(output))
+
+    def test_empty_intro_does_not_create_an_empty_stack(self) -> None:
+        # Build the title-only document with absent and explicitly empty intro content.
+        documents: list[dict[str, object]] = [
+            {"title": "Title Only"},
+            {"title": "Title Only", "intro": []},
+        ]
+        for document in documents:
+            with self.subTest(document=document):
+                output = Renderer(document, FIXTURES).render()
+
+                # Preserve the hero boundary without an empty layout element.
+                self.assertIn(
+                    '<section class="hero"><h1>Title Only</h1></section>', output
+                )
+
+    def test_malformed_falsy_intro_values_are_rejected(self) -> None:
+        # Reject falsy values that cannot represent a list of intro blocks.
+        malformed: list[object] = [None, False, 0, "", {}]
+        for intro in malformed:
+            with (
+                self.subTest(intro=intro),
+                self.assertRaisesRegex(
+                    ValueError, "^document field .intro. must be a list$"
+                ),
+            ):
+                _ = Renderer(
+                    {"title": "Invalid Intro", "intro": intro}, FIXTURES
+                ).render()
+
     def test_generated_scripts_are_embedded_with_charts_only_when_needed(self) -> None:
         # Read the generated assets that ship with the standalone skill.
         navigation = (ASSETS / "navigation.min.js").read_text(encoding="utf-8")

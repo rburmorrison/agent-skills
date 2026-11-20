@@ -481,10 +481,6 @@ figcaption {
   overflow: hidden;
 }
 
-.hero .visual {
-  margin-top: 35px;
-}
-
 .visual-label {
   padding: 12px 22px;
   border-bottom: 1px solid var(--line);
@@ -588,14 +584,6 @@ figcaption {
   color: inherit;
 }
 
-.alert p {
-  margin: 0;
-}
-
-.alert p + p {
-  margin-top: 12px;
-}
-
 .columns-container {
   container-type: inline-size;
 }
@@ -626,10 +614,6 @@ figcaption {
 .card h3,
 .card h4 {
   margin-top: 0;
-}
-
-.card > :last-child {
-  margin-bottom: 0;
 }
 
 .metric {
@@ -741,18 +725,6 @@ details > :not(summary) ~ :not(summary) {
   padding: 18px 20px;
   background: var(--wash);
   border-radius: var(--radius-media);
-}
-
-.disclosure-body > :first-child {
-  margin-top: 0;
-}
-
-.disclosure-body > :last-child {
-  margin-bottom: 0;
-}
-
-.disclosure-body > * + * {
-  margin-top: 18px;
 }
 
 .tabs {
@@ -1845,13 +1817,16 @@ pre {
   transform: rotate(90deg);
 }
 
-/* Block spacing in a section follows its components so it overrides their outer margins. */
-.content-stack > * + * {
-  margin-top: 20px;
+/* Let each block container own spacing without collapsing or adding child margins. */
+.content-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.content-stack > :last-child {
-  margin-bottom: 0;
+.content-stack > * {
+  min-width: 0;
+  margin-block: 0;
 }
 
 /* Narrow layouts. */
@@ -2159,7 +2134,11 @@ pre {
   }
 
   .tab-panel[hidden] {
-    display: block;
+    display: flex;
+  }
+
+  .disclosure-body.content-stack {
+    display: flex !important;
   }
 
   .tab-panel {
