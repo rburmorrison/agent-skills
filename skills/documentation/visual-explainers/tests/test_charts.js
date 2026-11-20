@@ -116,6 +116,20 @@ function checkFormatting({ formats }) {
   assert.equal(en.unit(1200, 'ms'), '1,200 ms');
   assert.equal(en.unit(3, ''), '3');
   assert.equal(en.axis(0.1 + 0.2), '0.3');
+
+  // Shorten tick labels with scientific notation only when it is shorter.
+  assert.equal(en.axis(1234), '1,234');
+  assert.equal(en.axis(1e12), '1E12');
+  assert.equal(en.axis(2.5e-7), '2.5E-7');
+}
+
+function checkAxisLabels({ formats, kinds, valueAxisLabels }) {
+  // List the labels each value axis draws, so the controller can widen the margin to fit them.
+  const format = formats('en');
+  const wide = { kind: 'bar', data: { categories: ['A', 'B'], values: [1234567, 2345678] } };
+  assert.deepEqual(valueAxisLabels(wide, format), ['0', '1E6', '2E6', '3E6']);
+  for (const [kind, config] of Object.entries(CONFIGS))
+    assert.equal(valueAxisLabels(config, format).length > 0, Boolean(kinds[kind].yDomain), kind);
 }
 
 function checkLabels({ wrapLabel }) {
@@ -217,8 +231,9 @@ for (const name of ['charts.js', 'charts.min.js']) {
   const model = require('../assets/' + name);
   checkScales(model);
   checkFormatting(model);
+  checkAxisLabels(model);
   checkLabels(model);
   checkNavigation(model);
   checkKinds(model);
 }
-console.log('Chart scales, formatting, labels, navigation, and every kind\'s drawing passed across source and minified assets.');
+console.log('Chart scales, formatting, axis labels, labels, navigation, and every kind\'s drawing passed across source and minified assets.');

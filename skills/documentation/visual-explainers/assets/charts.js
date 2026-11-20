@@ -16,15 +16,22 @@ const ExplainerChartModel = (() => {
    * Build the number formatters used by every chart in one document.
    * @param {string} locale BCP 47 language tag accepted by Intl.
    * @returns {{value: Function, axis: Function, range: Function, share: Function, unit: Function}}
-   *   Exact values, tick labels, intervals, one-decimal percentages, and values with an optional unit.
+   *   Exact values, tick labels (scientific when shorter), intervals, one-decimal percentages, and values with an optional unit.
    */
   function formats(locale) {
     const number = new Intl.NumberFormat(locale, { maximumSignificantDigits: 17 });
     const percent = new Intl.NumberFormat(locale, { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const scientific = new Intl.NumberFormat(locale, { notation: 'scientific', maximumSignificantDigits: 8 });
     const value = n => typeof n === 'number' ? number.format(n) : String(n);
     return {
       value,
-      axis: n => value(Number(n.toPrecision(8))),
+      axis(n) {
+        // Remove floating-point residue, then prefer scientific notation only when it is shorter.
+        const rounded = Number(n.toPrecision(8));
+        const ordinary = value(rounded);
+        const compact = scientific.format(rounded);
+        return compact.length < ordinary.length ? compact : ordinary;
+      },
       range: (low, high) => value(low) + '–' + value(high),
       share: fraction => percent.format(fraction),
       unit: (n, unit) => value(n) + (unit ? ' ' + unit : '')
@@ -259,6 +266,7 @@ const ExplainerChartModel = (() => {
   function seriesKind(filled) {
     return {
       nearest: 'x',
+      yDomain: config => domain(config.data.series.flatMap(s => s.values), { min: config.yMin, max: config.yMax }),
       table: config => ({
         headers: [config.xLabel || 'Category', ...config.data.series.map(s => s.name)],
         rows: config.data.categories.map((c, i) => [c, ...config.data.series.map(s => s.values[i])])
@@ -270,7 +278,7 @@ const ExplainerChartModel = (() => {
         // Map series categories and values into plot coordinates.
         const { config, data, H, m, plotW, plotH, format } = plot;
         const n = data.categories.length;
-        const [min, max] = domain(data.series.flatMap(s => s.values), { min: config.yMin, max: config.yMax });
+        const [min, max] = kinds[config.kind].yDomain(config);
         const x = i => m.l + (n === 1 ? plotW / 2 : plotW * i / (n - 1));
         const y = v => H - m.b - plotH * (v - min) / (max - min);
         valueAxis(plot, min, max);
@@ -313,6 +321,7 @@ const ExplainerChartModel = (() => {
   function barKind(histogram) {
     const values = data => histogram ? data.bins.map(b => b.count) : data.values;
     return {
+      yDomain: config => domain(values(config.data), { min: config.yMin, max: config.yMax }),
       table: (config, format) => histogram
         ? {
           headers: ['Interval (' + (config.binUnit || 'units') + ')', config.yLabel || 'Count'],
@@ -328,7 +337,7 @@ const ExplainerChartModel = (() => {
         const { config, data, H, m, plotW, plotH, format } = plot;
         const heights = values(data);
         const n = heights.length;
-        const [min, max] = domain(heights, { min: config.yMin, max: config.yMax });
+        const [min, max] = kinds[config.kind].yDomain(config);
         const step = plotW / n;
         const yAt = v => H - m.b - plotH * (v - min) / (max - min);
         const zero = yAt(baseline(min, max));
@@ -371,7 +380,8 @@ const ExplainerChartModel = (() => {
    *   `format`, `W`, `H`, margins `m`, `plotW`, `plotH`, `node(tag, attrs, text)` to create,
    *   `add(tag, attrs, text)` to create and append, `mark(element, record)` to append an
    *   inspectable mark, and `overlay()` for series crosshairs;
-   * - optional `frame` height and left margin, `nearest` pointer mode, and grid `stride(config)`.
+   * - optional `frame` height and left margin, `nearest` pointer mode, grid `stride(config)`,
+   *   and `yDomain(config)` bounds for a numeric value axis.
    */
   const kinds = {
     line: seriesKind(false),
@@ -380,6 +390,7 @@ const ExplainerChartModel = (() => {
     histogram: barKind(true),
     scatter: {
       nearest: 'xy',
+      yDomain: config => domain(config.data.points.map(p => p.y), { min: config.yMin, max: config.yMax, zero: false }),
       table: config => ({
         headers: ['Observation', config.xLabel, config.yLabel],
         rows: config.data.points.map(p => [p.label, p.x, p.y])
@@ -389,7 +400,7 @@ const ExplainerChartModel = (() => {
         // Fit both axes to the observations, since scatter marks encode position rather than magnitude.
         const { config, data, H, m, plotW, plotH, format } = plot;
         const [xmin, xmax] = domain(data.points.map(p => p.x), { min: config.xMin, max: config.xMax, zero: false });
-        const [ymin, ymax] = domain(data.points.map(p => p.y), { min: config.yMin, max: config.yMax, zero: false });
+        const [ymin, ymax] = kinds.scatter.yDomain(config);
         const x = v => m.l + plotW * (v - xmin) / (xmax - xmin);
         const y = v => H - m.b - plotH * (v - ymin) / (ymax - ymin);
         valueAxis(plot, ymin, ymax);
@@ -492,6 +503,7 @@ const ExplainerChartModel = (() => {
       }
     },
     box: {
+      yDomain: config => domain(config.data.groups.flatMap(g => [g.min, g.max]), { min: config.yMin, max: config.yMax }),
       table: config => ({
         headers: ['Group', 'Min', 'Q1', 'Median', 'Q3', 'Max'],
         rows: config.data.groups.map(g => [g.name, g.min, g.q1, g.median, g.q3, g.max])
@@ -500,7 +512,7 @@ const ExplainerChartModel = (() => {
       draw(plot) {
         // Map five-number summaries onto a shared numeric axis.
         const { config, data, H, m, plotW, plotH, format } = plot;
-        const [min, max] = domain(data.groups.flatMap(g => [g.min, g.max]), { min: config.yMin, max: config.yMax });
+        const [min, max] = kinds.box.yDomain(config);
         const y = v => H - m.b - plotH * (v - min) / (max - min);
         const step = plotW / data.groups.length;
         valueAxis(plot, min, max);
@@ -545,7 +557,18 @@ const ExplainerChartModel = (() => {
     return { ...DEFAULT_FRAME, ...kinds[kind].frame };
   }
 
-  return { formats, niceStep, domain, baseline, ticks, wrapLabel, nextIndex, nearestIndex, kinds, frame };
+  /**
+   * List the formatted labels of a chart's numeric value axis.
+   * @param {object} config Chart configuration with a `kind` key of `kinds`.
+   * @param {{axis: Function}} format Formatters from `formats`.
+   * @returns {string[]} Tick labels in drawing order; empty when the kind has no value axis.
+   */
+  function valueAxisLabels(config, format) {
+    const kind = kinds[config.kind];
+    return kind.yDomain ? ticks(...kind.yDomain(config)).map(format.axis) : [];
+  }
+
+  return { formats, niceStep, domain, baseline, ticks, wrapLabel, nextIndex, nearestIndex, kinds, frame, valueAxisLabels };
 })();
 
 // Expose the model to tests, and bind charts when running in a document.
@@ -553,7 +576,7 @@ if (typeof module !== 'undefined' && module.exports)
   module.exports = ExplainerChartModel;
 if (typeof document !== 'undefined')
   (() => {
-    const { formats, kinds, frame, nextIndex, nearestIndex } = ExplainerChartModel;
+    const { formats, kinds, frame, valueAxisLabels, nextIndex, nearestIndex } = ExplainerChartModel;
     const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
     const format = formats(documentLocale());
     const instances = new Map();
@@ -648,13 +671,23 @@ if (typeof document !== 'undefined')
       return element;
     }
 
+    function axisLabelWidth(state, config) {
+      // Measure value-axis labels in the font the SVG axis text inherits.
+      const labels = valueAxisLabels(config, format);
+      const context = labels.length ? document.createElement('canvas').getContext('2d') : null;
+      if (!context)
+        return 0;
+      context.font = '12px ' + getComputedStyle(state.canvas).fontFamily;
+      return Math.ceil(Math.max(...labels.map(label => context.measureText(label).width)));
+    }
+
     function draw(state) {
       // Size the SVG to the canvas width and the kind's frame.
       const config = state.config;
       const { height, left } = frame(config.kind);
       const W = Math.max(280, Math.round(state.canvas.clientWidth));
       const H = height;
-      const m = { l: left, r: 18, t: 32, b: 54 };
+      const m = { l: Math.max(left, axisLabelWidth(state, config) + 10), r: 18, t: 32, b: 54 };
       const svg = svgNode('svg', { viewBox: `0 0 ${W} ${H}`, role: 'group', 'aria-label': config.title });
       svg.append(svgNode('title', {}, config.title));
 
