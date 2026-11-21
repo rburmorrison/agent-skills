@@ -145,7 +145,7 @@ Lint and type-check suppressions must be rare, narrowly scoped, and accompanied 
 
 Handle routine local obstacles autonomously. When a missing consequential decision, changed requirement, or unplanned usage-documentation edit is discovered, ask the user immediately, one question at a time. The question always goes to the user; do not try to consult another model. Write it so the user can answer without opening the code:
 
-1. Open with `You asked: ` and the plan's goal sentence, then state the concrete issue in one sentence.
+1. Open with one sentence beginning `You wanted` that restates the plan's goal sentence, then state the concrete issue in one sentence.
 2. Show the current code or text: the file, the symbol or section, a short excerpt, and what it does.
 3. Compare the options on one concrete input or scenario.
 4. State what each option changes for the user and for the code.
@@ -159,17 +159,22 @@ Installation, commits, publishing, and other external actions require authorizat
 
 ## Handoff
 
-After fixes and verification, write the handoff in this format, even when the work stops on an open question:
+After fixes and verification, write the handoff, even when the work stops on an open question. Its purpose is to give the user a technical understanding of the change: how the code works now, what the change is worth, what it costs, and where it might be wrong. Explain the program; do not narrate or certify your own work. Read [the handoff guidance](references/handoff.md) before writing it, for what each part is for, how to scale them, and examples.
 
-- **Request:** the first line is `You asked: ` followed by the plan's goal sentence. With no plan, restate the request in one sentence.
-- **Summary:** a short paragraph with no heading, label, or bullets. Open with a bold sentence stating what changed, such as `**Imports now skip blank lines instead of failing.**`, not a `**Summary:**` label, then say why and name any gap that affects confidence. Give formatting, lint, type, and test results and whether planned documentation was updated as one clause. It may mention the review.
-- **`## Invariants`** and **`## Failure Modes and Recovery`:** one `###` subheading per guarantee or failure, each opening with a bold sentence and supported by a short source excerpt and verified link where available, then an `**Exercised by:**` line naming the test or observed run that covers it, or `not exercised`. Cover every invariant and failure mode the plan named, and mark any other `(not in the plan)`.
-- **`## Observed Behavior`:** the commands or actions actually run through the application's entry point, each with its trimmed, verbatim output. Omit it when the workflow could not run.
-- **`## Not Verified`:** only when something is unverified: a failed or skipped check, a `not exercised` item, a workflow that could not run, or blocked work. For each, say what was not checked, why, what could go wrong, and how to check it.
+A handoff has these parts, in this order:
+
+- **Opening sentence:** one ordinary sentence beginning `You wanted`, restating the plan's goal sentence in the user's terms. With no plan, restate the request.
+- **Summary:** a short paragraph with no heading or label. Its bold first sentence states the mechanism, what the code now does differently and where, such as `**The date filter now compares with >= where it used >.**` Then say what that achieves, give the results of the project's checks, naming any not run, and whether usage documentation changed as one clause, and end by naming any decision that awaits the user and any gap that affects confidence. It may mention the review.
+- **`## How It Works`:** the change explained in the order the code runs, with a subheading per piece in a larger change and a short source excerpt and a verified link where the code is the clearest explanation. Guarantees and failure handling appear where their mechanism is explained. For a bug fix, open with one real input traced before and after.
+- **`## Value and Cost`:** who benefits and how much, then the technical debt the change adds, sized as none, small, moderate, or significant. A larger change puts these under `### What It Adds` and `### What It Costs`. Always state the cost.
+- **`## Verification`:** the commands or actions actually run through the application's entry point with their verbatim output, then how each other fact is known (ran, tested, or read only) and what was not checked.
+- **`## Where I Would Aim Doubt`:** only when there is any. The places to look first if the change turned out wrong, in order, each with why.
 - **`## Choices Made Without Asking`:** only when there are any. One line each: the choice and its reason. List a choice when a reasonable alternative existed and the plan did not settle it; omit local names and syntax.
 - **`## Decisions Awaiting You`:** only when decisions remain. Number each item: a bold title naming the choice, the current state and what each option would change, then a recommendation and why. If you recommend keeping things as they are, leave the item out; for example, drop "I recommend leaving the duplicate parser as it is." The exception is a plan deviation you already made: always list it, even when you recommend keeping it. Plan deviations and unresolved findings go here, described as choices about the code, never by review labels such as Nit or Should-fix.
 
-Use no other sections, and put `---` before each section heading. Read [the handoff guidance](references/handoff.md) for coverage, evidence, links, and examples.
+Scale the parts to the number of distinct ideas in the change. A tiny change is one idea and needs no headings: the opening sentence, the summary, the excerpt that matters, and a few sentences covering verification, value, and cost, plus `## Decisions Awaiting You` when one decision awaits. A change of two or three ideas keeps the `##` headings and drops the subheadings. A found problem or a pending decision does not move a change up a size. Write in sentences, without label prefixes such as `Value:` or `Tested:`.
+
+If writing the handoff turns up a defect or a missing test within the agreed scope, fix it first and hand off the finished work. Give anything that needs the user's decision one home, and refer to it elsewhere in a few words.
 
 When the plan is a `.plans/` file, change its `Status:` line to `complete` once no decision awaits and nothing is blocked. Never delete a plan file.
 
@@ -181,5 +186,5 @@ When the plan is a `.plans/` file, change its `Status:` line to `complete` once 
 4. The readability pass is done: each multistep function and test has a one-line stage comment at every transition that gives the reason where the code does not, with blank lines between stages (Explain Steps and Decisions).
 5. Usage-documentation edits match the documentation map exactly; related documentation was inspected and any unplanned need was asked about ([documentation reference](references/documentation.md)).
 6. Unless no review is required (Independent Review), the independent review ran; validated Blocker and Should-fix findings are fixed and affected checks rerun. Each applied Nit touches only lines this change already modifies and changes no behavior or tests; revert any that does not (Independent Review).
-7. The handoff follows the Handoff format: the `You asked:` line, a bold-led summary paragraph, then only its sections. Every invariant and failure mode the plan named appears with an `Exercised by` line, and each decision has a recommendation and why (Handoff).
+7. The handoff opens with the `You wanted` sentence and a summary whose bold first sentence states the mechanism. It explains how the code works now, states the value and the cost, says how each verification fact is known, and gives each decision a recommendation and why. A reader could predict from it what the code does in a case it does not mention (Handoff).
 8. A plan saved under `.plans/` has its answered questions in the decision record, and is marked `Status: complete` when no decision awaits and nothing is blocked (Roadblocks and Handoff, Handoff).
