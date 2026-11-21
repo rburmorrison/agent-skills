@@ -1,6 +1,6 @@
 ---
 name: code-authoring
-description: Write or modify code, tests, interface documentation, READMEs, help, and user guides within the agreed scope. Apply readable code and documentation standards, verify behavior, and finish code changes by checking existing documentation for accuracy.
+description: Write or modify code, tests, interface documentation, READMEs, help, and user guides within the agreed scope. Apply readable code and documentation standards, verify behavior, and finish code changes by checking existing documentation for accuracy. For non-trivial changes without an agreed plan, use plan-changes first.
 ---
 
 # Code Authoring

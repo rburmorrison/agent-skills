@@ -1,6 +1,6 @@
 ---
 name: plan-changes
-description: Investigate and plan a feature, fix, or refactor before editing. Resolve consequential decisions one at a time and produce concrete implementation steps.
+description: Investigate and plan a non-trivial change before editing, resolving consequential decisions one at a time and producing concrete implementation steps. Use when building, changing, or fleshing out anything with design choices or open questions, even if no plan was requested. Skip for questions and simple, direct edits such as targeted fixes or refactors.
 ---
 
 # Plan Changes
