@@ -407,7 +407,7 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(38px, 4.6vw, 60px);
+  font-size: 34px;
   margin: 22px 0;
 }
 
@@ -416,17 +416,17 @@ h1 {
 }
 
 h2 {
-  font-size: 32px;
+  font-size: 26px;
   margin: 0 0 22px;
 }
 
 h3 {
-  font-size: 22px;
+  font-size: 20px;
   margin: 30px 0 14px;
 }
 
 h4 {
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.4;
   margin: 24px 0 12px;
 }
@@ -440,7 +440,7 @@ li + li {
 }
 
 .lead {
-  font-size: 21px;
+  font-size: 18px;
   line-height: 1.6;
   color: var(--muted);
 }
@@ -2030,10 +2030,6 @@ pre {
     padding: var(--layout-top-space) 22px var(--layout-bottom-space);
   }
 
-  h1 {
-    font-size: 44px;
-  }
-
   .two {
     grid-template-columns: 1fr;
   }
@@ -2168,15 +2164,15 @@ pre {
   }
 
   h1 {
-    font-size: 36px;
+    font-size: 30px;
   }
 
   h2 {
-    font-size: 28px;
+    font-size: 24px;
   }
 
-  .lead {
-    font-size: 18px;
+  h3 {
+    font-size: 19px;
   }
 
   main > section + section {
@@ -2293,7 +2289,15 @@ pre {
   }
 
   h1 {
-    font-size: 32pt;
+    font-size: 22pt;
+  }
+
+  h2 {
+    font-size: 16pt;
+  }
+
+  h3 {
+    font-size: 13pt;
   }
 
   h2,

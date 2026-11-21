@@ -36,34 +36,25 @@ h3 {
 }
 
 h1 {
-  font-size: 30px;
   line-height: 1.25;
   letter-spacing: -.012em;
   margin: 0 0 16px;
 }
 
 h2 {
-  font-size: 24px;
   line-height: 1.25;
   letter-spacing: -.015em;
   margin: 0 0 18px;
 }
 
 h3 {
-  font-size: 18px;
   line-height: 1.3;
   letter-spacing: -.01em;
   margin: 32px 0 12px;
 }
 
 h4 {
-  font-size: 16px;
   font-weight: 600;
-}
-
-.lead {
-  font-size: 17px;
-  line-height: 1.6;
 }
 
 main > section + section {
@@ -288,18 +279,6 @@ summary {
 }
 
 @media (max-width: 850px) {
-  h1 {
-    font-size: 26px;
-  }
-
-  h2 {
-    font-size: 22px;
-  }
-
-  .lead {
-    font-size: 16px;
-  }
-
   aside nav a {
     padding-block: 11px;
   }
@@ -319,18 +298,6 @@ summary {
     --line: #aaa !important;
     --wash: #eee !important;
     --table-head: #ddd !important;
-  }
-
-  h1 {
-    font-size: 20pt;
-  }
-
-  h2 {
-    font-size: 15pt;
-  }
-
-  h3 {
-    font-size: 12pt;
   }
 
   .alert {
