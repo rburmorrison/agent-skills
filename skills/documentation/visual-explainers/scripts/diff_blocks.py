@@ -1,0 +1,147 @@
+"""Align two source versions into diff hunks without performing I/O."""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from difflib import SequenceMatcher
+from itertools import groupby, zip_longest
+
+DEFAULT_CONTEXT = 3
+
+
+@dataclass(frozen=True)
+class DiffRow:
+    """One side-by-side row of zero-based line indices into each version."""
+
+    before: int | None
+    """Line in the earlier version; None when this row has no earlier line."""
+    after: int | None
+    """Line in the later version; None when this row has no later line."""
+    changed: bool
+    """False for a line present in both versions; True for a removal or addition."""
+
+
+@dataclass(frozen=True)
+class DiffHunk:
+    """Adjacent changes with their surrounding unchanged lines."""
+
+    hidden: int
+    """Unchanged lines omitted between the previous hunk, or the start, and this one."""
+    rows: tuple[DiffRow, ...]
+    """Side-by-side rows in source order; a replacement pairs lines by position."""
+
+
+@dataclass(frozen=True)
+class PreparedDiff:
+    """Hunks covering every difference between two versions."""
+
+    hunks: tuple[DiffHunk, ...]
+    """One or more hunks in source order."""
+    trailing: int
+    """Unchanged lines omitted after the last hunk."""
+    deletions: int
+    """Lines present only in the earlier version."""
+    insertions: int
+    """Lines present only in the later version."""
+
+
+def source_lines(text: str) -> list[str]:
+    """Split source into lines the way highlighted code numbers them.
+
+    Args:
+        text: Literal source using LF, CRLF, or CR line endings.
+
+    Returns:
+        Line contents without endings. A final ending adds no extra line, and
+        empty source has no lines.
+    """
+    lines = re.split(r"\r\n|\r|\n", text)
+    if not lines[-1]:
+        _ = lines.pop()
+    return lines
+
+
+def prepare_diff(
+    before: object, after: object, context: object = DEFAULT_CONTEXT
+) -> PreparedDiff:
+    """Compare two versions line by line and group their differences.
+
+    Args:
+        before: Earlier source as a string; empty for a newly added file.
+        after: Later source as a string; empty for a removed file.
+        context: Non-negative integer count of unchanged lines kept around
+            each change. Booleans are rejected.
+
+    Returns:
+        Hunks in source order. Lines compare by content, ignoring their line
+        endings. Changes whose context overlaps or touches share one hunk.
+
+    Raises:
+        ValueError: A version is not a string, context is not a non-negative
+            integer, or the versions have identical lines.
+    """
+    # Reject mistyped input instead of comparing its string form.
+    if not isinstance(before, str) or not isinstance(after, str):
+        raise ValueError("Diff before and after must be strings")
+    if type(context) is not int or context < 0:
+        raise ValueError("Diff context must be a non-negative integer")
+
+    # Require a difference so the block always has a change to show.
+    old, new = source_lines(before), source_lines(after)
+    if old == new:
+        raise ValueError("Diff before and after have identical lines")
+
+    # Group every change with the requested unchanged lines around it.
+    matcher = SequenceMatcher(None, old, new, autojunk=False)
+    hunks: list[DiffHunk] = []
+    previous_end = 0
+    for group in matcher.get_grouped_opcodes(context):
+        # Pair matching lines, and pair replaced lines by position within the change.
+        rows: list[DiffRow] = []
+        for tag, old_start, old_end, new_start, new_end in group:
+            rows.extend(
+                DiffRow(old_index, new_index, tag != "equal")
+                for old_index, new_index in zip_longest(
+                    range(old_start, old_end), range(new_start, new_end)
+                )
+            )
+
+        hunks.append(DiffHunk(group[0][1] - previous_end, tuple(rows)))
+        previous_end = group[-1][2]
+
+    changed = [row for hunk in hunks for row in hunk.rows if row.changed]
+    return PreparedDiff(
+        tuple(hunks),
+        len(old) - previous_end,
+        sum(row.before is not None for row in changed),
+        sum(row.after is not None for row in changed),
+    )
+
+
+def unified_rows(rows: tuple[DiffRow, ...]) -> tuple[DiffRow, ...]:
+    """Reorder side-by-side rows into single-column reading order.
+
+    Args:
+        rows: Rows of one hunk, as produced by prepare_diff.
+
+    Returns:
+        Unchanged rows as given. Each run of changed rows becomes its removals
+        followed by its additions, with one line per row.
+    """
+    result: list[DiffRow] = []
+    for changed, run in groupby(rows, key=lambda row: row.changed):
+        group = tuple(run)
+        if not changed:
+            result.extend(group)
+            continue
+
+        # List every removal in a change before any of its additions.
+        result.extend(
+            DiffRow(row.before, None, True) for row in group if row.before is not None
+        )
+        result.extend(
+            DiffRow(None, row.after, True) for row in group if row.after is not None
+        )
+
+    return tuple(result)

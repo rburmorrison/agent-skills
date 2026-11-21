@@ -646,6 +646,24 @@
     });
   });
 
+  // Switch every diff between its prerendered unified and split layouts together.
+  const diffChoices = $$('.diff > .codebar [data-diff-choice]');
+  diffChoices.forEach(choice => {
+    choice.addEventListener('click', () => {
+      // Apply the chosen layout to all diffs so the document reads consistently.
+      const view = choice.dataset.diffChoice;
+      const top = choice.getBoundingClientRect().top;
+      $$('.diff').forEach(box => { box.dataset.diffView = view; });
+      diffChoices.forEach(other => other.setAttribute('aria-pressed', String(other.dataset.diffChoice === view)));
+
+      // Keep the used control in place when earlier diffs change height.
+      scrollBy({ top: choice.getBoundingClientRect().top - top, behavior: 'instant' });
+
+      // Refresh contents tracking after the layout change moves later headings.
+      scheduleSpy();
+    });
+  });
+
   $$('[data-copy]').forEach(b => {
     let resetLabel = null;
     b.addEventListener('click', async () => {

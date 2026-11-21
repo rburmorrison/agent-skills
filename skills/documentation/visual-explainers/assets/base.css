@@ -1166,6 +1166,172 @@ pre {
   white-space: pre;
 }
 
+/* Diff blocks with prerendered unified and split layouts. */
+.diff {
+  container: diff / inline-size;
+  --diff-insert: var(--alert-tip);
+  --diff-delete: var(--alert-caution);
+}
+
+.diff > .codebar {
+  gap: 12px;
+}
+
+.diff-label {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.diff-stat {
+  display: flex;
+  gap: 8px;
+  font: 12px/1.6 "Explainer Mono", monospace;
+  white-space: nowrap;
+}
+
+.diff-stat > [data-diff="insert"] {
+  color: var(--diff-insert);
+}
+
+.diff-stat > [data-diff="delete"] {
+  color: var(--diff-delete);
+}
+
+.diff-views {
+  display: flex;
+  flex: none;
+}
+
+.diff-views button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.diff-views button:last-child {
+  margin-left: -1px;
+  border-radius: 0 6px 6px 0;
+}
+
+.diff-content {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--wash);
+  font-size: 15px;
+  overflow-wrap: normal;
+}
+
+.diff[data-diff-view="unified"] > .diff-split,
+.diff[data-diff-view="split"] > .diff-unified {
+  display: none;
+}
+
+.disclosure-body .diff-content {
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+}
+
+.diff-line,
+.diff-side {
+  display: grid;
+  font-size: 13px;
+  line-height: 27px;
+}
+
+.diff-line {
+  grid-template-columns: repeat(2, calc(var(--code-digits) * 1ch + 20px)) 22px minmax(0, 1fr);
+}
+
+.diff-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.diff-side {
+  grid-template-columns: calc(var(--code-digits) * 1ch + 20px) 22px minmax(0, 1fr);
+}
+
+.diff-side + .diff-side {
+  border-left: 1px solid var(--line);
+}
+
+.diff-number {
+  padding-right: 10px;
+  text-align: right;
+  color: var(--muted);
+  user-select: none;
+}
+
+.diff-mark {
+  text-align: center;
+  user-select: none;
+}
+
+.diff-text {
+  min-width: 0;
+  min-height: 27px;
+  padding-right: 16px;
+  font-size: 15px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.diff-content [data-diff="insert"] {
+  background: color-mix(in srgb, var(--diff-insert) 14%, transparent);
+}
+
+.diff-content [data-diff="delete"] {
+  background: color-mix(in srgb, var(--diff-delete) 14%, transparent);
+}
+
+.diff-content [data-diff="insert"] > :is(.diff-number, .diff-mark) {
+  color: var(--diff-insert);
+}
+
+.diff-content [data-diff="delete"] > :is(.diff-number, .diff-mark) {
+  color: var(--diff-delete);
+}
+
+.diff-side[data-diff="empty"] {
+  background: repeating-linear-gradient(-45deg, transparent 0 6px, var(--line) 6px 7px);
+  opacity: .55;
+}
+
+.diff-gap {
+  display: block;
+  padding: 2px 16px;
+  border-block: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--muted);
+  font: 12px/27px var(--font);
+  text-align: center;
+  user-select: none;
+}
+
+.diff-gap:first-child {
+  border-top: 0;
+}
+
+.diff-gap:last-child {
+  border-bottom: 0;
+}
+
+/* A split layout needs room for two readable columns. */
+@container diff (max-width: 640px) {
+  .diff-views,
+  .diff > .diff-split {
+    display: none !important;
+  }
+
+  .diff > .diff-unified {
+    display: block !important;
+  }
+}
+
 /* Diagram panels. */
 .diagram-scroll {
   container-type: inline-size;

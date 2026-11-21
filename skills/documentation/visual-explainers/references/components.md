@@ -54,6 +54,7 @@ Supported presentation attributes: `displaystyle`, `scriptlevel`, `mathvariant`,
 ```json
 {"type":"alert","kind":"note","text":"Relevant information."}
 {"type":"code","language":"Shell","text":"printf 'hello\\n'"}
+{"type":"diff","language":"Python","before":"x = 1\n","after":"x = 2\n"}
 {"type":"table","headers":["State","Meaning"],"rows":[["A","Explanation"],["B","Explanation"]],"caption":"Optional caption."}
 {"type":"disclosure","title":"A Useful Question","open":false,"blocks":["The answer."]}
 ```
@@ -84,6 +85,28 @@ Add `lines` to identify the source a note explains: an integer for one line or `
 ```
 
 Optional `id` identifies the code container. A custom script can replace its contents with `textContent`; the replacement is plain text without highlighting, numbers, or annotations, and Copy uses that replacement text.
+
+### Diff Blocks
+
+A `diff` block compares two versions of one source. Supply the earlier text as `before` and the later text as `after`; the builder computes the line differences, so do not write `+` or `-` markers or a patch yourself. Take both versions from the real source, such as `git show <commit>:<path>`. Use an empty string for the missing side of an added or removed file. Identical versions stop generation with an error.
+
+The reader switches between a unified layout and a side-by-side split layout, and switching one diff switches every diff in the document; a container too narrow for two columns shows the unified layout without the switch. Both layouts keep syntax highlighting, mark removed and added lines with a sign as well as color, and show the count of added and removed lines.
+
+```json
+{
+  "type": "diff",
+  "language": "Python",
+  "title": "orders/totals.py",
+  "view": "split",
+  "context": 3,
+  "before_start": 40,
+  "after_start": 42,
+  "before": "def total(items):\n    return sum(items)\n",
+  "after": "def total(items, discount=0):\n    return sum(items) - discount\n"
+}
+```
+
+Only `before` and `after` are required. `language` selects highlighting as it does for code blocks. `title` labels the bar, typically with the file path, and defaults to the language. `view` sets the initial layout, `"unified"` (the default) or `"split"`. Use the same `view` for every diff in a document, since the reader's switch applies to all of them. `context` is the number of unchanged lines kept around each change, default 3; longer unchanged runs collapse into a row stating how many lines were omitted, so whole functions or files can be supplied. When the versions are excerpts, set `before_start` and `after_start` to the file line number of each excerpt's first line; both default to 1. Lines compare by content, ignoring line-ending differences. An invalid `view`, `context`, or start line stops generation.
 
 ## Images
 

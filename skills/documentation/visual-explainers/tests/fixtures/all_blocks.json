@@ -35,6 +35,12 @@
           "text": "print(1)"
         },
         {
+          "type": "diff",
+          "language": "Python",
+          "before": "print(1)\n",
+          "after": "print(2)\n"
+        },
+        {
           "type": "table",
           "headers": [
             "A",

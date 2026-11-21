@@ -195,6 +195,31 @@ class CodeBlock(TextBlock, total=False):
     """Notes in input order within each placement; invalid input is rejected."""
 
 
+class _DiffVersions(TypedDict):
+    before: str
+    """Earlier source; empty for a newly added file."""
+    after: str
+    """Later source; empty for a removed file."""
+
+
+class DiffBlock(_DiffVersions, total=False):
+    """Two versions of one source compared line by line, with a layout toggle."""
+
+    id: str
+    language: str
+    """Bundled lexer name or alias used to highlight both versions."""
+    title: str
+    """Bar label, such as a file path; defaults to the language."""
+    view: str
+    """Initial layout: unified (default) or split."""
+    context: int
+    """Unchanged lines kept around each change; defaults to 3."""
+    before_start: int
+    """Line number of the first earlier line; defaults to 1."""
+    after_start: int
+    """Line number of the first later line; defaults to 1."""
+
+
 class _TableContent(TypedDict):
     headers: list[object]
     rows: list[list[object]]

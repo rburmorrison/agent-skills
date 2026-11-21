@@ -27,6 +27,13 @@ from diagram_layout import (
     layout_graph,
     rounded_path,
 )
+from diff_blocks import (
+    DEFAULT_CONTEXT,
+    DiffRow,
+    prepare_diff,
+    source_lines,
+    unified_rows,
+)
 from document_types import check_fields
 from mathml import render_mathml
 from themes import FONT_FAMILIES, Theme, palette_css, parse_theme, resolve_palette
@@ -715,6 +722,159 @@ class Renderer:
             + '">'
             + "".join(content)
             + "</code></div>"
+        )
+
+    def _diff_block(self, values: Mapping[str, object]) -> str:
+        # Align the two versions before highlighting either of them.
+        block = cast("spec.DiffBlock", values)
+        before, after = block["before"], block["after"]
+        prepared = prepare_diff(before, after, block.get("context", DEFAULT_CONTEXT))
+
+        # Reject unknown layouts and line offsets rather than guessing a default.
+        view = block.get("view", "unified")
+        if view not in ("unified", "split"):
+            raise ValueError("Diff view must be unified or split")
+        starts = (block.get("before_start", 1), block.get("after_start", 1))
+        if any(type(start) is not int or start < 1 for start in starts):
+            raise ValueError("Diff before_start and after_start must be integers >= 1")
+
+        # Highlight each whole version so multiline tokens keep their context.
+        language = block.get("language", "")
+        sources = (highlight_code(before, language), highlight_code(after, language))
+        for source in sources:
+            self.code_categories.update(source.categories)
+
+        # Size both number gutters for the largest line number on either side.
+        counts = (len(source_lines(before)), len(source_lines(after)))
+        digits = max(
+            2,
+            *(
+                len(str(start + count - 1))
+                for start, count in zip(starts, counts, strict=True)
+            ),
+        )
+
+        def side(row: DiffRow, version: int, paired: bool) -> tuple[str, str]:
+            # Describe one version's cell: its change kind and its numbered source.
+            index = (row.before, row.after)[version]
+            if index is None:
+                return "empty", ""
+            kind = ("delete", "insert")[version] if row.changed else "context"
+            sign, meaning = {
+                "delete": ("\u2212", "Removed"),
+                "insert": ("+", "Added"),
+                "context": ("", ""),
+            }[kind]
+            mark = (
+                '<span aria-hidden="true">'
+                + sign
+                + '</span><span class="sr-only">'
+                + meaning
+                + "</span>"
+                if sign
+                else ""
+            )
+
+            # Number the unified row in both gutters and the split cell in one.
+            numbers = "".join(
+                '<span class="diff-number" aria-hidden="true">'
+                + ("" if number is None else str(starts[column] + number))
+                + "</span>"
+                for column, number in enumerate((row.before, row.after))
+                if not paired or column == version
+            )
+            return kind, (
+                numbers
+                + '<span class="diff-mark">'
+                + mark
+                + '</span><span class="diff-text">'
+                + sources[version].lines[index].markup
+                + "</span>"
+            )
+
+        def gap(hidden: int) -> str:
+            # Name how much unchanged source separates the visible hunks.
+            if not hidden:
+                return ""
+            noun = "line" if hidden == 1 else "lines"
+            return f'<span class="diff-gap">{hidden} unchanged {noun}</span>'
+
+        # Render every hunk once per layout so switching needs no recomputation.
+        unified: list[str] = []
+        split: list[str] = []
+        for hunk in prepared.hunks:
+            unified.append(gap(hunk.hidden))
+            split.append(gap(hunk.hidden))
+            for row in unified_rows(hunk.rows):
+                kind, cells = side(row, 0 if row.before is not None else 1, False)
+                unified.append(
+                    f'<span class="diff-line" data-diff="{kind}">{cells}</span>'
+                )
+            split.extend(
+                '<span class="diff-pair">'
+                + "".join(
+                    f'<span class="diff-side" data-diff="{kind}">{cells}</span>'
+                    for kind, cells in (side(row, 0, True), side(row, 1, True))
+                )
+                + "</span>"
+                for row in hunk.rows
+            )
+        unified.append(gap(prepared.trailing))
+        split.append(gap(prepared.trailing))
+
+        # Summarize the change size and offer the two layouts in the bar.
+        ident = self.uid(block.get("id"))
+        label = block.get("title") or language or "Diff"
+        summary = (
+            f"{prepared.insertions} added, {prepared.deletions} removed"
+            if prepared.insertions and prepared.deletions
+            else f"{prepared.insertions} added"
+            if prepared.insertions
+            else f"{prepared.deletions} removed"
+        )
+        stats = (
+            f'<span class="diff-stat" role="img" aria-label="{summary}">'
+            + (
+                f'<span data-diff="insert">+{prepared.insertions}</span>'
+                if prepared.insertions
+                else ""
+            )
+            + (
+                f'<span data-diff="delete">\u2212{prepared.deletions}</span>'
+                if prepared.deletions
+                else ""
+            )
+            + "</span>"
+        )
+        choices = "".join(
+            '<button type="button" data-diff-choice="'
+            + name
+            + '" aria-pressed="'
+            + str(name == view).lower()
+            + '">'
+            + name.title()
+            + "</button>"
+            for name in ("unified", "split")
+        )
+        return (
+            '<div id="'
+            + ident
+            + '" class="codebox diff" data-diff-view="'
+            + view
+            + '"><div class="codebar"><span class="diff-label"><span>'
+            + esc(label)
+            + "</span>"
+            + stats
+            + '</span><span class="diff-views" role="group" aria-label="Diff layout">'
+            + choices
+            + "</span></div>"
+            + "".join(
+                f'<code class="diff-content diff-{name}" style="--code-digits:{digits}">'
+                + "".join(rows)
+                + "</code>"
+                for name, rows in (("unified", unified), ("split", split))
+            )
+            + "</div>"
         )
 
     def _table_block(self, values: Mapping[str, object]) -> str:
@@ -1816,6 +1976,7 @@ class Renderer:
         "list": (spec.ListBlock, _list_block),
         "alert": (spec.AlertBlock, _alert_block),
         "code": (spec.CodeBlock, _code_block),
+        "diff": (spec.DiffBlock, _diff_block),
         "table": (spec.TableBlock, _table_block),
         "image": (spec.ImageBlock, _image_block),
         "disclosure": (spec.DisclosureBlock, _disclosure_block),
