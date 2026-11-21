@@ -29,6 +29,8 @@ from diagram_layout import (
 )
 from diff_blocks import (
     DEFAULT_CONTEXT,
+    SIDES,
+    DiffNote,
     DiffRow,
     prepare_diff,
     source_lines,
@@ -635,13 +637,15 @@ class Renderer:
         # Validate annotations and highlight the whole source before rendering rows.
         block = cast("spec.CodeBlock", values)
         source = highlight_code(str(block["text"]), block.get("language", ""))
-        prepared = prepare_code_block(source, block.get("annotations", []))
+        prepared = prepare_code_block(
+            source, block.get("annotations", []), block.get("start", 1)
+        )
         self.code_categories.update(prepared.source.categories)
 
         # Reserve the copy target and a gutter wide enough for every line number.
         ident = self.uid(block.get("id"))
         label = block.get("language", "Code")
-        digits = max(2, len(str(len(prepared.source.lines))))
+        digits = max(2, len(str(prepared.start + len(prepared.source.lines) - 1)))
         overlaps = max(map(len, prepared.line_ranges), default=0)
         gutter_extra = (
             f";--code-rail-extra:{4 * (overlaps - 1)}px" if overlaps > 1 else ""
@@ -657,9 +661,9 @@ class Renderer:
 
         # Render numbered source rows followed by their notes in input order.
         endings = {"": "", "\n": "&#10;", "\r": "&#13;", "\r\n": "&#13;&#10;"}
-        for number, line in enumerate(prepared.source.lines, 1):
+        for number, line in enumerate(prepared.source.lines, prepared.start):
             # Stack every covering range while using the earliest background at rest.
-            covering = prepared.line_ranges[number - 1]
+            covering = prepared.line_ranges[number - prepared.start]
             attributes = f' data-source-line="{number}"'
             if covering:
                 stops: list[str] = []
@@ -724,19 +728,56 @@ class Renderer:
             + "</code></div>"
         )
 
+    def _diff_note(self, note: DiffNote) -> str:
+        # Render the optional title with the same safe inline vocabulary as text.
+        title = (
+            '<span class="code-annotation-title">' + inline(note.title) + "</span>"
+            if note.title
+            else ""
+        )
+
+        # Name the version and lines the note explains, as the gutters number them.
+        attributes = ""
+        badge = ""
+        if note.side is not None and note.lines is not None:
+            start, end = note.lines.start, note.lines.end
+            version = ("Old", "New")[note.side]
+            label = (
+                f"{version} line {start}"
+                if start == end
+                else f"{version} lines {start}\u2013{end}"
+            )
+            attributes = f' data-diff-note="{SIDES[note.side]}"'
+            badge = '<span class="code-range-label">' + label + "</span>"
+
+        return (
+            '<span class="code-annotation diff-note" role="note"'
+            + attributes
+            + '><span class="code-annotation-heading">'
+            + badge
+            + title
+            + '</span><span class="code-annotation-text">'
+            + inline(note.text)
+            + "</span></span>"
+        )
+
     def _diff_block(self, values: Mapping[str, object]) -> str:
         # Align the two versions before highlighting either of them.
         block = cast("spec.DiffBlock", values)
         before, after = block["before"], block["after"]
-        prepared = prepare_diff(before, after, block.get("context", DEFAULT_CONTEXT))
+        prepared = prepare_diff(
+            before,
+            after,
+            block.get("context", DEFAULT_CONTEXT),
+            block.get("annotations"),
+            (block.get("before_start", 1), block.get("after_start", 1)),
+        )
+        starts = prepared.starts
 
-        # Reject unknown layouts and line offsets rather than guessing a default.
+        # Reject an unknown layout rather than guessing a default.
         view = block.get("view", "unified")
         if view not in ("unified", "split"):
             raise ValueError("Diff view must be unified or split")
-        starts = (block.get("before_start", 1), block.get("after_start", 1))
-        if any(type(start) is not int or start < 1 for start in starts):
-            raise ValueError("Diff before_start and after_start must be integers >= 1")
 
         # Highlight each whole version so multiline tokens keep their context.
         language = block.get("language", "")
@@ -792,6 +833,14 @@ class Renderer:
                 + "</span>"
             )
 
+        def notes(*keys: str | tuple[int, int | None]) -> str:
+            # Render the notes placed at these positions, in their input order.
+            return "".join(
+                self._diff_note(note)
+                for key in keys
+                for note in prepared.notes.get(cast("str | tuple[int, int]", key), [])
+            )
+
         def gap(hidden: int) -> str:
             # Name how much unchanged source separates the visible hunks.
             if not hidden:
@@ -800,8 +849,8 @@ class Renderer:
             return f'<span class="diff-gap">{hidden} unchanged {noun}</span>'
 
         # Render every hunk once per layout so switching needs no recomputation.
-        unified: list[str] = []
-        split: list[str] = []
+        unified: list[str] = [notes("top")]
+        split: list[str] = [notes("top")]
         for hunk in prepared.hunks:
             unified.append(gap(hunk.hidden))
             split.append(gap(hunk.hidden))
@@ -809,6 +858,7 @@ class Renderer:
                 kind, cells = side(row, 0 if row.before is not None else 1, False)
                 unified.append(
                     f'<span class="diff-line" data-diff="{kind}">{cells}</span>'
+                    + notes((0, row.before), (1, row.after))
                 )
             split.extend(
                 '<span class="diff-pair">'
@@ -817,10 +867,11 @@ class Renderer:
                     for kind, cells in (side(row, 0, True), side(row, 1, True))
                 )
                 + "</span>"
+                + notes((0, row.before), (1, row.after))
                 for row in hunk.rows
             )
-        unified.append(gap(prepared.trailing))
-        split.append(gap(prepared.trailing))
+        unified.extend((gap(prepared.trailing), notes("bottom")))
+        split.extend((gap(prepared.trailing), notes("bottom")))
 
         # Summarize the change size and offer the two layouts in the bar.
         ident = self.uid(block.get("id"))

@@ -40,15 +40,32 @@ class PreparedCodeBlock:
 
     source: HighlightedCode
     """Whole-source highlighting split into independently renderable lines."""
+    start: int
+    """Number of the first source line; later lines count up from it."""
     annotations: dict[str | int, list[CodeAnnotation]]
-    """Notes keyed by top, bottom, or a one-based source line to follow."""
+    """Notes keyed by top, bottom, or the numbered source line to follow."""
     ranges: dict[SourceRange, int]
     """Unique regions mapped to indices in start-line order, with input-order ties."""
     line_ranges: tuple[tuple[int, ...], ...]
     """Range indices covering each source line in source order, earliest first."""
 
 
-def _source_range(value: object, line_count: int, label: str) -> SourceRange:
+def source_range(value: object, first: int, last: int, label: str) -> SourceRange:
+    """Read one annotation's referenced lines.
+
+    Args:
+        value: One integer line, or a two-integer inclusive [start, end] list.
+        first: Number of the first source line.
+        last: Number of the last source line.
+        label: Reader-facing name of the annotation, used in error messages.
+
+    Returns:
+        The inclusive bounds; a single line has equal bounds.
+
+    Raises:
+        ValueError: The value has another shape, holds a non-integer or a
+            boolean, is reversed, or falls outside the numbered source.
+    """
     # Accept exactly one integer line or a two-integer inclusive range.
     if type(value) is int:
         bounds = [value, value]
@@ -62,15 +79,15 @@ def _source_range(value: object, line_count: int, label: str) -> SourceRange:
 
     # Reject reversed and out-of-range bounds instead of changing their meaning.
     start, end = bounds
-    if not 1 <= start <= end <= line_count:
+    if not first <= start <= end <= last:
         raise ValueError(
-            f"{label} lines must satisfy 1 <= start <= end <= {line_count}"
+            f"{label} lines must satisfy {first} <= start <= end <= {last}"
         )
     return SourceRange(start, end)
 
 
 def _line_ranges(
-    ranges: dict[SourceRange, int], line_count: int
+    ranges: dict[SourceRange, int], first: int, last: int
 ) -> tuple[tuple[int, ...], ...]:
     # Index range boundaries once instead of rescanning every range for each line.
     starts: dict[int, list[int]] = {}
@@ -82,7 +99,7 @@ def _line_ranges(
     # Keep active ranges in their start/input order as the source is traversed.
     active: dict[int, None] = {}
     result: list[tuple[int, ...]] = []
-    for number in range(1, line_count + 1):
+    for number in range(first, last + 1):
         for index in ends.get(number, []):
             del active[index]
         for index in starts.get(number, []):
@@ -93,7 +110,7 @@ def _line_ranges(
 
 
 def prepare_code_block(
-    source: HighlightedCode, annotations: object
+    source: HighlightedCode, annotations: object, start: object = 1
 ) -> PreparedCodeBlock:
     """Validate and group annotations for already highlighted source.
 
@@ -101,10 +118,12 @@ def prepare_code_block(
         source: Highlighted source with one or more addressable lines.
         annotations: JSON list of objects with required nonblank string text,
             optional string title, and position defaulting to top. Position is
-            top, bottom, or an integer source line in 1..line_count. Booleans,
-            unknown fields, and invalid field types are rejected. Optional lines
-            is one integer or [start, end] within the source, independent of
+            top, bottom, or an integer numbered source line. Booleans, unknown
+            fields, and invalid field types are rejected. Optional lines is one
+            integer or [start, end] within the numbered source, independent of
             position; omission makes a general note.
+        start: Integer number of the first source line, at least 1. Positions
+            and lines use the resulting numbering. Booleans are rejected.
 
     Returns:
         Numbered-line input and grouped notes; notes at each position retain
@@ -113,8 +132,14 @@ def prepare_code_block(
         Empty source has one addressable blank line.
 
     Raises:
-        ValueError: Annotation input is malformed or its line is out of range.
+        ValueError: The start or annotation input is malformed, or an
+            annotation's line is out of range.
     """
+    # Number the source from the requested first line.
+    if type(start) is not int or start < 1:
+        raise ValueError("Code start must be an integer >= 1")
+    first, last = start, start + len(source.lines) - 1
+
     # Require a list before validating individual notes.
     if not isinstance(annotations, list):
         raise ValueError("Code annotations must be a list")
@@ -139,16 +164,14 @@ def prepare_code_block(
         # Reject bad positions rather than silently moving a note to other code.
         position = fields.get("position", "top")
         if type(position) is int:
-            if not 1 <= position <= len(source.lines):
-                raise ValueError(
-                    f"{label} position must be between 1 and {len(source.lines)}"
-                )
+            if not first <= position <= last:
+                raise ValueError(f"{label} position must be between {first} and {last}")
         elif not isinstance(position, str) or position not in ("top", "bottom"):
             raise ValueError(label + " position must be top, bottom, or a source line")
 
         # Resolve referenced source separately from the note's display position.
         lines = (
-            _source_range(fields["lines"], len(source.lines), label)
+            source_range(fields["lines"], first, last, label)
             if "lines" in fields
             else None
         )
@@ -160,5 +183,5 @@ def prepare_code_block(
     ordered = sorted(distinct_ranges, key=lambda bounds: bounds.start)
     ranges = {bounds: index for index, bounds in enumerate(ordered)}
     return PreparedCodeBlock(
-        source, grouped, ranges, _line_ranges(ranges, len(source.lines))
+        source, first, grouped, ranges, _line_ranges(ranges, first, last)
     )

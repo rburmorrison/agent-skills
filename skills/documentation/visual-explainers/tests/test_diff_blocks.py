@@ -144,6 +144,116 @@ class DiffBlockTests(unittest.TestCase):
                 _texts(content, "diff-gap"),
             )
 
+    def test_notes_follow_their_lines_in_both_layouts(self) -> None:
+        # Annotate a removed line, a replacement range, and the diff as a whole.
+        root = _rendered(
+            {
+                "before": "keep\nold\ngone\n",
+                "after": "keep\nnew\nadded\n",
+                "before_start": 10,
+                "after_start": 20,
+                "annotations": [
+                    {"position": "bottom", "text": "Last"},
+                    {"lines": 12, "side": "before", "text": "Why it went"},
+                    {"lines": [21, 22], "title": "<T>", "text": "**Both** lines"},
+                    {"text": "Overview"},
+                ],
+            }
+        )
+
+        # Place each note after its last line, wherever the layout puts that line.
+        unified, split = (
+            [
+                "".join(row.itertext())
+                for row in content
+                if "code-annotation" in row.attrib["class"]
+                or row.attrib["class"] in ("diff-line", "diff-pair")
+            ]
+            for content in root.findall("code")
+        )
+        self.assertEqual(
+            [
+                "Overview",
+                "1020keep",
+                "11\u2212Removedold",
+                "12\u2212Removedgone",
+                "Old line 12Why it went",
+                "21+Addednew",
+                "22+Addedadded",
+                "New lines 21\u201322<T>Both lines",
+                "Last",
+            ],
+            unified,
+        )
+        self.assertEqual(
+            [
+                "Overview",
+                "10keep20keep",
+                "11\u2212Removedold21+Addednew",
+                "12\u2212Removedgone22+Addedadded",
+                "Old line 12Why it went",
+                "New lines 21\u201322<T>Both lines",
+                "Last",
+            ],
+            split,
+        )
+
+        # Mark which version a referenced note explains, and escape its title.
+        notes = [row for row in root.findall("code")[0] if row.get("role") == "note"]
+        self.assertEqual(
+            [None, "before", "after", None],
+            [note.get("data-diff-note") for note in notes],
+        )
+        self.assertIsNone(root.find(".//T"))
+        self.assertIsNotNone(root.find(".//strong"))
+
+    def test_notes_on_collapsed_lines_need_an_explicit_position(self) -> None:
+        # Leave line 1 outside the single line of context around the change.
+        before = "".join(f"{number}\n" for number in range(1, 9))
+        block: dict[str, object] = {
+            "before": before,
+            "after": before.replace("8\n", "eight\n"),
+            "context": 1,
+        }
+
+        # Refuse to move a note away from the line it names.
+        with self.assertRaisesRegex(ValueError, "line 1 is collapsed"):
+            _ = _rendered(block | {"annotations": [{"lines": 1, "text": "n"}]})
+
+        # Accept the same reference once the author chooses where it goes.
+        root = _rendered(
+            block | {"annotations": [{"lines": 1, "position": "top", "text": "n"}]}
+        )
+        self.assertEqual(
+            ["New line 1"], _texts(root.findall("code")[0], "code-range-label")
+        )
+
+    def test_malformed_diff_annotations_stop_rendering(self) -> None:
+        # Pair each invalid annotation list with the diagnostic it produces.
+        cases: list[tuple[object, str]] = [
+            ({}, "must be a list"),
+            (["note"], "must be an object"),
+            ([{}], "text must be a nonblank string"),
+            ([{"text": " "}], "text must be a nonblank string"),
+            ([{"text": "n", "title": 1}], "title must be a string"),
+            ([{"text": "n", "position": 2}], "position must be top or bottom"),
+            ([{"text": "n", "side": "before"}], "side applies only with lines"),
+            ([{"text": "n", "lines": 1, "side": "old"}], "side must be before or"),
+            ([{"text": "n", "lines": 3}], "1 <= start <= end <= 2"),
+            ([{"text": "n", "lines": [2, 1]}], "lines must"),
+            ([{"text": "n", "lines": True}], "lines must"),
+            ([{"text": "n", "line": 1}], "accepts only"),
+        ]
+
+        for annotations, message in cases:
+            with (
+                self.subTest(annotations=annotations),
+                self.assertRaisesRegex(ValueError, message),
+            ):
+                _ = _rendered(
+                    {"before": "a\nb\n", "after": "a\nc\n", "annotations": annotations}
+                )
+
     def test_malformed_diffs_stop_rendering(self) -> None:
         # Pair each invalid field with the diagnostic it produces.
         valid: dict[str, object] = {"before": "a\n", "after": "b\n"}

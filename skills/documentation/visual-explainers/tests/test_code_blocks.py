@@ -103,6 +103,63 @@ class CodeBlockTests(unittest.TestCase):
         )
         self.assertEqual(source, recovered)
 
+    def test_start_renumbers_rows_positions_and_referenced_lines(self) -> None:
+        # Number a three-line excerpt as lines 98 to 100 of its file.
+        output = Renderer({"title": "Excerpt"}, Path.cwd()).block(
+            {
+                "type": "code",
+                "text": "a\nb\nc\n",
+                "start": 98,
+                "annotations": [
+                    {"position": 99, "lines": [99, 100], "text": "Note"},
+                ],
+            }
+        )
+
+        # Show file numbers in the gutter, the note's badge, and the range data.
+        root = ET.fromstring(output)  # noqa: S314 — renderer escapes all input markup.
+        content = root.findall("code")[0]
+        self.assertEqual("--code-digits:3", content.get("style"))
+        self.assertEqual(
+            [
+                ("code-line", "98a"),
+                ("code-line", "99b"),
+                ("code-annotation", "Lines 99\u2013100Note"),
+                ("code-line", "100c"),
+            ],
+            [(row.get("class"), "".join(row.itertext())) for row in content],
+        )
+        note = content.findall("span[@class='code-annotation']")[0]
+        self.assertEqual(
+            ("99", "100"),
+            (note.attrib["data-range-start"], note.attrib["data-range-end"]),
+        )
+        self.assertEqual(
+            ["98", "99", "100"],
+            [row.attrib["data-source-line"] for row in content if row is not note],
+        )
+
+    def test_start_bounds_annotations_and_rejects_invalid_values(self) -> None:
+        # Reject lines numbered as if the excerpt still began at one.
+        source = highlight_code("a\nb", "")
+        for annotation, message in [
+            ({"text": "n", "position": 1}, "between 40 and 41"),
+            ({"text": "n", "lines": [1, 2]}, "40 <= start <= end <= 41"),
+        ]:
+            with (
+                self.subTest(annotation=annotation),
+                self.assertRaisesRegex(ValueError, message),
+            ):
+                _ = prepare_code_block(source, [annotation], 40)
+
+        # Reject starts that cannot number a first line.
+        for start in [0, -3, True, 1.0, "2", None]:
+            with (
+                self.subTest(start=start),
+                self.assertRaisesRegex(ValueError, "start must be an integer >= 1"),
+            ):
+                _ = prepare_code_block(source, [], start)
+
     def test_ranges_share_identities_and_keep_every_overlap(self) -> None:
         # Mix placement and range order, including an identical repeated range.
         result = prepare_code_block(

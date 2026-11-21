@@ -1320,6 +1320,22 @@ pre {
   border-bottom: 0;
 }
 
+.code-annotation:has(+ :is(.diff-line, .diff-pair)) {
+  border-bottom: 1px solid var(--line);
+}
+
+.diff-note[data-diff-note="before"] {
+  --code-range-ink: var(--diff-delete);
+}
+
+.diff-note[data-diff-note="after"] {
+  --code-range-ink: var(--diff-insert);
+}
+
+.code-annotation.diff-note[data-diff-note]::before {
+  background: var(--code-range-ink);
+}
+
 /* A split layout needs room for two readable columns. */
 @container diff (max-width: 640px) {
   .diff-views,

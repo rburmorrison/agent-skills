@@ -6,8 +6,12 @@ import re
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from itertools import groupby, zip_longest
+from typing import cast
+
+from code_blocks import SourceRange, source_range
 
 DEFAULT_CONTEXT = 3
+SIDES = ("before", "after")
 
 
 @dataclass(frozen=True)
@@ -33,11 +37,29 @@ class DiffHunk:
 
 
 @dataclass(frozen=True)
+class DiffNote:
+    """Explanatory content shown between diff rows."""
+
+    text: str
+    """Required nonblank text accepting the renderer's safe inline vocabulary."""
+    title: str
+    """Optional title accepting inline formatting; empty means no title."""
+    side: int | None = None
+    """Version the lines belong to, 0 earlier or 1 later; None for a general note."""
+    lines: SourceRange | None = None
+    """Referenced lines in that version's numbering; None for a general note."""
+
+
+@dataclass(frozen=True)
 class PreparedDiff:
-    """Hunks covering every difference between two versions."""
+    """Hunks covering every difference between two versions, with their notes."""
 
     hunks: tuple[DiffHunk, ...]
     """One or more hunks in source order."""
+    starts: tuple[int, int]
+    """Number of the first line of the earlier and later version."""
+    notes: dict[str | tuple[int, int], list[DiffNote]]
+    """Notes keyed by top, bottom, or the (version, zero-based line) to follow."""
     trailing: int
     """Unchanged lines omitted after the last hunk."""
     deletions: int
@@ -62,8 +84,76 @@ def source_lines(text: str) -> list[str]:
     return lines
 
 
+def _notes(
+    annotations: object,
+    hunks: list[DiffHunk],
+    starts: tuple[int, int],
+    counts: tuple[int, int],
+) -> dict[str | tuple[int, int], list[DiffNote]]:
+    # Require a list before validating individual notes.
+    if not isinstance(annotations, list):
+        raise ValueError("Diff annotations must be a list")
+
+    # Record which lines of each version the hunks actually show.
+    shown = (
+        {row.before for hunk in hunks for row in hunk.rows},
+        {row.after for hunk in hunks for row in hunk.rows},
+    )
+
+    # Validate each complete annotation before adding it to its placement group.
+    grouped: dict[str | tuple[int, int], list[DiffNote]] = {}
+    for index, raw in enumerate(cast("list[object]", annotations), 1):
+        label = f"Diff annotation {index}"
+        if not isinstance(raw, dict):
+            raise ValueError(label + " must be an object")
+        fields = cast("dict[str, object]", raw)
+        if fields.keys() - {"text", "title", "position", "lines", "side"}:
+            raise ValueError(
+                label + " accepts only text, title, position, lines, and side"
+            )
+        content = fields.get("text")
+        title = fields.get("title", "")
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError(label + " text must be a nonblank string")
+        if not isinstance(title, str):
+            raise ValueError(label + " title must be a string")
+        position = fields.get("position")
+        if position is not None and position not in ("top", "bottom"):
+            raise ValueError(label + " position must be top or bottom")
+
+        # Keep a note without referenced lines as a general note.
+        if "lines" not in fields:
+            if "side" in fields:
+                raise ValueError(label + " side applies only with lines")
+            grouped.setdefault(position or "top", []).append(DiffNote(content, title))
+            continue
+
+        # Resolve the referenced lines in the chosen version's own numbering.
+        side_name = fields.get("side", "after")
+        if side_name not in SIDES:
+            raise ValueError(label + " side must be before or after")
+        side = SIDES.index(cast("str", side_name))
+        first = starts[side]
+        lines = source_range(fields["lines"], first, first + counts[side] - 1, label)
+
+        # Reject a note whose anchor line is collapsed instead of moving it.
+        last_index = lines.end - first
+        if position is None and last_index not in shown[side]:
+            raise ValueError(
+                f"{label} line {lines.end} is collapsed as unchanged; raise context to show it, or set position"
+            )
+        key = position or (side, last_index)
+        grouped.setdefault(key, []).append(DiffNote(content, title, side, lines))
+
+    return grouped
+
+
 def prepare_diff(
-    before: object, after: object, context: object = DEFAULT_CONTEXT
+    before: object,
+    after: object,
+    context: object = DEFAULT_CONTEXT,
+    annotations: object = None,
+    starts: tuple[object, object] = (1, 1),
 ) -> PreparedDiff:
     """Compare two versions line by line and group their differences.
 
@@ -72,20 +162,34 @@ def prepare_diff(
         after: Later source as a string; empty for a removed file.
         context: Non-negative integer count of unchanged lines kept around
             each change. Booleans are rejected.
+        annotations: None, or a JSON list of objects with required nonblank
+            string text and optional string title. Optional lines is one
+            integer or [start, end] in the numbering of the version named by
+            side, before or after (the default). Optional position is top or
+            bottom. A note with lines and no position follows its last line,
+            which must be shown; a note without lines defaults to top.
+            Unknown fields, and side without lines, are rejected.
+        starts: Integer number, at least 1, of the first line of the earlier
+            and of the later version. Booleans are rejected.
 
     Returns:
         Hunks in source order. Lines compare by content, ignoring their line
         endings. Changes whose context overlaps or touches share one hunk.
+        Notes at each placement retain their original list order.
 
     Raises:
-        ValueError: A version is not a string, context is not a non-negative
-            integer, or the versions have identical lines.
+        ValueError: A version is not a string, context or a start is not a
+            valid integer, the versions have identical lines, or an annotation
+            is malformed, out of range, or anchored to a collapsed line.
     """
     # Reject mistyped input instead of comparing its string form.
     if not isinstance(before, str) or not isinstance(after, str):
         raise ValueError("Diff before and after must be strings")
     if type(context) is not int or context < 0:
         raise ValueError("Diff context must be a non-negative integer")
+    if any(type(start) is not int or start < 1 for start in starts):
+        raise ValueError("Diff before_start and after_start must be integers >= 1")
+    numbering = cast("tuple[int, int]", starts)
 
     # Require a difference so the block always has a change to show.
     old, new = source_lines(before), source_lines(after)
@@ -111,8 +215,16 @@ def prepare_diff(
         previous_end = group[-1][2]
 
     changed = [row for hunk in hunks for row in hunk.rows if row.changed]
+    notes = _notes(
+        [] if annotations is None else annotations,
+        hunks,
+        numbering,
+        (len(old), len(new)),
+    )
     return PreparedDiff(
         tuple(hunks),
+        numbering,
+        notes,
         len(old) - previous_end,
         sum(row.before is not None for row in changed),
         sum(row.after is not None for row in changed),

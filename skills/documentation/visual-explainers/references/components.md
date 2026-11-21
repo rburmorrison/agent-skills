@@ -65,11 +65,11 @@ Alerts accept `kind`: `note`, `tip`, `important`, `warning`, `caution`. Instead 
 
 Code `language` labels the block and selects syntax highlighting during generation; it does not execute code. Use a recognized Pygments name or alias, such as `"Rust"` or `"rust"`; matching is case-insensitive. Missing or unknown languages render as plain text. Keep descriptions such as “Actual Source” in `annotations`, outside `language`: `"Rust · Actual Source"` is not a recognized language.
 
-Code blocks are numbered by source line, including blank lines, not by wrapped rows. Copy copies only the source, not numbers or annotations.
+Code blocks are numbered by source line, including blank lines, not by wrapped rows. Numbering begins at 1; for an excerpt, set `start` to the file line number of its first line so the gutter shows real file lines. Copy copies only the source, not numbers or annotations.
 
-Use the optional `annotations` list for full-width explanatory notes. Each object requires a nonblank string `text` and accepts an optional string `title`; both use the existing safe inline formatting. `position` defaults to `"top"`, accepts `"bottom"`, or takes a positive integer meaning **after that source line**. Multiple notes at the same position keep their list order. Invalid fields, types, positions, or line numbers stop generation with an error; correct them rather than moving the note silently. Choose notes and positions that help explain the source; no annotation is required.
+Use the optional `annotations` list for full-width explanatory notes. Each object requires a nonblank string `text` and accepts an optional string `title`; both use the existing safe inline formatting. `position` defaults to `"top"`, accepts `"bottom"`, or takes a line number meaning **after that source line**. Multiple notes at the same position keep their list order. Invalid fields, types, positions, or line numbers stop generation with an error; correct them rather than moving the note silently. Choose notes and positions that help explain the source; no annotation is required.
 
-Add `lines` to identify the source a note explains: an integer for one line or `[start, end]` for an inclusive range. This is independent of `position`; omitting it leaves a neutral general note. Bounds must be integers within the source, with start no greater than end; invalid bounds stop generation. Referenced notes show a line badge and matching source shading. Overlapping ranges are supported.
+Add `lines` to identify the source a note explains: an integer for one line or `[start, end]` for an inclusive range. This is independent of `position`; omitting it leaves a neutral general note. Bounds must be integers within the source, with start no greater than end; invalid bounds stop generation. With `start` set, `position` and `lines` use the same file line numbers as the gutter. Referenced notes show a line badge and matching source shading. Overlapping ranges are supported.
 
 ```json
 {
@@ -107,6 +107,24 @@ The reader switches between a unified layout and a side-by-side split layout, an
 ```
 
 Only `before` and `after` are required. `language` selects highlighting as it does for code blocks. `title` labels the bar, typically with the file path, and defaults to the language. `view` sets the initial layout, `"unified"` (the default) or `"split"`. Use the same `view` for every diff in a document, since the reader's switch applies to all of them. `context` is the number of unchanged lines kept around each change, default 3; longer unchanged runs collapse into a row stating how many lines were omitted, so whole functions or files can be supplied. When the versions are excerpts, set `before_start` and `after_start` to the file line number of each excerpt's first line; both default to 1. Lines compare by content, ignoring line-ending differences. An invalid `view`, `context`, or start line stops generation.
+
+Use the optional `annotations` list to explain a change beside it. Each object requires a nonblank string `text` and accepts an optional string `title`, both with inline formatting. Add `lines`, an integer or `[start, end]`, to name the lines a note explains, in the numbering the gutter shows; `side` says which version those numbers belong to, `"after"` (the default) or `"before"` for removed lines. Such a note appears after its last line in both layouts, with a badge such as “New lines 42–43”. That line must be shown: if it is collapsed as unchanged, raise `context` or set `position`. `position` accepts `"top"` or `"bottom"`; a note without `lines` is a general note and defaults to `"top"`. Invalid annotations stop generation.
+
+```json
+{
+  "type": "diff",
+  "language": "Python",
+  "before_start": 40,
+  "after_start": 42,
+  "before": "def total(items):\n    return sum(items)\n",
+  "after": "def total(items, discount=0):\n    return sum(items) - discount\n",
+  "annotations": [
+    {"text": "Callers that pass no discount behave as before."},
+    {"lines": 41, "side": "before", "text": "The old total ignored discounts."},
+    {"lines": [42, 43], "title": "New Parameter", "text": "`discount` defaults to zero."}
+  ]
+}
+```
 
 ## Images
 

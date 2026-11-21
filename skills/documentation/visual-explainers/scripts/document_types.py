@@ -181,9 +181,9 @@ class CodeAnnotation(_CodeAnnotationText, total=False):
     title: str
     """Optional title accepting safe inline formatting."""
     lines: int | list[int]
-    """One line or inclusive [start, end]; independent of position, omitted for general notes."""
+    """One numbered line or inclusive [start, end]; independent of position, omitted for general notes."""
     position: str | int
-    """Top (default), bottom, or a one-based source line to follow."""
+    """Top (default), bottom, or a numbered source line to follow."""
 
 
 class CodeBlock(TextBlock, total=False):
@@ -191,8 +191,23 @@ class CodeBlock(TextBlock, total=False):
 
     id: str
     language: str
+    start: int
+    """Number of the first source line; defaults to 1."""
     annotations: list[CodeAnnotation]
     """Notes in input order within each placement; invalid input is rejected."""
+
+
+class DiffAnnotation(_CodeAnnotationText, total=False):
+    """One note shown between diff rows."""
+
+    title: str
+    """Optional title accepting safe inline formatting."""
+    lines: int | list[int]
+    """One numbered line or inclusive [start, end] of the version named by side."""
+    side: str
+    """Version the lines belong to: before or after (default)."""
+    position: str
+    """Top or bottom; defaults to after the last referenced line, or top without lines."""
 
 
 class _DiffVersions(TypedDict):
@@ -218,6 +233,8 @@ class DiffBlock(_DiffVersions, total=False):
     """Line number of the first earlier line; defaults to 1."""
     after_start: int
     """Line number of the first later line; defaults to 1."""
+    annotations: list[DiffAnnotation]
+    """Notes in input order within each placement; invalid input is rejected."""
 
 
 class _TableContent(TypedDict):
