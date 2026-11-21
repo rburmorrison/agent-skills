@@ -1,6 +1,6 @@
 # Readable Behavior Tests
 
-Derive cases from agreed behavior, invariants, and meaningful failures. Prefer a small set of distinct scenarios over repeated tests of equivalent paths. Add cases when they protect a separate contract; do not optimize for a numeric test or coverage target unless the project requires one.
+Derive cases from agreed behavior, guarantees, and meaningful failures. Prefer a small set of distinct scenarios over repeated tests of equivalent paths. Add cases when they protect a separate contract; do not optimize for a numeric test or coverage target unless the project requires one.
 
 Test at the boundary where the behavior can actually be observed. Use focused tests for non-trivial pure logic and integration tests for interactions such as transactions and serialization. A fake that simply implements the desired behavior does not establish that the production adapter has it.
 

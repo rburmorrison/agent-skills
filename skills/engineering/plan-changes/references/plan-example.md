@@ -102,11 +102,11 @@ Stage outlines:
 
 Representative request: CLI reads CSV, parser retains record numbers, validator rejects bad input, storage locks and reads, pure planning partitions entries, storage applies and commits, CLI prints counts. Failure trace: after one insert succeeds, an update fails; the adapter rolls back both changes, the CLI prints the storage error, and returns 1.
 
-## Invariants and Failure Modes
+## Guarantees and Failure Handling
 
-- I1: An import commits every validated entry or changes nothing (D2).
-- I2: No storage read or write happens before the whole file has validated (D2).
-- I3: Each input identifier is counted exactly once, as inserted or as updated (D5).
+- G1: An import commits every validated entry or changes nothing (D2).
+- G2: No storage read or write happens before the whole file has validated (D2).
+- G3: Each input identifier is counted exactly once, as inserted or as updated (D5).
 - F1: An invalid field or duplicate identifier exits 2 with the first error in input order on stderr and leaves the catalog unchanged; the user corrects the file and reruns.
 - F2: A storage failure during the read or a write exits 1 with the storage error on stderr and rolls back; the user reruns the same file.
 

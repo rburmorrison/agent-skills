@@ -20,9 +20,9 @@ None consequential: the intended behavior is already documented, and no other ca
 
 In `select_entries`, replace `entry.date > since` with `entry.date >= since`. Add one case to `tests/test_report.py`: an entry dated exactly on `since` is included. Exit statuses, output format, and the no-bound path stay unchanged.
 
-## Invariants and Failure Modes
+## Guarantees and Failure Handling
 
-- I1: An entry dated on the `--since` date appears in the report.
+- G1: An entry dated on the `--since` date appears in the report.
 
 ## Checks
 
