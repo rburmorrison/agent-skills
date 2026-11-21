@@ -1,6 +1,6 @@
 ---
 name: gitmoji-commits
-description: Create GitMoji commits from repository changes, using official GitMoji shortcodes, recent commit style, rare optional bodies, and heredoc commit commands. Use when the user asks to commit changes, split changes into commits, or suggest a commit message.
+description: Create GitMoji commits from repository changes, choosing official shortcodes and coherent file groups. Use for every git commit and commit-message suggestion, including when committing is one step of a larger request such as commit and push. Load before writing any commit message.
 ---
 
 # GitMoji Commits
