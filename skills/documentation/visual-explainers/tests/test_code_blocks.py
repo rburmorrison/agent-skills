@@ -139,6 +139,18 @@ class CodeBlockTests(unittest.TestCase):
             [row.attrib["data-source-line"] for row in content if row is not note],
         )
 
+    def test_title_replaces_the_language_label_but_not_highlighting(self) -> None:
+        # Label one block with a path and leave another with its language.
+        renderer = Renderer({"title": "Labels"}, Path.cwd())
+        block = {"type": "code", "language": "Python", "text": "return 1"}
+        titled = renderer.block(block | {"title": "<src>/app.py"})
+        plain = renderer.block(block)
+
+        # Show the escaped title in the bar while still highlighting as Python.
+        self.assertIn('<div class="codebar"><span>&lt;src&gt;/app.py</span>', titled)
+        self.assertIn('<div class="codebar"><span>Python</span>', plain)
+        self.assertIn("syn-keyword", titled)
+
     def test_start_bounds_annotations_and_rejects_invalid_values(self) -> None:
         # Reject lines numbered as if the excerpt still began at one.
         source = highlight_code("a\nb", "")

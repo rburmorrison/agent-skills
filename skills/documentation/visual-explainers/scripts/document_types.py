@@ -187,10 +187,12 @@ class CodeAnnotation(_CodeAnnotationText, total=False):
 
 
 class CodeBlock(TextBlock, total=False):
-    """Numbered literal code with optional language, annotations, and ID."""
+    """Numbered literal code with optional language, title, annotations, and ID."""
 
     id: str
     language: str
+    title: str
+    """Bar label, such as a file path; defaults to the language."""
     start: int
     """Number of the first source line; defaults to 1."""
     annotations: list[CodeAnnotation]

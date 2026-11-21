@@ -644,7 +644,7 @@ class Renderer:
 
         # Reserve the copy target and a gutter wide enough for every line number.
         ident = self.uid(block.get("id"))
-        label = block.get("language", "Code")
+        label = block.get("title") or block.get("language", "Code")
         digits = max(2, len(str(prepared.start + len(prepared.source.lines) - 1)))
         overlaps = max(map(len, prepared.line_ranges), default=0)
         gutter_extra = (

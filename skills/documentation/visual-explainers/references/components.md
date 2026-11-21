@@ -63,7 +63,7 @@ Alerts accept `kind`: `note`, `tip`, `important`, `warning`, `caution`. Instead 
 
 ### Code Blocks
 
-Code `language` labels the block and selects syntax highlighting during generation; it does not execute code. Use a recognized Pygments name or alias, such as `"Rust"` or `"rust"`; matching is case-insensitive. Missing or unknown languages render as plain text. Keep descriptions such as “Actual Source” in `annotations`, outside `language`: `"Rust · Actual Source"` is not a recognized language.
+Code `language` labels the block and selects syntax highlighting during generation; it does not execute code. An optional `title`, typically the file path, replaces the language as the label without affecting highlighting. Use a recognized Pygments name or alias, such as `"Rust"` or `"rust"`; matching is case-insensitive. Missing or unknown languages render as plain text. Keep descriptions such as “Actual Source” in `annotations`, outside `language`: `"Rust · Actual Source"` is not a recognized language.
 
 Code blocks are numbered by source line, including blank lines, not by wrapped rows. Numbering begins at 1; for an excerpt, set `start` to the file line number of its first line so the gutter shows real file lines. Copy copies only the source, not numbers or annotations.
 
@@ -75,6 +75,7 @@ Add `lines` to identify the source a note explains: an integer for one line or `
 {
   "type": "code",
   "language": "Rust",
+  "title": "src/totals.rs",
   "text": "fn total(values: &[i32]) -> i32 {\n    values.iter().sum()\n}",
   "annotations": [
     {"title": "Actual Source", "text": "Adds the values in a borrowed slice."},

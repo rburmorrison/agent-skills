@@ -38,14 +38,14 @@ A polished page looks authoritative whether or not it is right, so the evidence 
 - **Say what was not run.** If you did not build or run tests, cite tests as evidence of intent, not as passing checks.
 - **Report what you find.** Stale comments, mismatched names, or contract violations discovered along the way belong in a short closing section and in the handoff. Do not fix them.
 
-Show sources without burying the prose in parentheses: set a code block's `start` and a diff's `title`, `before_start`, and `after_start` so excerpts carry their own file and line numbers; give tables a "Defined In" column; and name a section's main file once. Reserve inline `file:line` citations for claims no shown excerpt supports. State the pinned commit in a note near the top.
+Show sources without burying the prose in parentheses: set `title` to the file path on every code block and diff, with a code block's `start` and a diff's `before_start` and `after_start`, so excerpts carry their own file and line numbers; give tables a "Defined In" column; and name a section's main file once. Reserve inline `file:line` citations for claims no shown excerpt supports. State the pinned commit in a note near the top.
 
 ## Shape the Explanation
 
 Lead with the main point in one or two sentences, then give the smallest big picture that makes the rest readable, then the detail.
 
 - **A change:** what changed in one paragraph and a short table; where the changed code sits; the before and after as the reader would observe it, taken from tests, fixtures, or documentation when the repository has them; why; the code changes; consequences and what a caller must now do differently.
-- **A subsystem:** its responsibilities and main guarantee; the pieces and how they connect, with a diagram; one run walked through step by step; the state it keeps and why; edge cases and the decisions behind them.
+- **A subsystem:** its responsibilities and main guarantee; the pieces and how they connect, with a diagram; one run walked through step by step; the state it keeps and why; edge cases and the decisions behind them. Include a diff only where a design rule came from a specific fix, and name that diff's commit, since it predates the pinned one.
 - **A concept:** the idea in plain terms; a small worked example built from nothing; the general rule or math, kept to what the code actually uses; the variants that exist, in a table; where the code defines and applies it; how it has been extended.
 
 Define terms inline when first needed and collect project terms in one table early. Do not include material only because it was touched or because a component exists to display it.
@@ -58,7 +58,7 @@ Define terms inline when first needed and collect project terms in one table ear
 - **Diagrams** for real relationships: a graph for components, a sequence for one run. Graphs cannot contain cycles, so describe a feedback path in prose or as a sequence message.
 - **Output and data** copied from the repository. If real output must be shortened to be readable, label it as abridged and put the complete version in a disclosure.
 
-Keep the document to what a reader can finish in one sitting: roughly ten to fifteen minutes. Move secondary cases into a table or a disclosure, and cite code rather than showing it once the main path is clear.
+Keep the document to what a reader can finish in one sitting: roughly ten to fifteen minutes. This limit outranks showing whole functions: show in full only the functions that carry the main path's decisions, and cite the rest by file and line. Move secondary cases into a table or a disclosure.
 
 ## Build and Hand Off
 
