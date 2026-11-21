@@ -31,16 +31,30 @@ For new projects, use `setup-project` if available to select tooling and support
 
 ### Present Decision Context
 
-Lead each decision with a brief, one-sentence question that frames the actual choice in behavior or responsibilities. Follow it with enough context to answer without asking what the code does today, what would replace it, or what the alternatives mean. Do not repeat the question at the bottom.
+Present every decision in this shape, with all of its context ahead of the request for an answer:
 
-Use short, visually separated blocks with descriptive bold labels, such as **Current behavior**, **Concrete example**, **Options**, **Proposed change** or **Proposed addition**, **Side effects**, and **Recommendation**. Scale the detail to the decision; omit unnecessary blocks and avoid a rigid template for simple questions.
+```markdown
+**Decision 2 of 3: Should an Invoice Be Reminded More Than Once?**
 
-- Ground current behavior in inspected code. Identify the relevant file and symbol, show a focused excerpt, and explain what it does in plain language. Keep code beside its explanation; a file link alone is not sufficient context. Label proposed code, simplified excerpts, and pseudocode so they cannot be mistaken for the current implementation. State uncertainty when evidence is unavailable.
-- Explain why the requested work introduces this decision. Compare concrete outcomes using the same input or usage scenario across options. Use a table when it makes the options, results, and tradeoffs easier to scan; avoid abstract labels without explaining their practical meaning.
-- For changes to existing behavior, show the before and after with focused code or a worked example. Explain what the proposal replaces, which behavior changes, and any relevant behavior preserved. Include meaningful failure and edge cases when they distinguish the choices.
-- For new additions, establish the surrounding workflow and what does not exist yet. Explain where the feature fits, what triggers it, and what the user and system would do under each option. Show proposed code, interfaces, or data shapes when they clarify the choice. If there is no relevant existing code, use a concrete scenario rather than inventing an implementation to replace.
-- Make material consequences explicit: user-visible effects, compatibility, persistence, error handling, dependencies, new responsibilities, and implementation or maintenance costs. Put side effects beside the relevant option, or in a separate block when they need explanation. An addition can introduce these consequences even when it preserves existing behavior.
-- End the explanation with a recommendation tied to the requirements and inspected evidence, including its material downside. Phrase the choice around the consequential behavior the user is deciding, rather than hiding it behind an implementation label such as "use the library" or "add caching."
+**Situation:** The reminder job will run daily. Nothing currently records that a reminder was sent, so without a rule, every overdue invoice gets an email every day.
+
+**Options:**
+- **A. Once only.** Needs a `reminded_at` column. Customers who ignore the first email never hear again.
+- **B. Every 7 days until paid (recommended).** Same column, plus an interval check.
+- **C. Daily.** No schema change, but likely to generate complaints.
+
+**Why B:** The payment-failed emails already repeat weekly, so customers get one consistent cadence. A stops chasing after one ignored email, which defeats the feature. C saves a migration, but daily emails are the likeliest to be marked as spam.
+
+**Cost to Reverse:** A to B is a one-line change later. C to either needs the migration anyway.
+```
+
+- **Title.** One question that frames the actual choice in behavior or responsibilities, in Title Case. Number it, and give the total when it is known. Do not repeat the question at the bottom.
+- **Situation.** Say why the requested work introduces this decision and what happens today, in enough detail to answer without asking what the code does, what would replace it, or what the alternatives mean. Ground current behavior in inspected code: name the file and symbol, and when the choice turns on what the code does, put a focused excerpt directly beneath with a plain-language explanation; a file link alone is not sufficient context. Label proposed code, simplified excerpts, and pseudocode so they cannot be mistaken for the current implementation. For a new addition, describe the surrounding workflow, what triggers the feature, and what does not exist yet; use a concrete scenario rather than inventing an implementation to replace. State uncertainty when evidence is unavailable.
+- **Options.** Letter each option and give it its own bullet: a bold plain-language name, then what it changes in practice. Name the consequential behavior the user is deciding, not an implementation label such as "use the library" or "add caching." Compare the options on the same input or usage scenario, and put material consequences beside the option they belong to: user-visible effects, compatibility, persistence, error handling, dependencies, new responsibilities, and implementation or maintenance costs. For a change to existing behavior, make clear what each option replaces and what it preserves. Mark exactly one option `(recommended)`.
+- **Why.** Head it with the recommended option's letter. Argue for the recommendation against each other option by name, tied to the requirements and inspected evidence, and include its material downside.
+- **Cost to Reverse.** Say what changing the answer later would take.
+
+Keep all five parts and scale their length to the decision; a simple question needs one sentence in each. Add a table, a before-and-after excerpt, or a worked failure or edge case beneath **Situation** only when it makes the options easier to compare.
 
 Provide this context with the question before requesting an answer, including when using a question tool with short option labels. The user should not need to reconstruct the investigation or read a completed plan to understand the decision.
 
@@ -71,7 +85,7 @@ Make responsibility boundaries a concrete planning deliverable for non-trivial c
 - Its exact boundary signature or equivalent input/result contract, including named types and fields, their meaning, and relevant constraints.
 - Whether it is pure or has effects: I/O, mutation of its inputs or shared state, or hidden inputs such as time, randomness, or environment. For effects, name which operation owns coordination, error handling, and any transaction or snapshot.
 - Precise validation rules, error categories and presentation, and partial-failure behavior. Include relevant parser or adapter failure families as well as domain failures; inspect the boundary implementation when needed.
-- A stage outline: the operation's ordered stage names, which the implementer turns into its stage comments.
+- A stage outline: the operation's ordered stages, each as one plain sentence saying what the stage does, with the reason where ordering or a constraint matters. The implementer turns each into its stage comment.
 - Pseudocode where ordering or algorithm choices affect correctness.
 
 ### Design Toward a Functional, Declarative Core

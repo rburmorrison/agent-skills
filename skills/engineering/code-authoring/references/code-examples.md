@@ -149,7 +149,7 @@ Collecting the values and organizing them have different purposes. Sorting and d
 
 ### Decisions and Ordering
 
-Name the stage with an imperative comment and explain why a consequential decision or ordering constraint is necessary:
+Explain the stage in a plain sentence and say why a consequential decision or ordering constraint is necessary:
 
 ```rust
 fn prepare_text(
@@ -212,7 +212,7 @@ output.push_str(&section.title);
 output.push('\n');
 ```
 
-Stage comments name a stage's purpose, not each statement.
+Stage comments explain a stage's purpose, not each statement.
 
 ### Stage Reasons
 
@@ -228,14 +228,14 @@ Three comments for the same stage:
 
 The first names the stage but hides why merging must happen here. The second pads it with a generic claim. The third is one line and states the downstream dependency the code cannot show. When no such dependency or constraint exists, the first form is correct.
 
-Each of these fails a rule, and the fix keeps the stage name alone or drops the comment:
+Each of these fails a rule, and the fix keeps the explanation of the step alone or drops the comment:
 
 ```python
 # Create an empty cart; the loop below adds items to it.
 # Fails: describes the code below. Routine setup needs no comment at all.
 
 # Reject expired coupons so that only valid coupons remain.
-# Fails: restates the stage name. Use "# Reject expired coupons."
+# Fails: restates the step. Use "# Reject expired coupons."
 
 # Apply discounts in a clean and consistent way.
 # Fails: claims tidiness. Use "# Apply discounts."

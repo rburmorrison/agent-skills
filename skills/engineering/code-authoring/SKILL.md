@@ -71,15 +71,15 @@ Keep ordinary one-off conditionals, exhaustive mappings, local mutation, and ord
 
 ### Explain Steps and Decisions
 
-For every function with more than one logical step, introduce each meaningful stage with a brief, imperative implementation comment and separate stages with blank lines. The comment names the stage and, unless the code already makes it plain, why the stage exists or must happen where it does. Sketch these stage comments before filling in the implementation, and revise them when the flow changes. Apply this to short functions too, and to distinct stages within loops or branches. A logical step is a coherent purpose, not an individual statement: collecting values and then organizing them are separate stages; sorting and deduplicating those values can form one stage. Routine buffer initialization and a final return do not automatically need their own comments.
+For every function with more than one logical step, introduce each meaningful stage with a one-line implementation comment and separate stages with blank lines. Write the comment as a natural sentence that explains what the stage does in plain words, as you would say it to a colleague, and, unless the code already makes it plain, why the stage exists or must happen where it does. Do not write a terse label or tag such as `Validation`, `Step 1:`, or `Load:`. Sketch these stage comments before filling in the implementation, and revise them when the flow changes. Apply this to short functions too, and to distinct stages within loops or branches. A logical step is a coherent purpose, not an individual statement: collecting values and then organizing them are separate stages; sorting and deduplicating those values can form one stage. Routine buffer initialization and a final return do not automatically need their own comments.
 
 A broad comment naming several distinct stages does not replace comments at their transitions. Selecting whether work is allowed and performing that work are separate stages, as are writing a heading and rendering its entries. Place each comment where its stage begins.
 
 Write every stage comment as exactly one line, within the file's line-length limit including indentation, or 80 characters when the project sets none. Put the reason in that line as a short clause (`so ...`, `because ...`, `before ...`). Check each stage comment against these rules:
 
 - **Reason source.** A reason names something the stage's own code does not show: a property of the input, a later consumer, an ordering dependency, or a failure it prevents.
-- **Grounding.** Write only a reason you can trace to the code, the plan or task, a test, or observed behavior. If you cannot say where it came from, it may be plausible but false; name the stage alone.
-- **Rejected reasons.** Drop a reason that describes the code below it, repeats the stage name in other words, or claims tidiness or correctness. Keep the stage name alone; do not invent a replacement.
+- **Grounding.** Write only a reason you can trace to the code, the plan or task, a test, or observed behavior. If you cannot say where it came from, it may be plausible but false; explain the step alone.
+- **Rejected reasons.** Drop a reason that describes the code below it, repeats the step's explanation in other words, or claims tidiness or correctness. Keep the explanation of the step alone; do not invent a replacement.
 - **Deletion test.** Remove the reason clause. If a reader loses nothing, leave it removed.
 - **Overlong lines.** Cut words before cutting facts. If two facts the code cannot show still do not fit, keep the one that explains why the stage exists and drop the other. Never continue a stage comment onto a second line.
 - **Routine setup.** Initialization, unpacking, and returns that need no comment do not gain one to carry a reason.
@@ -100,7 +100,7 @@ See [the implementation comment examples](references/code-examples.md#implementa
 After formatting and before independent review or handoff, perform a separate readability pass on the finished source, including changed tests:
 
 1. Read each affected function and its nested blocks in execution order. Identify where the purpose changes, then check that a local stage comment marks each transition; reading only the existing comments can conceal an omitted stage.
-2. For each stage comment, confirm it is one line within the length limit, then apply the reason-source, grounding, and deletion tests above. For each reason, name where it came from; if you cannot, remove the reason and keep the stage name. Also confirm that no stage with a non-obvious constraint lacks a reason.
+2. For each stage comment, confirm it is one line within the length limit, then apply the reason-source, grounding, and deletion tests above. For each reason, name where it came from; if you cannot, remove the reason and keep the explanation of the step. Also confirm that no stage with a non-obvious constraint lacks a reason.
 3. Check each comment group's preceding line and its attachment to the stage it describes. Check the smaller whitespace breaks around setup, traversal, guards, and results even where no new comment is needed.
 4. In tests, trace setup, action, assertions, and each new scenario. Correct broad or misplaced comments and missing paragraphs before reporting the work ready. Passing formatters and tests does not complete this pass.
 
