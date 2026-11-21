@@ -11,6 +11,7 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 - [code-authoring](skills/engineering/code-authoring/SKILL.md) - Writes code and planned documentation changes with clear responsibility boundaries, readable behavior tests, and automatic review; finishes code changes by checking existing documentation for needed accuracy updates.
 - [review-changes](skills/engineering/review-changes/SKILL.md) - Reviews a completed change or targeted fixes using fresh context and the shared documentation guidance.
 - [setup-project](skills/engineering/setup-project/SKILL.md) - Establishes strict project tooling, with Rust and Python profiles.
+- [agents-md](skills/engineering/agents-md/SKILL.md) - Creates and edits `AGENTS.md` and `CLAUDE.md` files as short rule lists with a dedicated verification section, preserving the format of existing files.
 - [align-codebase](skills/engineering/align-codebase/SKILL.md) (manual) - Plans and applies a scoped, behavior-preserving alignment of an existing codebase with these conventions.
 - [implement-verified-steps](skills/engineering/implement-verified-steps/SKILL.md) (manual) - Checks and independently reviews each planned step, with targeted follow-up only for concrete unresolved risks.
 
@@ -38,6 +39,7 @@ npx skills add rburmorrison/agent-skills --global --skill plan-changes
 npx skills add rburmorrison/agent-skills --global --skill code-authoring
 npx skills add rburmorrison/agent-skills --global --skill review-changes
 npx skills add rburmorrison/agent-skills --global --skill setup-project
+npx skills add rburmorrison/agent-skills --global --skill agents-md
 npx skills add rburmorrison/agent-skills --global --skill align-codebase
 npx skills add rburmorrison/agent-skills --global --skill implement-verified-steps
 
