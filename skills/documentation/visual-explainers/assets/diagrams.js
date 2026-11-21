@@ -330,7 +330,17 @@ const ExplainerDiagrams = (() => {
     });
 
     // Recompute fitted or manual framing when a panel becomes visible or resizes.
-    const observer = new ResizeObserver(refresh);
+    // Wait a frame first: resizing the observed panel inside its own callback raises a browser loop error.
+    let scheduled = false;
+    const observer = new ResizeObserver(() => {
+      if (scheduled)
+        return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        refresh();
+      });
+    });
     observer.observe(viewport);
     refresh();
   }
