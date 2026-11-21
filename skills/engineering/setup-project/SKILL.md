@@ -9,7 +9,7 @@ Use for new projects or an explicitly requested tooling setup. Keep existing-pro
 
 ## Plan the Setup
 
-Inspect the destination and applicable instructions before creating files. Establish the project kind, supported language/runtime versions, package manager, and required checks. Ask consequential questions one at a time. Select compatible tools during planning; setup writes start only when implementation is authorized.
+Inspect the destination and applicable instructions before creating files. Establish the project kind, package manager, required checks, and the language/runtime versions the profile asks for. Ask consequential questions one at a time. Select compatible tools during planning; setup writes start only when implementation is authorized.
 
 Keep the shared policy language-agnostic: formatting, deliberate strict linting, static type checks where applicable, readable behavior tests, and repeatable verification. Read only the relevant profile:
 

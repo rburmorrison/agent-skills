@@ -12,11 +12,23 @@ uv add --dev ruff basedpyright pytest
 
 Merge [pyproject-tooling.toml](../assets/python/pyproject-tooling.toml) into the initialized manifest, preserving its existing tables and package-manager output. Ruff can infer its target from `requires-python` in a project manifest. Set basedpyright's `pythonVersion` to the project's minimum supported version; do not assume the running interpreter represents that minimum.
 
-The selected rules cover errors, imports, modern syntax, common bugs, unnecessary complexity, common security mistakes, and suppression hygiene. Docstring requirements are intentionally not selected: documentation should explain useful contracts and decisions, with concise usage examples. Formatters determine mechanical layout; preserve logical grouping within that layout.
+The asset's `select` list is the baseline for every new project: errors and style, imports, naming, modern syntax, common bugs, simplification, Pylint checks, complexity, unused arguments, commented-out code, stray prints, exception handling, pathlib, timezone-aware datetimes, performance, security, pytest style, and suppression hygiene. Remove a baseline family only for a concrete project reason, written beside the setting; a command-line tool that prints its output may drop `T20`, for example. `E501` is ignored because the formatter owns line length.
 
-The McCabe threshold is 15. This is a Python-profile default, not an assertion that Ruff's metric equals Clippy's cognitive-complexity score. Adjust it only for a concrete project reason, documented with the setting.
+During planning, add the families that fit the project. Ruff has many more than any one project needs, so choose them by what the project does:
 
-The test exception permits assertion statements in recognized test paths because they are the test framework's behavior checks. Keep test discovery paths and the exemption aligned. Additional exemptions must be narrow and explained. Use specific rule names for `noqa` or `# pyright: ignore[rule]` comments and put a reason alongside them; do not blanket-ignore a file or missing imports to obtain a pass.
+- `ASYNC` for asyncio, Trio, or AnyIO code.
+- `LOG` and `G` when the project uses the standard `logging` module.
+- `FBT` for libraries, where boolean positional arguments obscure call sites.
+- `DJ`, `FAST`, `NPY`, `PD`, or `AIR` for Django, FastAPI, NumPy, pandas, or Airflow.
+- `ANN` only when basedpyright is not the type checker; strict mode already requires annotations.
+
+Docstring rules (`D`, `DOC`) are not selected. `code-authoring` owns docstring content, and Ruff's `DOC` rules are preview-only and reject documented exceptions that a callee raises.
+
+The McCabe threshold is 15, and Pylint's own size and branch thresholds stay at their defaults. Adjust any of them only for a concrete project reason, documented with the setting.
+
+The test exceptions permit assertion statements and literal expected values in recognized test paths. Keep test discovery paths and the exemptions aligned. Additional exemptions must be narrow and explained.
+
+Every suppression names its rule and carries a reason: `# noqa: RULE` or `# pyright: ignore[rule]`, followed by the reason in the same comment. The tooling rejects a suppression with no rule code (`PGH003`, `PGH004`, `reportIgnoreCommentWithoutRule`) and one that no longer suppresses anything (`RUF100`, `reportUnnecessaryTypeIgnoreComment`). Neither tool can check that a reason is present, so check that yourself. Do not blanket-ignore a file or missing imports to obtain a pass.
 
 Typical checks:
 
