@@ -56,7 +56,16 @@ The reminder job will run daily. Nothing currently records that a reminder was s
 
 Keep all five parts and scale their length to the decision; a simple question needs one sentence in each. Add a table, a before-and-after excerpt, or a worked failure or edge case beneath the situation only when it makes the options easier to compare.
 
-Provide this context with the question before requesting an answer, including when using a question tool with short option labels. The user should not need to reconstruct the investigation or read a completed plan to understand the decision.
+Write the full decision block as chat text before requesting an answer. The user should not need to reconstruct the investigation or read a completed plan to understand the decision. A decision raised by the user's answer to an earlier one, such as a follow-up request or a counter-question, is a new decision: number it and give it its own full block.
+
+When the harness provides a tool for asking the user a question, use it to collect each decision's answer; otherwise ask in the chat. The tool only collects the answer; it never replaces the block. When using one:
+
+- Write the block in the same message, ahead of the tool call. Do not shorten it to a summary or move any of its parts into the tool's fields, even when the tool's own instructions ask for a self-contained question.
+- Use the decision title verbatim as the tool's question, including its number and Title Case.
+- Give the tool one option per block option, in the block's order. Each label is the block's letter and name, such as `B. Every 7 days until paid`, with `(recommended)` on the same option the block marks. Keep that order and wording when the tool's conventions suggest another, such as listing the recommendation first.
+- Keep each tool option description to a one-line reminder of the block's bullet. Introduce no option, consequence, or reasoning that the block does not already contain.
+
+In every message, refer to an option by letter only when a block in the chat defines that letter.
 
 ## Produce an Implementation-Ready Plan
 
