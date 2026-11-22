@@ -34,9 +34,9 @@ For new projects, use `setup-project` if available to select tooling and support
 Present every decision in this shape, with all of its context ahead of the request for an answer:
 
 ```markdown
-**Decision 2 of 3: Should an Invoice Be Reminded More Than Once?**
+**Decision 2: Should an Invoice Be Reminded More Than Once?**
 
-**Situation:** The reminder job will run daily. Nothing currently records that a reminder was sent, so without a rule, every overdue invoice gets an email every day.
+The reminder job will run daily. Nothing currently records that a reminder was sent, so without a rule, every overdue invoice gets an email every day.
 
 **Options:**
 - **A. Once only.** Needs a `reminded_at` column. Customers who ignore the first email never hear again.
@@ -48,13 +48,13 @@ Present every decision in this shape, with all of its context ahead of the reque
 **Cost to Reverse:** A to B is a one-line change later. C to either needs the migration anyway.
 ```
 
-- **Title.** One question that frames the actual choice in behavior or responsibilities, in Title Case. Number it, and give the total when it is known. Do not repeat the question at the bottom.
-- **Situation.** Say why the requested work introduces this decision and what happens today, in enough detail to answer without asking what the code does, what would replace it, or what the alternatives mean. Ground current behavior in inspected code: name the file and symbol, and when the choice turns on what the code does, put a focused excerpt directly beneath with a plain-language explanation; a file link alone is not sufficient context. Label proposed code, simplified excerpts, and pseudocode so they cannot be mistaken for the current implementation. For a new addition, describe the surrounding workflow, what triggers the feature, and what does not exist yet; use a concrete scenario rather than inventing an implementation to replace. State uncertainty when evidence is unavailable.
+- **Title.** One question that frames the actual choice in behavior or responsibilities, in Title Case. Number it; do not state or estimate a total, because the number of decisions is not fixed in advance. Do not repeat the question at the bottom.
+- **Situation.** Open with it directly beneath the title as plain prose, with no label. Say why the requested work introduces this decision and what happens today, in enough detail to answer without asking what the code does, what would replace it, or what the alternatives mean. Ground current behavior in inspected code: name the file and symbol, and when the choice turns on what the code does, put a focused excerpt directly beneath with a plain-language explanation; a file link alone is not sufficient context. Label proposed code, simplified excerpts, and pseudocode so they cannot be mistaken for the current implementation. For a new addition, describe the surrounding workflow, what triggers the feature, and what does not exist yet; use a concrete scenario rather than inventing an implementation to replace. State uncertainty when evidence is unavailable.
 - **Options.** Letter each option and give it its own bullet: a bold plain-language name, then what it changes in practice. Name the consequential behavior the user is deciding, not an implementation label such as "use the library" or "add caching." Compare the options on the same input or usage scenario, and put material consequences beside the option they belong to: user-visible effects, compatibility, persistence, error handling, dependencies, new responsibilities, and implementation or maintenance costs. For a change to existing behavior, make clear what each option replaces and what it preserves. Mark exactly one option `(recommended)`.
 - **Why.** Head it with the recommended option's letter. Argue for the recommendation against each other option by name, tied to the requirements and inspected evidence, and include its material downside.
 - **Cost to Reverse.** Say what changing the answer later would take.
 
-Keep all five parts and scale their length to the decision; a simple question needs one sentence in each. Add a table, a before-and-after excerpt, or a worked failure or edge case beneath **Situation** only when it makes the options easier to compare.
+Keep all five parts and scale their length to the decision; a simple question needs one sentence in each. Add a table, a before-and-after excerpt, or a worked failure or edge case beneath the situation only when it makes the options easier to compare.
 
 Provide this context with the question before requesting an answer, including when using a question tool with short option labels. The user should not need to reconstruct the investigation or read a completed plan to understand the decision.
 
