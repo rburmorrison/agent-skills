@@ -102,7 +102,7 @@ Imperative code remains appropriate where it is clearer or required: ordered I/O
 
 For non-trivial changes, include a data-flow chain: the typed transformations from input to result, with each effectful step marked. Pseudocode supplements the chain where ordering affects correctness.
 
-When the change modifies existing imperative code, plan to separate the pure core of the behavior being changed from its effects, within the operations the change already touches, preserving behavior and public contracts. Explain the separation in the plan, and confirm it with the user when it changes module boundaries or public interfaces. Restructuring beyond the touched behavior is an optional improvement: propose it separately rather than including it.
+When the change modifies existing imperative code, plan to separate the pure core of the behavior being changed from its effects, within the operations the change already touches, preserving behavior and public contracts. Explain the separation in the plan, and confirm it with the user when it changes module boundaries or public interfaces. Restructuring beyond the touched behavior is an optional improvement: propose it separately rather than including it. When the codebase has an established style that differs, such as consistently object-oriented code built around mutable state, that style wins: plan to match it, and raise any move toward a functional core as a decision for the user.
 
 For each coherent family of domain rules, decide the representation per `code-authoring`'s guidance on declarative domain rules and record the concrete readability reason in the plan.
 

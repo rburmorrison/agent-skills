@@ -31,6 +31,7 @@ Source comments and API doc comments/docstrings are allowed for affected code. E
 - State what a result is rather than how to build it where that reads more clearly: mapping, filtering, and grouping expressions over accumulator loops, a dependency's declarative APIs over hand-written procedures, and declarative domain rules as described below. See [expressions over accumulator loops](references/code-examples.md#expressions-over-accumulator-loops).
 - Local mutation inside one function, ordered I/O, and framework APIs built around mutable state remain direct when clearer. Imperative code is also appropriate for performance needs that are measured or a stated hot path, where the plan names the path, the data size, and the cost avoided.
 - Follow the plan's pure and effectful contracts; moving a decision into an effectful operation is a consequential change.
+- When the codebase has an established style that differs, such as consistently object-oriented code built around mutable state, match that style unless the plan or the user says otherwise.
 - Use the project's existing mechanisms. Introduce abstractions only for a concrete responsibility or dependency, and avoid functional machinery such as effect wrappers that makes the code harder to read.
 
 **Existing dependencies**
