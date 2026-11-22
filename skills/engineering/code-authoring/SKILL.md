@@ -1,11 +1,13 @@
 ---
 name: code-authoring
-description: Write or modify code, tests, interface documentation, READMEs, help, and user guides within the agreed scope. Apply readable code and documentation standards, verify behavior, and finish code changes by checking existing documentation for accuracy. For non-trivial changes without an agreed plan, use plan-changes first.
+description: Write or modify source code, tests, interface documentation, READMEs, help, and user guides within the agreed scope. Apply readable code and documentation standards, verify behavior, and finish code changes by checking existing documentation for accuracy. Not for configuration, manifest, or data files. For non-trivial changes without an agreed plan, use plan-changes first.
 ---
 
 # Code Authoring
 
 Use for new code, features, fixes, refactors, and source or usage documentation edits. For planning or review tasks, apply the relevant standards without executing the authoring workflow.
+
+Do not use this skill for configuration, manifest, lockfile, or data files, such as `Cargo.toml`, `clippy.toml`, `package.json`, or CI workflows. A task that edits only those files does not load it. When a code change also touches them, edit them directly in the file's own conventions: the code-shaping, comment, review, and handoff standards here do not apply to them. Only Dependency Management and the suppression rule under Verify Behavior govern those files.
 
 Use the agreed plan and decisions: the `.plans/` file named in the conversation or task when one exists, otherwise the plan held by the harness or the conversation. If consequential behavior or scope remains unresolved, complete planning with the user one question at a time before editing; use `plan-changes` if available. A small unambiguous task needs only proportionate planning.
 
