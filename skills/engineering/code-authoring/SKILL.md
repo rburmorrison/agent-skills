@@ -89,6 +89,8 @@ Write every stage comment as exactly one line, within the file's line-length lim
 
 These rules can remove a reason, never a stage comment. Every stage keeps its one-line comment and the blank line above it, with or without a reason.
 
+The one exception is a codebase whose established style comments sparsely: the existing multistep functions in the files the change touches, and in their neighbors, carry no stage comments. Still write every stage comment there while implementing, because the comments are what place the breaks. Then, as the last step of the readability pass, delete each stage comment that gives no reason and keep the blank line where it stood. Stage comments that give a reason stay, as do rationale comments on specific decisions. New files in such a codebase follow this exception. A new project, or a codebase that already uses stage comments, keeps them all.
+
 Use step comments to make the process scannable even when individual statements are clear. Explain consequential decisions, ordering requirements, assumptions, and constraints near the relevant code, including why a check or exception is necessary. A single-step function usually needs no comment unless its rationale is otherwise unclear; a straightforward predicate or mapping remains one step regardless of its line count. Keep clear names and cohesive code, and avoid narrating every assignment or match arm. Do not fragment a coherent function merely to avoid step comments.
 
 - Use standalone single-line comments in the language's ordinary comment syntax, such as `#` or `//`. Do not use multiline or block-comment syntax for implementation comments.
@@ -106,6 +108,7 @@ After formatting and before independent review or handoff, perform a separate re
 2. For each stage comment, confirm it is one line within the length limit, then apply the reason-source, grounding, and deletion tests above. For each reason, name where it came from; if you cannot, remove the reason and keep the explanation of the step. Also confirm that no stage with a non-obvious constraint lacks a reason.
 3. Check each comment group's preceding line and its attachment to the stage it describes. Check the smaller whitespace breaks around setup, traversal, guards, and results even where no new comment is needed.
 4. In tests, trace setup, action, assertions, and each new scenario. Correct broad or misplaced comments and missing paragraphs before reporting the work ready. Passing formatters and tests does not complete this pass.
+5. Only in a codebase with a sparse established comment style, as defined above: after the steps above, delete each stage comment left without a reason, in source and tests alike. Keep the blank line that stood above it, so every transition still has its break, and leave every comment that gives a reason.
 
 ## Verify Behavior
 
@@ -186,7 +189,7 @@ When the plan is a `.plans/` file, change its `Status:` line to `complete` once 
 1. The change stays within the agreed scope and remaining discretion; every consequential gap was asked about, not decided (Execute Within Scope, Roadblocks and Handoff).
 2. Formatting, lint, type, and behavior checks ran; results are recorded accurately, including anything not run (Verify Behavior).
 3. The changed behavior was exercised through the actual entry point, or the limitation is stated (Verify Behavior).
-4. The readability pass is done: each multistep function and test has a one-line stage comment at every transition that gives the reason where the code does not, with blank lines between stages (Explain Steps and Decisions).
+4. The readability pass is done: each multistep function and test has a one-line stage comment at every transition that gives the reason where the code does not, with blank lines between stages. In a codebase with a sparse established comment style, the reasonless stage comments are removed and their blank lines kept (Explain Steps and Decisions).
 5. Usage-documentation edits match the documentation map exactly; related documentation was inspected and any unplanned need was asked about ([documentation reference](references/documentation.md)).
 6. Unless no review is required (Independent Review), the independent review ran; validated Blocker and Should-fix findings are fixed and affected checks rerun. Each applied Nit touches only lines this change already modifies and changes no behavior or tests; revert any that does not (Independent Review).
 7. The handoff opens with the `You wanted` sentence and a summary whose bold first sentence states the mechanism. It explains how the code works now, states the value and the cost, says how each verification fact is known, and gives each decision a recommendation and why. A reader could predict from it what the code does in a case it does not mention (Handoff).

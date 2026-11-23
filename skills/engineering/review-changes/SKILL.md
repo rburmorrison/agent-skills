@@ -47,7 +47,7 @@ Perform two distinct assessments of the completed change. First check behavior, 
 
 For usage documentation, compare added and rewritten factual claims with both the original text and the plan's documentation map, point to unauthorized clauses, and recommend removing them while keeping authorized corrections.
 
-For implementation comments, identify each affected function's stages, including short functions and nested processing, and check them against `code-authoring`'s step-comment standard, including comment syntax, placement, and blank-line breaks. Flag the specific missing stage or rationale the reader must reconstruct. Do not demand comments for routine initialization, final returns, or straightforward single-step predicates and mappings, or recommend trivial helper extraction to avoid comments. Formatting tools passing does not establish these checks passed.
+For implementation comments, identify each affected function's stages, including short functions and nested processing, and check them against `code-authoring`'s step-comment standard, including comment syntax, placement, and blank-line breaks. Flag the specific missing stage or rationale the reader must reconstruct. Do not demand comments for routine initialization, final returns, or straightforward single-step predicates and mappings, or recommend trivial helper extraction to avoid comments. Where the codebase's established style comments sparsely, `code-authoring` removes stage comments that give no reason: do not flag those as missing, but still flag a missing blank-line break or a missing reason for a non-obvious constraint. Formatting tools passing does not establish these checks passed.
 
 ## Report Findings
 
