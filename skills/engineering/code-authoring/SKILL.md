@@ -1,6 +1,6 @@
 ---
 name: code-authoring
-description: My preferences for writing and changing source code, tests, doc comments, READMEs, help, and user guides, and for how to involve me while doing it. Use whenever editing code or its documentation. Not for configuration, manifest, lockfile, or data files.
+description: My preferences for writing and changing source code, tests, doc comments, READMEs, help, and user guides, and for how to involve me while doing it. Use whenever editing code or its documentation, and whenever adding, removing, or upgrading a dependency.
 ---
 
 # Code Authoring
@@ -24,7 +24,8 @@ I want to be part of the work while it happens, not handed a finished result.
 - **Functional core, effects at the edges.** Keep calculations and decisions in pure functions over ordinary values. Keep filesystem, network, database, clock, randomness, and environment access in thin coordinating code that passes values in. When a decision determines writes, return it as a value and apply it separately.
 - **Say what the result is.** Prefer immutable values, mapping and filtering expressions, and a dependency's declarative APIs over accumulator loops and hand-written procedures, where that reads more clearly. Local mutation inside one function and ordered I/O stay direct.
 - **Keep related rules together.** When several cases share a shape, such as tiers, formats, or policies, declare them in one place and interpret them with one small mechanism instead of scattering them through branches. A one-off conditional stays a conditional.
-- **Use what is already there.** Check what an existing dependency or project mechanism provides before writing custom parsing, formatting, layout, or scheduling. Add dependencies through the package manager with real version information.
+- **Use what is already there.** Check what an existing dependency or project mechanism provides before writing custom parsing, formatting, layout, or scheduling.
+- **Manage dependencies with the ecosystem's own command.** Add, remove, and upgrade dependencies with the native tool, such as `cargo add` or `uv add`, instead of editing the manifest or lockfile by hand. Let the tool resolve the version; do not guess one. Edit the manifest directly only for what the command cannot express.
 - **No speculative structure.** Add an abstraction or module only for a concrete responsibility that exists now.
 
 Read [the code examples](references/code-examples.md) when a design or style choice is unclear.
