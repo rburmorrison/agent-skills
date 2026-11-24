@@ -1,10 +1,6 @@
 ## Engineering Workflow
 
-For changes beyond a small, unambiguous correction, plan before editing. Use `plan-changes`: investigate, ask consequential questions one at a time, and get agreement on decisions affecting behavior, scope, public contracts, data ownership, I/O boundaries, and architecture. Silence or general permission to implement is not agreement to a new choice.
-
-Before editing any file, including for a small fix, invoke the `code-authoring` skill and follow it through verification and handoff. When continuing an agreed plan, including after a model switch or in a new session, read its plan file when one exists and follow the plan and its Implementer Brief, and ask immediately about any consequential gap instead of deciding it.
-
-Use `setup-project` when establishing a new project. Run one independent review in a fresh-context subagent using `review-changes`, unless the change is small as `code-authoring` defines.
+Before editing source code, tests, or their documentation, load the `code-authoring` skill and apply its preferences, including how to involve me while the work happens. Use `setup-project` when establishing a new project.
 
 Verify changes as a user would, through the actual CLI, UI, API, or caller when feasible, and report what remains unverified. Never claim a check passed unless it ran.
 

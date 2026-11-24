@@ -7,13 +7,9 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 **Engineering**:
 
 - [gitmoji-commits](skills/engineering/gitmoji-commits/SKILL.md) - Creates subject-first GitMoji commits from repository changes.
-- [plan-changes](skills/engineering/plan-changes/SKILL.md) - Resolves consequential decisions before editing, designs toward a functional, declarative core with explicit effect boundaries, and assigns documentation facts to their owning interfaces.
-- [code-authoring](skills/engineering/code-authoring/SKILL.md) - Writes code and planned documentation changes with clear responsibility boundaries, readable behavior tests, and automatic review; finishes code changes by checking existing documentation for needed accuracy updates.
-- [review-changes](skills/engineering/review-changes/SKILL.md) - Reviews a completed change or targeted fixes using fresh context and the shared documentation guidance.
+- [code-authoring](skills/engineering/code-authoring/SKILL.md) - States my preferences for code design, readability, tests, and documentation, and for how an agent involves me while it works.
 - [setup-project](skills/engineering/setup-project/SKILL.md) - Establishes strict project tooling, with Rust and Python profiles.
 - [agents-md](skills/engineering/agents-md/SKILL.md) - Creates and edits `AGENTS.md` and `CLAUDE.md` files as short rule lists with a dedicated verification section, preserving the format of existing files.
-- [align-codebase](skills/engineering/align-codebase/SKILL.md) (manual) - Plans and applies a scoped, behavior-preserving alignment of an existing codebase with these conventions.
-- [implement-verified-steps](skills/engineering/implement-verified-steps/SKILL.md) (manual) - Checks and independently reviews each planned step, with targeted follow-up only for concrete unresolved risks.
 
 **Documentation**:
 
@@ -35,13 +31,9 @@ Install skills globally by name:
 ```bash
 # Engineering
 npx skills add rburmorrison/agent-skills --global --skill gitmoji-commits
-npx skills add rburmorrison/agent-skills --global --skill plan-changes
 npx skills add rburmorrison/agent-skills --global --skill code-authoring
-npx skills add rburmorrison/agent-skills --global --skill review-changes
 npx skills add rburmorrison/agent-skills --global --skill setup-project
 npx skills add rburmorrison/agent-skills --global --skill agents-md
-npx skills add rburmorrison/agent-skills --global --skill align-codebase
-npx skills add rburmorrison/agent-skills --global --skill implement-verified-steps
 
 # Documentation
 npx skills add rburmorrison/agent-skills --global --skill visual-explainers
@@ -51,8 +43,6 @@ npx skills add rburmorrison/agent-skills --global --skill code-explainers
 ## Engineering Workflow Guidance
 
 Add the section in [engineering-workflow.md](guidance/engineering-workflow.md) to a global or project `AGENTS.md` or `CLAUDE.md`.
-
-`plan-changes` delegates code exploration to your harness's exploration subagent when it has one. This lowers cost only when that agent runs on a cheaper model than the planner. Claude Code, Codex, and OpenCode do not run it on a low-cost model by default, so set the agent's model in your harness configuration.
 
 ## Development
 

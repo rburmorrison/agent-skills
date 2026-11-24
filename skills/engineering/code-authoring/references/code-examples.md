@@ -14,7 +14,7 @@ def render_failures(checks: Sequence[Check]) -> str:
     ])
 ```
 
-Name the stages, introduce each with a short comment stating its purpose, and separate changes of purpose:
+Name the intermediate values and separate changes of purpose:
 
 ```python
 def render_failures(checks: Sequence[Check]) -> str:
@@ -22,17 +22,15 @@ def render_failures(checks: Sequence[Check]) -> str:
     failed_checks = [check for check in checks if not check.passed]
     summary = f"{len(failed_checks)} checks failed"
 
-    # Keep each failure's name with its message so it can be traced.
     details = [
         f"- {check.name}: {check.message}"
         for check in failed_checks
     ]
 
-    # Lead with the count so a reader can stop after one line.
     return "\n".join([summary, *details])
 ```
 
-Each comment names its stage and gives a reason the code does not state. This remains one coherent function. The simple comprehension is useful; three extra helpers would add little meaning.
+Blank lines separate the three stages. Only the first carries a comment, because filtering once is a choice the code does not explain. This remains one coherent function. The simple comprehension is useful; three extra helpers would add little meaning.
 
 ## Named Domain Values
 
@@ -119,17 +117,16 @@ def handle_event(event: FileEvent, index: SearchIndex) -> None:
             raise TypeError(f"Unsupported event: {type(event).__name__}")
 ```
 
-The arms form one dispatch operation, so neither the function nor its individual arms need step comments. Indentation provides the structure. Use ordinary conditionals for straightforward predicates.
+The arms form one dispatch operation, so neither the function nor its individual arms need comments or internal blank lines. Indentation provides the structure. Use ordinary conditionals for straightforward predicates.
 
 ## Implementation Comments
 
-### Short Functions with Multiple Steps
+### Spacing Carries the Structure
 
-Logical steps, rather than function length or statement count, determine whether step comments are required. Even this short function has two stages:
+Blank lines mark the stages; a comment appears only where the code cannot explain itself. This function has two stages and one comment:
 
 ```rust
 fn normalize_tags(input: &str) -> Vec<String> {
-    // Collect nonempty tags in lowercase so matching ignores case.
     let mut tags: Vec<_> = input
         .split(',')
         .map(str::trim)
@@ -145,11 +142,11 @@ fn normalize_tags(input: &str) -> Vec<String> {
 }
 ```
 
-Collecting the values and organizing them have different purposes. Sorting and deduplication work together as one stage, and the second comment states the ordering constraint that joins them. The final return needs no separate comment.
+Collecting the values and organizing them have different purposes, so a blank line separates them. The collecting stage reads directly from its code and needs no comment. The second stage has an ordering constraint the code does not show, so it gets one.
 
 ### Decisions and Ordering
 
-Explain the stage in a plain sentence and say why a consequential decision or ordering constraint is necessary:
+Say why a consequential decision or ordering constraint is necessary, beside the code it governs:
 
 ```rust
 fn prepare_text(
@@ -161,36 +158,32 @@ fn prepare_text(
         return Ok(None);
     }
 
-    // Validate the encoding.
     let text = std::str::from_utf8(bytes)?;
 
     Ok(Some(text))
 }
 ```
 
-The size check explains both its purpose and why it precedes encoding validation. The encoding comment names its stage alone because the code already shows why it runs; an invented reason would only add length. The rationale belongs beside that decision, not only in API documentation or the handoff.
+The size check explains why it precedes encoding validation. The validation line needs nothing: a comment such as `// Validate the encoding.` would only repeat it.
 
 ### Stages Inside a Loop
 
-Apply the same standard inside nested processing. This fragment assumes `Section` has a string `title` and a list of string `entries`:
+Space nested stages the same way. This fragment assumes `Section` has a string `title` and a list of string `entries`:
 
 ```rust
 fn render_sections(sections: &[Section]) -> String {
     let mut output = String::new();
 
     for section in sections {
-        // Start with the title so the entries below read as its members.
         output.push_str(&section.title);
         output.push('\n');
 
-        // List each entry as a bullet.
         for entry in &section.entries {
             output.push_str("- ");
             output.push_str(entry);
             output.push('\n');
         }
 
-        // End with a blank line so sections do not run together.
         output.push('\n');
     }
 
@@ -198,11 +191,11 @@ fn render_sections(sections: &[Section]) -> String {
 }
 ```
 
-The comments identify three stages within the outer loop. Two give reasons the code cannot show; the bullet stage needs none. A single comment such as "Write the heading and entries" would hide the transition into the inner loop; comment each stage where it starts. Routine buffer initialization and returning the result need no narration, but whitespace still separates them from the traversal. Keep cohesive code together instead of creating helpers solely to shorten the function or avoid comments.
+Every stage here is obvious from its code, so the function has no comments at all. Whitespace still separates the title, the entries, and the closing blank line, and sets the buffer setup and the return apart from the traversal. Keep cohesive code together instead of creating helpers solely to shorten the function.
 
-### Stage Comments Versus Narration
+### Comments That Add Nothing
 
-A counterexample, not a model; each comment merely restates its statement:
+Counterexamples, not models. The first two restate their statements, and the third labels a stage whose code already names it:
 
 ```rust
 // Push the title.
@@ -210,45 +203,21 @@ output.push_str(&section.title);
 
 // Push a newline.
 output.push('\n');
+
+// Merge overlapping ranges.
+let merged = merge_overlapping(ranges);
 ```
 
-Stage comments explain a stage's purpose, not each statement.
-
-### Stage Reasons
-
-Three comments for the same stage:
+Delete all three. A generic claim does not rescue one: `// Merge overlapping ranges so the result is correct and clean.` is still noise. This version earns its place, because it states a downstream dependency the code cannot show:
 
 ```rust
-// Merge overlapping ranges.
-
-// Merge overlapping ranges so the result is correct and clean.
-
 // Merge overlaps so later lookups can binary-search disjoint ranges.
-```
-
-The first names the stage but hides why merging must happen here. The second pads it with a generic claim. The third is one line and states the downstream dependency the code cannot show. When no such dependency or constraint exists, the first form is correct.
-
-Each of these fails a rule, and the fix keeps the explanation of the step alone or drops the comment:
-
-```python
-# Create an empty cart; the loop below adds items to it.
-# Fails: describes the code below. Routine setup needs no comment at all.
-
-# Reject expired coupons so that only valid coupons remain.
-# Fails: restates the step. Use "# Reject expired coupons."
-
-# Apply discounts in a clean and consistent way.
-# Fails: claims tidiness. Use "# Apply discounts."
-
-# Apply percentage discounts before fixed ones so a fixed discount cannot push
-# the total below zero, and so receipts list them in the order customers expect.
-# Fails: two lines. Keep the fact that explains why the order matters:
-# "# Apply percentages first so fixed discounts cannot push totals below zero."
+let merged = merge_overlapping(ranges);
 ```
 
 ### Single-Step Functions
 
-Straightforward predicates and mappings usually need no implementation comments:
+Straightforward predicates and mappings need no implementation comments:
 
 ```rust
 fn same_content(before: &[u8], after: &[u8]) -> bool {
@@ -261,7 +230,7 @@ fn is_within_limit(content: &[u8], max_bytes: u64) -> bool {
 }
 ```
 
-Both functions perform one logical operation even though the second uses two statements. The dispatch function under [Cohesive Branches](#cohesive-branches) is also one operation despite its length. A single-step function can still need a rationale comment when its behavior is surprising.
+Both functions perform one logical operation even though the second uses two statements. The dispatch function under [Cohesive Branches](#cohesive-branches) is also one operation despite its length. A single-step function can still need a comment when its behavior is surprising.
 
 ### Top of a Block
 
@@ -286,9 +255,9 @@ for record in records:
     apply_record(record)
 ```
 
-### Rare Comment Groups
+### Longer Rationale
 
-Even decision rationale usually fits one line:
+Rationale usually fits one line:
 
 ```rust
 let boundary = buffer.len() - overlap;
@@ -297,7 +266,7 @@ let boundary = buffer.len() - overlap;
 buffer.drain(..boundary);
 ```
 
-This fragment assumes `overlap` is no greater than the buffer length and that the surrounding reader scans the retained bytes with the next chunk. Use consecutive single-line comments as one group only for a decision whose single constraint cannot be stated in one line, never for a stage comment, and never a block comment or a standalone string.
+This fragment assumes `overlap` is no greater than the buffer length and that the surrounding reader scans the retained bytes with the next chunk. When a constraint cannot be stated in one line, use consecutive single-line comments as one group, not a block comment or a standalone string.
 
 ### API Documentation Syntax
 
@@ -311,7 +280,7 @@ fn can_serve(entry: &CacheEntry, now: Instant, refresh_pending: bool) -> bool {
 }
 ```
 
-Python API docstrings likewise retain their normal triple-quoted syntax. The single-line implementation-comment rule does not replace API documentation formats; see the [Python](documentation-python.md) and [Rust](documentation-rust.md) references for their contract requirements.
+Python API docstrings likewise retain their normal triple-quoted syntax; see the [Python](documentation-python.md) and [Rust](documentation-rust.md) references for their contract requirements.
 
 ### Keeping Existing Comments Accurate
 
@@ -331,7 +300,7 @@ if force_refresh or cache_entry.expires_at <= now:
     refresh_cache()
 ```
 
-Check existing comments in touched logic even when their lines are absent from the code diff. Leave accurate comments unchanged. Update stale stage comments when the process changes; remove comments whose stage or rationale no longer applies. Clear individual statements do not make a useful stage comment redundant.
+Check existing comments in touched logic even when their lines are absent from the code diff. Leave accurate comments unchanged, and remove comments whose rationale no longer applies.
 
 ## Responsibilities and I/O
 
@@ -348,19 +317,17 @@ storage            database access and transaction boundary
 The workflow then reads as a sequence of meaningful operations:
 
 ```text
-# Read the source at the I/O boundary.
 source = read source at the I/O boundary
 
-# Parse and validate the records before writing.
+# Reject invalid input before anything is written.
 records = parse source
 entries = validate records
 
-# Import the validated entries atomically.
 summary = import entries atomically through storage
 return summary
 ```
 
-The plan must define errors and transaction behavior before implementation. Parsing and validation should operate on values without reaching into storage or the environment. A small converter may need fewer modules; this is a responsibility example, not a mandatory directory template.
+Settle errors and transaction behavior before implementation. Parsing and validation should operate on values without reaching into storage or the environment. A small converter may need fewer modules; this is a responsibility example, not a mandatory directory template.
 
 When a calculation depends on stored state, separating it does not require moving the read outside the transaction. Illustrative orchestration can remain small:
 
@@ -373,7 +340,6 @@ with store.transaction() as transaction:
     # Apply updates within the same transaction to preserve consistency.
     transaction.apply(changes)
 
-# Summarize the committed changes.
 return summarize(changes)
 ```
 
@@ -416,7 +382,6 @@ def expire_sessions(store: SessionStore, now: datetime) -> Expiry:
     # Decide from one read of the store, before any session is deleted.
     expiry = plan_expiry(store.load_sessions(), now)
 
-    # Apply the decision.
     for identifier in expiry.identifiers:
         store.delete(identifier)
 

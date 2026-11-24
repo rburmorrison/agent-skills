@@ -22,10 +22,8 @@ def normalize_title(title: str) -> str:
         ValueError: The title is empty after whitespace is removed.
     """
 
-    # Remove surrounding whitespace from the proposed title.
     normalized = title.strip()
 
-    # Reject titles that are empty after trimming.
     if not normalized:
         raise ValueError("title must not be empty")
 
