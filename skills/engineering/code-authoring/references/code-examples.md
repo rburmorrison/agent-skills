@@ -1,8 +1,12 @@
 # Readable Code Examples
 
-These fragments illustrate language-agnostic decisions. Adapt the types and syntax to the actual project's conventions and supported versions.
+These fragments illustrate language-agnostic decisions. Adapt the types and syntax to the actual project's conventions and supported versions. The design examples, such as separating decisions from effects, show the default for new projects and for code with no settled convention; in an existing codebase, its conventions come first.
 
-## Logical Paragraphs
+## Self-Documenting Code
+
+The code should carry its own explanation through names, types, and shape. Most good functions here have no comments at all.
+
+### Name the Intermediate Values
 
 A dense report hides intermediate concepts:
 
@@ -30,9 +34,29 @@ def render_failures(checks: Sequence[Check]) -> str:
     return "\n".join([summary, *details])
 ```
 
-Blank lines separate the three stages. Only the first carries a comment, because filtering once is a choice the code does not explain. This remains one coherent function. The simple comprehension is useful; three extra helpers would add little meaning.
+`failed_checks`, `summary`, and `details` tell the reader what each part is, and blank lines separate the three stages. Only the first carries a comment, because filtering once is a choice the code does not explain. This is also the right size: three stages in one coherent function. Extracting helpers here would add navigation without adding meaning.
 
-## Named Domain Values
+### Descriptive Names
+
+Abbreviated names make the reader open the definition, and sometimes the callers, to learn what a value holds:
+
+```python
+def calc(d: Sequence[Order], t: datetime) -> int:
+    return sum(o.amt for o in d if o.ts > t)
+```
+
+Full words from the problem's vocabulary, with units where they matter, make the signature its own description:
+
+```python
+def revenue_cents_since(orders: Sequence[Order], cutoff: datetime) -> int:
+    return sum(
+        order.amount_cents
+        for order in orders
+        if order.placed_at > cutoff
+    )
+```
+
+### Concrete Types
 
 Positional fields lose meaning at call sites:
 
@@ -42,7 +66,7 @@ type SearchMatch = (PathBuf, usize, String);
 println!("{}:{}: {}", found.0.display(), found.1, found.2);
 ```
 
-A named domain value keeps the contract visible:
+A named record keeps the contract visible:
 
 ```rust
 struct SearchMatch {
@@ -59,7 +83,150 @@ println!(
 );
 ```
 
-Choose the equivalent record, dataclass, named tuple, struct, or explicit variant in the target language. Local iteration pairs can remain immediately unpacked tuples. Runtime validation is a separate concern from naming fields.
+A string standing in for a fixed set of values lets a typo compile and leaves related data loosely attached:
+
+```rust
+struct Job {
+    id: JobId,
+    status: String,
+    retries: Option<u32>,
+}
+
+if job.status == "failed" && job.retries.unwrap_or(0) < MAX_RETRIES {
+    requeue(&job);
+}
+```
+
+An explicit variant names every state and carries the data that belongs to it:
+
+```rust
+enum JobStatus {
+    Queued,
+    Running,
+    Succeeded,
+    Failed { retries: u32 },
+}
+
+struct Job {
+    id: JobId,
+    status: JobStatus,
+}
+
+if let JobStatus::Failed { retries } = job.status {
+    if retries < MAX_RETRIES {
+        requeue(&job);
+    }
+}
+```
+
+The same applies to untyped maps and catch-all types: a `dict[str, Any]` passed between functions becomes a dataclass, and a parameter typed `object` or `Any` takes the type the function actually uses. Local iteration pairs can remain immediately unpacked tuples. Runtime validation is a separate concern from naming fields.
+
+### Function Size
+
+Most functions should hold one to three stages and fit comfortably on a screen, often in five to twenty lines. That is a description of what reads well, not a limit to enforce. `render_failures` above is a typical size. This function has grown past it; selecting, grouping, composing, and sending are four stages, and the last two are tangled inside one loop:
+
+```python
+def send_overdue_reminders(
+    invoices: Sequence[Invoice],
+    today: date,
+    mailer: Mailer,
+) -> ReminderReport:
+    overdue = [
+        invoice
+        for invoice in invoices
+        if invoice.due < today and not invoice.paid
+    ]
+
+    by_customer: defaultdict[CustomerId, list[Invoice]] = defaultdict(list)
+    for invoice in overdue:
+        by_customer[invoice.customer].append(invoice)
+
+    failed: list[CustomerId] = []
+    for customer, customer_invoices in by_customer.items():
+        total_cents = sum(invoice.amount_cents for invoice in customer_invoices)
+        lines = [
+            f"- {invoice.number}: due {invoice.due.isoformat()}"
+            for invoice in customer_invoices
+        ]
+        body = "\n".join([
+            f"{len(customer_invoices)} invoices overdue, {format_cents(total_cents)} in total.",
+            *lines,
+        ])
+
+        try:
+            mailer.send(customer, subject="Overdue invoices", body=body)
+        except MailError:
+            failed.append(customer)
+
+    return ReminderReport(sent=len(by_customer) - len(failed), failed=tuple(failed))
+```
+
+Extract each stage that has a name worth giving. The top function then reads as a summary of the work:
+
+```python
+def send_overdue_reminders(
+    invoices: Sequence[Invoice],
+    today: date,
+    mailer: Mailer,
+) -> ReminderReport:
+    overdue_by_customer = group_by_customer(overdue_invoices(invoices, today))
+    reminders = [
+        compose_reminder(customer, customer_invoices)
+        for customer, customer_invoices in overdue_by_customer.items()
+    ]
+
+    return deliver(reminders, mailer)
+
+
+def overdue_invoices(invoices: Sequence[Invoice], today: date) -> list[Invoice]:
+    return [
+        invoice
+        for invoice in invoices
+        if invoice.due < today and not invoice.paid
+    ]
+
+
+def group_by_customer(
+    invoices: Sequence[Invoice],
+) -> dict[CustomerId, list[Invoice]]:
+    grouped: defaultdict[CustomerId, list[Invoice]] = defaultdict(list)
+
+    for invoice in invoices:
+        grouped[invoice.customer].append(invoice)
+
+    return dict(grouped)
+
+
+def compose_reminder(customer: CustomerId, invoices: Sequence[Invoice]) -> Reminder:
+    total_cents = sum(invoice.amount_cents for invoice in invoices)
+    summary = f"{len(invoices)} invoices overdue, {format_cents(total_cents)} in total."
+    details = [
+        f"- {invoice.number}: due {invoice.due.isoformat()}"
+        for invoice in invoices
+    ]
+
+    return Reminder(
+        customer=customer,
+        subject="Overdue invoices",
+        body="\n".join([summary, *details]),
+    )
+
+
+def deliver(reminders: Sequence[Reminder], mailer: Mailer) -> ReminderReport:
+    failed: list[CustomerId] = []
+
+    for reminder in reminders:
+        try:
+            mailer.send(reminder.customer, subject=reminder.subject, body=reminder.body)
+        except MailError:
+            failed.append(reminder.customer)
+
+    return ReminderReport(sent=len(reminders) - len(failed), failed=tuple(failed))
+```
+
+Each function now has one to three stages and a name that says what it returns, and none needs a comment. `Reminder` gives the composed message a concrete type, so composing can be tested without a mailer and only `deliver` has an effect.
+
+Split by purpose, not by length. A function that performs one cohesive stage stays whole even when it is long, such as the dispatch under [Cohesive Branches](#cohesive-branches), and a three-stage function like `render_failures` gains nothing from helpers.
 
 ## Declarative Domain Rules
 
@@ -119,56 +286,11 @@ def handle_event(event: FileEvent, index: SearchIndex) -> None:
 
 The arms form one dispatch operation, so neither the function nor its individual arms need comments or internal blank lines. Indentation provides the structure. Use ordinary conditionals for straightforward predicates.
 
-## Implementation Comments
+## Comments
 
 ### Spacing Carries the Structure
 
-Blank lines mark the stages; a comment appears only where the code cannot explain itself. This function has two stages and one comment:
-
-```rust
-fn normalize_tags(input: &str) -> Vec<String> {
-    let mut tags: Vec<_> = input
-        .split(',')
-        .map(str::trim)
-        .filter(|tag| !tag.is_empty())
-        .map(str::to_lowercase)
-        .collect();
-
-    // Sort before deduplicating; `dedup` removes only adjacent repeats.
-    tags.sort_unstable();
-    tags.dedup();
-
-    tags
-}
-```
-
-Collecting the values and organizing them have different purposes, so a blank line separates them. The collecting stage reads directly from its code and needs no comment. The second stage has an ordering constraint the code does not show, so it gets one.
-
-### Decisions and Ordering
-
-Say why a consequential decision or ordering constraint is necessary, beside the code it governs:
-
-```rust
-fn prepare_text(
-    bytes: &[u8],
-    max_bytes: usize,
-) -> Result<Option<&str>, std::str::Utf8Error> {
-    // Skip oversized content first so validation work stays bounded.
-    if bytes.len() > max_bytes {
-        return Ok(None);
-    }
-
-    let text = std::str::from_utf8(bytes)?;
-
-    Ok(Some(text))
-}
-```
-
-The size check explains why it precedes encoding validation. The validation line needs nothing: a comment such as `// Validate the encoding.` would only repeat it.
-
-### Stages Inside a Loop
-
-Space nested stages the same way. This fragment assumes `Section` has a string `title` and a list of string `entries`:
+Blank lines mark the stages; a comment appears only where the code cannot explain itself. Every stage in this function is obvious from its code, so it has no comments. This fragment assumes `Section` has a string `title` and a list of string `entries`:
 
 ```rust
 fn render_sections(sections: &[Section]) -> String {
@@ -191,7 +313,30 @@ fn render_sections(sections: &[Section]) -> String {
 }
 ```
 
-Every stage here is obvious from its code, so the function has no comments at all. Whitespace still separates the title, the entries, and the closing blank line, and sets the buffer setup and the return apart from the traversal. Keep cohesive code together instead of creating helpers solely to shorten the function.
+Whitespace separates the title, the entries, and the closing blank line, and sets the buffer setup and the return apart from the traversal. This is the common case.
+
+### A Reason the Code Cannot Show
+
+Comment a stage when a reader could not recover its reason from the code: an ordering constraint, an assumption, or surprising behavior. Here the first stage needs nothing and the second depends on an ordering the code does not explain:
+
+```rust
+fn normalize_tags(input: &str) -> Vec<String> {
+    let mut tags: Vec<_> = input
+        .split(',')
+        .map(str::trim)
+        .filter(|tag| !tag.is_empty())
+        .map(str::to_lowercase)
+        .collect();
+
+    // Sort first because `dedup` removes only adjacent repeats.
+    tags.sort_unstable();
+    tags.dedup();
+
+    tags
+}
+```
+
+Put the comment directly above the code it explains, with a blank line above the comment unless it opens its block. Rationale usually fits one line. When it cannot, use consecutive single-line comments as one group, not a block comment or a standalone string.
 
 ### Comments That Add Nothing
 
@@ -214,73 +359,6 @@ Delete all three. A generic claim does not rescue one: `// Merge overlapping ran
 // Merge overlaps so later lookups can binary-search disjoint ranges.
 let merged = merge_overlapping(ranges);
 ```
-
-### Single-Step Functions
-
-Straightforward predicates and mappings need no implementation comments:
-
-```rust
-fn same_content(before: &[u8], after: &[u8]) -> bool {
-    before == after
-}
-
-fn is_within_limit(content: &[u8], max_bytes: u64) -> bool {
-    let byte_count = content.len() as u64;
-    byte_count <= max_bytes
-}
-```
-
-Both functions perform one logical operation even though the second uses two statements. The dispatch function under [Cohesive Branches](#cohesive-branches) is also one operation despite its length. A single-step function can still need a comment when its behavior is surprising.
-
-### Top of a Block
-
-A comment can immediately follow the opening of its enclosing block. Explain the reason for otherwise surprising behavior:
-
-```python
-if cache_entry is not None:
-    # Expired entries remain available while a refresh is in progress.
-    if refresh_pending or cache_entry.expires_at > now:
-        return cache_entry.value
-```
-
-### Within a Block
-
-After preceding code, leave a blank line above the comment and keep it adjacent to the code it explains:
-
-```python
-records = parse_records(source)
-
-# Preserve input order because later entries depend on earlier ones.
-for record in records:
-    apply_record(record)
-```
-
-### Longer Rationale
-
-Rationale usually fits one line:
-
-```rust
-let boundary = buffer.len() - overlap;
-
-// Keep the overlapping suffix because a delimiter may span two chunks.
-buffer.drain(..boundary);
-```
-
-This fragment assumes `overlap` is no greater than the buffer length and that the surrounding reader scans the retained bytes with the next chunk. When a constraint cannot be stated in one line, use consecutive single-line comments as one group, not a block comment or a standalone string.
-
-### API Documentation Syntax
-
-Keep native documentation syntax for API contracts. For example, Rust uses `///` for the function's caller-facing brief and `//` for the implementation rationale:
-
-```rust
-/// Return whether the entry is unexpired at `now` or a refresh is in progress.
-fn can_serve(entry: &CacheEntry, now: Instant, refresh_pending: bool) -> bool {
-    // Expired entries remain available while a refresh is in progress.
-    refresh_pending || entry.expires_at > now
-}
-```
-
-Python API docstrings likewise retain their normal triple-quoted syntax; see the [Python](documentation-python.md) and [Rust](documentation-rust.md) references for their contract requirements.
 
 ### Keeping Existing Comments Accurate
 
@@ -333,11 +411,10 @@ When a calculation depends on stored state, separating it does not require movin
 
 ```text
 with store.transaction() as transaction:
-    # Plan updates from the state visible to this transaction.
+    # Read inside the transaction so the plan matches what gets written.
     current = transaction.load_items()
     changes = plan_updates(current, requested)
 
-    # Apply updates within the same transaction to preserve consistency.
     transaction.apply(changes)
 
 return summarize(changes)
