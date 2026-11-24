@@ -14,7 +14,6 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 **Documentation**:
 
 - [visual-explainers](skills/documentation/visual-explainers/SKILL.md) - Creates standalone, offline HTML explainers from a JSON document using built-in components, diagrams, interactive charts, and math. A Python 3.11+ builder embeds all assets; the user chooses the content, structure, and [theme](docs/visual-explainers/themes.md).
-- [code-explainers](skills/documentation/code-explainers/SKILL.md) - Explains a past change, a subsystem, or a concept in a codebase to its owner, using excerpts and diffs taken from the real source and git history. Renders with `visual-explainers`.
 
 ## Usage
 
@@ -37,7 +36,6 @@ npx skills add rburmorrison/agent-skills --global --skill agents-md
 
 # Documentation
 npx skills add rburmorrison/agent-skills --global --skill visual-explainers
-npx skills add rburmorrison/agent-skills --global --skill code-explainers
 ```
 
 ## Engineering Workflow Guidance
