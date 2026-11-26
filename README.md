@@ -38,10 +38,6 @@ npx skills add rburmorrison/agent-skills --global --skill agents-md
 npx skills add rburmorrison/agent-skills --global --skill visual-explainers
 ```
 
-## Engineering Workflow Guidance
-
-Add the section in [engineering-workflow.md](guidance/engineering-workflow.md) to a global or project `AGENTS.md` or `CLAUDE.md`.
-
 ## Development
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/),
