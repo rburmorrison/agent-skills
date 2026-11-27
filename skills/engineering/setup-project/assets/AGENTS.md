@@ -8,8 +8,8 @@
 - Keep core logic and decisions pure over ordinary values, with I/O and state changes at the edges.
 - Prefer concrete named types and explicit variants over positional tuples, untyped maps, or magic strings, and use full-word domain names (with units where they matter).
 - Break dense or nested expressions into named intermediate variables so each step is clear in review.
-- Separate distinct logical stages with blank lines.
-- Comment only non-obvious constraints, ordering, or surprises—never narrate what the code already says—and update stale comments when behavior changes.
+- Separate distinct logical stages inside functions with blank lines.
+- Comment only non-obvious constraints, ordering, or surprises instead of narrating what the code already says, and update stale comments when behavior changes.
 
 ## Verification
 
