@@ -7,8 +7,7 @@ My personal collection of agent skills. Each skill lives in `skills/<category>/<
 **Engineering**:
 
 - [gitmoji-commits](skills/engineering/gitmoji-commits/SKILL.md) - Creates subject-first GitMoji commits from repository changes.
-- [code-authoring](skills/engineering/code-authoring/SKILL.md) - States my preferences for code design, readability, tests, and documentation, and for how an agent involves me while it works.
-- [setup-project](skills/engineering/setup-project/SKILL.md) - Establishes strict project tooling, with Rust and Python profiles.
+- [setup-project](skills/engineering/setup-project/SKILL.md) - Establishes strict project tooling and a starter `AGENTS.md`, with Rust and Python profiles.
 - [agents-md](skills/engineering/agents-md/SKILL.md) - Creates and edits `AGENTS.md` and `CLAUDE.md` files as short rule lists with a dedicated verification section, preserving the format of existing files.
 
 **Documentation**:
@@ -30,7 +29,6 @@ Install skills globally by name:
 ```bash
 # Engineering
 npx skills add rburmorrison/agent-skills --global --skill gitmoji-commits
-npx skills add rburmorrison/agent-skills --global --skill code-authoring
 npx skills add rburmorrison/agent-skills --global --skill setup-project
 npx skills add rburmorrison/agent-skills --global --skill agents-md
 

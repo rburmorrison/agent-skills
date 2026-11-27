@@ -1,6 +1,6 @@
 ---
 name: setup-project
-description: Establish a new project's package-manager workflow, strict formatting, linting, type checking, and verification commands using the relevant language profile.
+description: Establish a new project's package-manager workflow, strict formatting, linting, type checking, verification commands, and starter AGENTS.md using the relevant language profile.
 ---
 
 # Setup Project
@@ -25,6 +25,8 @@ Use the package manager's initialization and dependency commands. Resolve packag
 
 Read the selected assets before applying them. Merge their configuration tables deliberately; do not replace an existing manifest or append duplicate TOML tables. Adapt package/workspace scope and supported-version settings to the planned project. Assets contain tooling configuration, not application dependencies.
 
+For a new project with no `AGENTS.md`, copy [AGENTS.md](assets/AGENTS.md) to the project root, replace the one-sentence repository summary, adjust the dependency-management bullet to the project's actual package-manager commands, append any profile-specific rules from the selected profile, and fill in `## Verification` with the configured verification commands. If an `AGENTS.md` already exists, update only what the agreed setup requires rather than replacing it.
+
 Enable a deliberate strict rule set, including type checking where applicable. Encode appropriate test exemptions in the tooling. Every suppression or exception must have a specific reason beside its configuration or use site. Prefer native justification syntax. Never disable broad groups or verification commands simply to make the new project pass.
 
 Give dependencies, source files, and modules homes justified by the actual project's responsibilities. Do not create speculative directories, placeholder abstractions, or redundant automation layers.
@@ -33,6 +35,6 @@ Give dependencies, source files, and modules homes justified by the actual proje
 
 Run formatting checks, linting, type checks where applicable, and relevant tests with the configured project tools. Check the actual configuration is discovered and covers the intended production and test code. Adapt feature/platform coverage to supported combinations.
 
-Make the agreed verification commands easy to run through existing project or CI mechanisms. When adding CI, use the same tool versions and commands exercised locally. Follow `code-authoring`'s documentation reference for usage-documentation scope; setup alone does not authorize new guides or facts.
+Make the agreed verification commands easy to run through existing project or CI mechanisms. When adding CI, use the same tool versions and commands exercised locally. Keep README and usage-documentation edits limited to what the setup changed, because setup alone does not authorize new guides or facts.
 
 Report what was configured and verified, plus material limitations. If a required tool or capability is unavailable, do not silently weaken the profile; finish independent setup work and clearly report the roadblock. Use the implementation and independent-review workflow for non-trivial setup changes when those skills are available.

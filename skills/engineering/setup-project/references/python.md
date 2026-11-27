@@ -22,7 +22,11 @@ During planning, add the families that fit the project. Ruff has many more than 
 - `DJ`, `FAST`, `NPY`, `PD`, or `AIR` for Django, FastAPI, NumPy, pandas, or Airflow.
 - `ANN` only when basedpyright is not the type checker; strict mode already requires annotations.
 
-Docstring rules (`D`, `DOC`) are not selected. `code-authoring` owns docstring content, and Ruff's `DOC` rules are preview-only and reject documented exceptions that a callee raises.
+Docstring rules (`D`, `DOC`) are not selected. `D` forces docstrings on every public module, class, and function, and Ruff's `DOC` rules are preview-only and reject documented exceptions that a callee raises. Instead, append this rule to `## Repository Rules` in the project's `AGENTS.md`:
+
+```markdown
+- Document public and cross-module interfaces with concise Google-style docstrings (`Args:`, `Returns:` or `Yields:`, and `Raises:` when applicable). Omit `self`, `cls`, types already in annotations, `Returns: None`, and docstrings on obvious private helpers.
+```
 
 The McCabe threshold is 15, and Pylint's own size and branch thresholds stay at their defaults. Adjust any of them only for a concrete project reason, documented with the setting.
 

@@ -14,6 +14,12 @@ Every source suppression must be `#[expect(clippy::rule, reason = "...")]` at th
 
 Cognitive complexity comes from the nursery group at Clippy's default threshold of 25. Do not lower it without a concrete project reason, documented with the setting.
 
+Append this documentation rule to `## Repository Rules` in the project's `AGENTS.md`:
+
+```markdown
+- Document public and cross-module items with a concise brief, adding `# Errors`, `# Panics`, and `# Safety` sections only when applicable. Omit empty contract sections, redundant prose across levels, and `# Examples` unless they materially clarify use.
+```
+
 Typical checks:
 
 ```sh
